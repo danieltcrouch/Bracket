@@ -1,4 +1,4 @@
-<?php include("$_SERVER[DOCUMENT_ROOT]/php/startup.php"); ?>
+<?php include("php/startup.php"); ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -51,6 +51,18 @@ todo:
         Radio button choices
         Round end date/time
     (Session monitoring matters)
+
+    Multi tiered list
+    Print list
+    Print buttons with alert
+    Print grouped buttons
+    Print buttons in different columns
+    Print in bracket format without lines
+    Print in bracket format (do I need lines?)
+    Be able to select buttons in pair
+    Add thumbnail to item
+    Prettify, including gray out previous rounds
+    (Phone only displays current round with tabs for displaying previous rounds)
 -->
 
     <!--Main-->
