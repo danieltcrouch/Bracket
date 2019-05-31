@@ -32,8 +32,16 @@
     <!--
     todo:
 
-        Home Page:
-            dynamic columns of logos
+        Create/Edit Page:
+            image for logo
+            title - will need to limit so that it fits over image; will be used in logo
+            explanation/rules
+            textarea for entering entries
+                markup code for entering other fields--dynamically parse label/info and image tag
+            radio button for bracket vs poll
+            timer for each round, or allow entering individual times per round
+            (be able to bring up bracket to inactivate)
+            (be able to manually edit results if need be)
     -->
 
 </body>

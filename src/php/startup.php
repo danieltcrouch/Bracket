@@ -1,13 +1,13 @@
 <?php
 session_start();
 
-$project    = "bracket";
-$siteTitle  = "Bracket";
-$pageTitle  = "The Bracket";
-$image      = "https://bracket.religionandstory.com/images/*.jpg"; //todo
-$description= "..."; //todo
-$keywords   = "..."; //todo
-$homeUrl    = "https://bracket.religionandstory.com";
+$project     = "bracket";
+$siteTitle   = "Bracket";
+$pageTitle   = "The Bracket";
+$image       = "https://bracket.religionandstory.com/images/chess.jpg";
+$description = "Create brackets to solve super serious questions and debates. With dynamic graphics, there can only be one winner.";
+$keywords    = "bracket,two,four,eight,sixteen,thirty-two,competition,tournament,decide,dynamic";
+$homeUrl     = "https://bracket.religionandstory.com";
 
 function getRootPath()
 {

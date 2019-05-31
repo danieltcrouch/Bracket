@@ -32,8 +32,12 @@
     <!--
     todo:
 
-        Home Page:
-            dynamic columns of logos
+        Poll Page:
+            Logo
+            Explanation
+            Radio button choices
+            Round end date/time
+        (Session monitoring matters)
     -->
 
 </body>
