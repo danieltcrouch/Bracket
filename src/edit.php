@@ -21,7 +21,7 @@
 
     <!--Main-->
     <div class="col-10 main">
-        <div class="title center">This Page is under construction</div>
+        <div class="subtitle center">This Page is under construction</div>
         <br/>
         <div class="textBlock center">
             Contact <a class="link" href="mailto:dcrouch1@harding.edu?Subject=Bracket" target="_top">Daniel Crouch</a> for any questions regarding this page.

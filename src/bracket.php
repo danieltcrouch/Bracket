@@ -22,8 +22,8 @@
 
     <!--Main-->
     <div class="col-10 main">
-        <div class="title center">The Bracket</div>
-        <div id="textDisplay" class="textBlock center">...</div>
+        <div class="subtitle center" style="margin-bottom: 1em">This Bracket</div>
+        <div id="textDisplay" class="center">...</div>
     </div>
 
     <!--
@@ -42,10 +42,6 @@
                 https://www.w3schools.com/tags/canvas_lineto.asp
             Round end date/time
 
-        Multi tiered list
-        Print list
-        Print buttons with alert
-        Print grouped buttons
         Print buttons in different columns
         Print in bracket format without lines
         Print in bracket format (do I need lines?)
