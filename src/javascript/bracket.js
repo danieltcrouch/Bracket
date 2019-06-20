@@ -198,18 +198,27 @@ class Bracket {
     }
 }
 
+const BUTTON_WIDTH          = "12rem";
+const BUTTON_TEXT_HEIGHT    = "3rem";
+const BUTTON_PADDING        = ".5rem";
+const BUTTON_B_MARGIN       = ".75rem";
+const MATCH_B_MARGIN        = "1.5rem";
+const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
+
 let bracket;
 
 function loadBracket() {
-    //let entries = ["A", "B", "C", "D"];
-    //let entries = ["A", "B", "C", "D", "E"];
-    //let entries = ["A", "B", "C", "D", "E", "F", "G", "H"];
-    let entries = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-    //let entries = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"];
-    //let winners = ("B1BBBBBB,110").split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
-    //let winners = ("1101").split(',').reduce( function( result, w ) { return result.push( Array.from( w ) ); }, [] );
-    //let winners = ["1"];
-    let winners = null;
+    //todo - cap at 20 chars
+    let entries = [
+        "Spider-Man",
+        "Iron Man",
+        "Captain America",
+        "Thor",
+        "Black Panther",
+        "Doctor Strange",
+        "Hulk Smash!"
+    ];
+    let winners = ("B1").split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
     bracket = new Bracket( entries, winners );
     displayBracket();
 }
@@ -234,7 +243,7 @@ function displayBracket() {
             let matchDiv = document.createElement( "DIV" );
             matchDiv.style.display = "flex";
             matchDiv.style.flexDirection = "column";
-            matchDiv.style.marginBottom = "1em";
+            matchDiv.style.marginBottom = MATCH_B_MARGIN;
 
             matchDiv = getMatch( matchDiv, match );
 
@@ -246,49 +255,111 @@ function displayBracket() {
             roundDiv.appendChild( matchDiv );
         }
         div.appendChild( roundDiv );
+        adjustFontSize( roundDiv );
     }
+
+    setClickableMatches( div );
 }
 
 function getMatch( matchDiv, match ) {
-    //if ( !match.bye ) {
-        let buttonTop = getButtonFromEntry( match.top );
-        let buttonBottom = getButtonFromEntry( match.bottom, match.bye );
-        matchDiv.appendChild( buttonTop );
-        matchDiv.appendChild( buttonBottom );
-    //}
-    //else {
-    //    matchDiv.style.height = "7em";
-    //    matchDiv.style.borderStyle = "solid";
-    //    matchDiv.style.borderWidth = "1px";
-    //    matchDiv.style.marginBottom = "2em";
-    //}
+    const matchId = "r" + match.round + "m" + match.match;
+    let buttonTop = getButtonFromEntry( match.top, matchId );
+    let buttonBottom = getButtonFromEntry( match.bottom, matchId, match.bye );
+    matchDiv.appendChild( buttonTop );
+    matchDiv.appendChild( buttonBottom );
     return matchDiv;
 }
 
-function getButtonFromEntry( e, isBye ) {
-    e = e || {title: (isBye ? "Bye" : "TBD"), seed: 0};
+function getButtonFromEntry( entry, matchId, isBye ) {
+    entry = entry || {title: (isBye ? "Bye" : "TBD"), seed: 0};
+
     let result = document.createElement( "BUTTON" );
-    result.innerHTML = e.title;
-    result.id = e.seed;
+    result.innerHTML = getDisplayName( entry );
+    result.id = entry.seed;
+    result.name = matchId;
     result.onclick = function() {
-        alert( e.title + ": " + e.seed );
+        alert( entry.title + ": " + entry.seed );
     };
-    result.style.width = "8em";
-    result.style.marginBottom = ".5em";
+    result.style.width = BUTTON_WIDTH;
+    result.style.height = BUTTON_TEXT_HEIGHT;
+    result.style.lineHeight = "100%";
+    result.style.padding = BUTTON_PADDING;
+    result.style.marginBottom = BUTTON_B_MARGIN;
+    result.style.textAlign = "left";
+    result.style.whiteSpace = "nowrap";
     result.classList.add( "button" );
     return result;
 }
 
+function getDisplayName( entry ) {
+    let title = entry.title;
+    if ( !( title === "Bye" || title === "TBD" ) ) {
+        title = "" + entry.seed + ". " + title;
+    }
+
+    return title;
+}
+
 function insertFiller( roundDiv, count ) {
-    for ( let i = 0; i < count; i++ )
-    {
+    for ( let i = 0; i < count; i++ ) {
         let fillerDiv = document.createElement( "DIV" );
         fillerDiv.style.display = "flex";
         fillerDiv.style.flexDirection = "column";
-        fillerDiv.style.marginBottom = "2em";
-        fillerDiv.style.height = "7em";
+        fillerDiv.style.marginBottom = MATCH_B_MARGIN;
+        fillerDiv.style.height = TOTAL_MATCH_HEIGHT;
         //fillerDiv.style.borderStyle = "solid";
         //fillerDiv.style.borderWidth = "1px";
         roundDiv.appendChild( fillerDiv );
     }
+}
+
+function adjustFontSize( roundDiv ) {
+    let buttons = roundDiv.getElementsByTagName( "BUTTON" );
+
+    const defaultStyle = getComputedStyle( buttons[0] );
+    const defaultWidth = parseFloat( defaultStyle.width );
+    const defaultFontSize = parseFloat( defaultStyle.fontSize );
+    let minFontSize = defaultFontSize;
+    for ( let i = 0; i < buttons.length; i++ ) {
+        let button = buttons[i];
+        let width = getFullWidth( button );
+        if ( width > defaultWidth ) {
+            const minSize = 12;
+            for ( let size = defaultFontSize; size > minSize; size-- ) {
+                button.style.fontSize = size + "px";
+                width = getFullWidth( button );
+                if ( width <= defaultWidth ) {
+                    minFontSize = size < minFontSize ? size : minFontSize;
+                    break;
+                }
+                if ( size - 1 === minSize ) {
+                    button.innerHTML = button.innerHTML.substring( 0, 15 ) + "...";
+                    minFontSize = size < minFontSize ? size : minFontSize;
+                }
+            }
+        }
+    }
+
+    if ( minFontSize < defaultFontSize ) {
+        for ( let i = 0; i < buttons.length; i++ ) {
+            buttons[i].style.fontSize = minFontSize + "px";
+        }
+    }
+}
+
+function getFullWidth( button ) {
+    button.style.width = "";
+    let result = getComputedStyle( button ).width;
+    button.style.width = BUTTON_WIDTH;
+    return parseFloat( result );
+}
+
+function setClickableMatches( div ) {
+    let buttons = div.getElementsByTagName( "BUTTON" );
+
+    for ( let i = 0; i < buttons.length; i++ ) {
+        buttons[i].classList.add( "inverseButton" );
+    }
+
+    //todo - make pointer not be clickable for matches that aren't open
 }

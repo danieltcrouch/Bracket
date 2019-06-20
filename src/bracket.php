@@ -10,6 +10,7 @@
 
 	<!--Header-->
     <?php includeHeader(); ?>
+    <!-- todo: use something more standard than "col" class for mobile development -- look into bootstrap and competitors -->
     <div class="col-10 header">
         <div class="title center"><span class="clickable">
             Bracket Central
@@ -41,9 +42,8 @@
                 http://www.aropupu.fi/bracket/
                 https://www.w3schools.com/tags/canvas_lineto.asp
             Round end date/time
+        (Allow instant Bracket, round polling, and match polling)
 
-        Print in bracket format (do I need lines?)
-        Make each button pair into radio buttons
         Add thumbnail to item
         Prettify, including gray out previous rounds
         (Phone only displays current round with tabs for displaying previous rounds)
