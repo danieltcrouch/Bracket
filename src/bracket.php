@@ -25,6 +25,7 @@
     <div class="col-10 main">
         <div class="subtitle center" style="margin-bottom: 1em">This Bracket</div>
         <div id="bracketDisplay" class="center">...</div>
+        <div class="center"><button id="submit" class="button" style="display: none; width: 8em">Submit</button></div>
     </div>
 
     <!--
@@ -45,8 +46,9 @@
         (Allow instant Bracket, round polling, and match polling)
 
         Add thumbnail to item
-        Prettify, including gray out previous rounds
-        (Phone only displays current round with tabs for displaying previous rounds)
+        Is red good indicator for active matches? Maybe pulsing light? Ask Lauren...
+        Prettify
+        (Phone only displays current round with tabs/arrows for displaying previous rounds)
     -->
 
 </body>

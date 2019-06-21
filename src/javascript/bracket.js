@@ -141,56 +141,51 @@ class Bracket {
         return result;
     }
 
+    isLastRound( round ) {
+        return round === this.roundCount;
+    }
+
     getMaxRounds() {
         return this.roundCount; //only includes rounds with matches
     }
 
     getCurrentRound() {
-        return this.currentRound + 1;
+        return this.currentRound;
     }
 
-    getMatch() {
-        return this.currentMatch + 1;
-    }
-
-    getCompletedMatchExtended() {
+    getCurrentMatch() {
         return this.currentMatch;
     }
 
-    getMatchExtended() {
-        return this.currentMatch + 1;
+    getCurrentMatchId() {
+        return "r" + this.currentRound + "m" + this.currentMatch;
     }
 
-    getMatchTop( matchId ) { //todo
-        return {
-            image: "",
-            title: "",
-            seed: "",
-        };
-    }
-
-    getMatchBottom( matchId ) { //todo
-        return {
-            image: "",
-            title: "",
-            seed: "",
-        };
-    }
-
-    getEntries() {
-        return this.entries;
-    }
-
-    getEntriesFromRound( round, includeByes ) {
-        return this.bracket[round].filter( m => !m.bye || includeByes ).reduce( (result, m) => { return result.concat( [m.top, m.bottom] ); }, [] );
+    getMatchFromId( matchId ) {
+        let round = parseInt( matchId.split('m')[0].substring( 1 ) );
+        let match = parseInt( matchId.split('m')[1] );
+        return this.bracket[round][match];
     }
 
     getMatchesFromRound( round, includeByes ) {
         return this.bracket[round].filter( m => !m.bye || includeByes );
     }
 
-    getDisplay() {
-        return this.entries.map( e => e.title );
+    getNextMatch ( matchId ) {
+        let round = parseInt( matchId.split('m')[0].substring( 1 ) );
+        let match = parseInt( matchId.split('m')[1] );
+        let isTop = match % 2 === 0;
+        round++;
+        match = Math.floor(match / 2);
+        let result = this.isLastRound( round ) ? null : this.bracket[round][match];
+        return {
+            match: result,
+            isTop: isTop
+        };
+    }
+
+    getMatches( includeByes ) {
+        return this.bracket.reduce( (result, r) => { return result.concat( r ); }, [] ).filter( m => !m.bye || includeByes );
     }
 
     toString() {
@@ -206,6 +201,8 @@ const MATCH_B_MARGIN        = "1.5rem";
 const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
 
 let bracket;
+let mode;
+let isLive;
 
 function loadBracket() {
     //todo - cap at 20 chars
@@ -220,7 +217,13 @@ function loadBracket() {
     ];
     let winners = ("B1").split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
     bracket = new Bracket( entries, winners );
+    mode = "all";
+    isLive = true;
     displayBracket();
+
+    if ( !isLive ) {
+        id( 'submit' ).style.display = "inline";
+    }
 }
 
 function displayBracket() {
@@ -231,7 +234,7 @@ function displayBracket() {
 
     for ( let i = 0; i < bracket.getMaxRounds(); i++ ) {
         let roundDiv = document.createElement( "DIV" );
-        roundDiv.id = "round" + (i + 1);
+        roundDiv.id = "round" + i;
         roundDiv.style.display = "flex";
         roundDiv.style.flexDirection = "column";
         roundDiv.style.justifyContent = "center";
@@ -258,27 +261,32 @@ function displayBracket() {
         adjustFontSize( roundDiv );
     }
 
-    setClickableMatches( div );
+    setClickableMatches( div, mode );
 }
 
 function getMatch( matchDiv, match ) {
-    const matchId = "r" + match.round + "m" + match.match;
-    let buttonTop = getButtonFromEntry( match.top, matchId );
-    let buttonBottom = getButtonFromEntry( match.bottom, matchId, match.bye );
+    const matchId = getMatchId( match );
+    let buttonTop = getButtonFromEntry( match.top, true, matchId );
+    let buttonBottom = getButtonFromEntry( match.bottom, false, matchId, match.bye );
     matchDiv.appendChild( buttonTop );
     matchDiv.appendChild( buttonBottom );
     return matchDiv;
 }
 
-function getButtonFromEntry( entry, matchId, isBye ) {
+function getMatchId( match )
+{
+    return "r" + match.round + "m" + match.match;
+}
+
+function getButtonFromEntry( entry, isTop, matchId, isBye ) {
     entry = entry || {title: (isBye ? "Bye" : "TBD"), seed: 0};
 
     let result = document.createElement( "BUTTON" );
     result.innerHTML = getDisplayName( entry );
-    result.id = entry.seed;
+    result.id = matchId + (isTop ? "T" : "B");
     result.name = matchId;
     result.onclick = function() {
-        alert( entry.title + ": " + entry.seed );
+        registerChoice( matchId, isTop );
     };
     result.style.width = BUTTON_WIDTH;
     result.style.height = BUTTON_TEXT_HEIGHT;
@@ -354,12 +362,95 @@ function getFullWidth( button ) {
     return parseFloat( result );
 }
 
-function setClickableMatches( div ) {
+function setClickableMatches( div, mode ) {
     let buttons = div.getElementsByTagName( "BUTTON" );
-
     for ( let i = 0; i < buttons.length; i++ ) {
-        buttons[i].classList.add( "inverseButton" );
+        buttons[i].classList.add( "staticInverseButton" );
     }
 
-    //todo - make pointer not be clickable for matches that aren't open
+    let matches = bracket.getMatches( true );
+    for ( let i = 0; i < matches.length; i++ ) {
+        if ( matches[i].winner ) {
+            const matchId = getMatchId( matches[i] );
+            const winnerId = matchId + ( matches[i].winner.seed === matches[i].top.seed ? "T" : "B" );
+            let matchButtons = nm( matchId );
+            for ( let j = 0; j < matchButtons.length; j++ ) {
+                matchButtons[j].classList.remove( "staticInverseButton" );
+                matchButtons[j].classList.add( matchButtons[j].id === winnerId ? "staticSelectedButton" : "staticInverseButton" );
+            }
+        }
+    }
+
+    switch ( mode ) {
+    case "match":
+        let matchButtons = nm( bracket.getCurrentMatchId() );
+        for ( let i = 0; i < matchButtons.length; i++ ) {
+            matchButtons[i].style.borderColor = "red";
+            matchButtons[i].classList.remove( "staticInverseButton" );
+            matchButtons[i].classList.add( "inverseButton" );
+        }
+        break;
+    case "round":
+        for ( let i = 0; i < buttons.length; i++ ) {
+            let round = parseInt( buttons[i].parentElement.parentElement.id );
+            if ( bracket.getCurrentRound() === round ) {
+                buttons[i].style.borderColor = "red";
+                buttons[i].classList.remove( "staticInverseButton" );
+                buttons[i].classList.add( "inverseButton" );
+            }
+        }
+        break;
+    case "all":
+    default:
+        for ( let i = 0; i < matches.length; i++ ) {
+            let match = matches[i];
+            if ( !matches[i].winner &&
+                match.top && match.top.seed &&
+                match.bottom && match.bottom.seed ) {
+                let matchButtons = nm( getMatchId( match ) );
+                for ( let j = 0; j < matchButtons.length; j++ ) {
+                    matchButtons[j].style.borderColor = "red";
+                    matchButtons[j].classList.remove( "staticInverseButton" );
+                    matchButtons[j].classList.add( "inverseButton" );
+                }
+            }
+        }
+    }
+}
+
+function registerChoice( matchId, isTop ) {
+    if ( isLive ) {
+        let match = bracket.getMatchFromId( matchId );
+        match.winner = isTop ? match.top : match.bottom;
+        let next = bracket.getNextMatch( matchId );
+        if ( next.match ) {
+            next.isTop ? next.match.top = match.winner : next.match.bottom = match.winner;
+
+            let matchButtons = nm( getMatchId( match ) );
+            for ( let i = 0; i < matchButtons.length; i++ ) {
+                matchButtons[i].style.borderColor = "";
+            }
+
+            let nextMatchButtons = nm( getMatchId( next.match ) );
+            nextMatchButtons[ next.isTop ? 0 : 1 ].innerHTML = getDisplayName( match.winner );
+            adjustFontSize( id( "round" + next.match.round ) );
+
+            if ( next.match.top && next.match.bottom ) {
+                for ( let i = 0; i < nextMatchButtons.length; i++ ) {
+                    nextMatchButtons[i].style.borderColor = "red";
+                    nextMatchButtons[i].classList.remove( "staticInverseButton" );
+                    nextMatchButtons[i].classList.add( "inverseButton" );
+                }
+            }
+
+            //todo - if you go change a choice 2 rounds back, it makes the future round wrong
+            //  it already fixes the next round's match, but all descendant matches after that need to be fixed
+        }
+        else {
+            alert( "The winner is: " + match.winner.title + "!" );
+        }
+    }
+    else {
+        alert( matchId + ": " + (isTop ? "top" : "bottom") );
+    }
 }
