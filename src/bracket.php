@@ -46,7 +46,8 @@
         (Allow instant Bracket, round polling, and match polling)
 
         Add thumbnail to item
-        Is red good indicator for active matches? Maybe pulsing light? Ask Lauren...
+            .style.filter = "grayscale(100%)";
+            .style.filter = "saturate(50%)";
         Prettify
         (Phone only displays current round with tabs/arrows for displaying previous rounds)
     -->

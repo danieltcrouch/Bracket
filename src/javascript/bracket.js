@@ -204,6 +204,8 @@ let bracket;
 let mode;
 let isLive;
 
+//todo - Also, use comments to split file into sections
+
 function loadBracket() {
     //todo - cap at 20 chars
     let entries = [
@@ -385,7 +387,7 @@ function setClickableMatches( div, mode ) {
     case "match":
         let matchButtons = nm( bracket.getCurrentMatchId() );
         for ( let i = 0; i < matchButtons.length; i++ ) {
-            matchButtons[i].style.borderColor = "red";
+            matchButtons[i].classList.add( "blinkBorder" );
             matchButtons[i].classList.remove( "staticInverseButton" );
             matchButtons[i].classList.add( "inverseButton" );
         }
@@ -394,7 +396,7 @@ function setClickableMatches( div, mode ) {
         for ( let i = 0; i < buttons.length; i++ ) {
             let round = parseInt( buttons[i].parentElement.parentElement.id );
             if ( bracket.getCurrentRound() === round ) {
-                buttons[i].style.borderColor = "red";
+                buttons[i].classList.add( "blinkBorder" );
                 buttons[i].classList.remove( "staticInverseButton" );
                 buttons[i].classList.add( "inverseButton" );
             }
@@ -409,7 +411,7 @@ function setClickableMatches( div, mode ) {
                 match.bottom && match.bottom.seed ) {
                 let matchButtons = nm( getMatchId( match ) );
                 for ( let j = 0; j < matchButtons.length; j++ ) {
-                    matchButtons[j].style.borderColor = "red";
+                    matchButtons[j].classList.add( "blinkBorder" );
                     matchButtons[j].classList.remove( "staticInverseButton" );
                     matchButtons[j].classList.add( "inverseButton" );
                 }
@@ -421,33 +423,54 @@ function setClickableMatches( div, mode ) {
 function registerChoice( matchId, isTop ) {
     if ( isLive ) {
         let match = bracket.getMatchFromId( matchId );
-        match.winner = isTop ? match.top : match.bottom;
-        let next = bracket.getNextMatch( matchId );
-        if ( next.match ) {
-            next.isTop ? next.match.top = match.winner : next.match.bottom = match.winner;
+        let winner = isTop ? match.top : match.bottom;
+        const winnerChange = winner !== match.winner;
+        match.winner = winner;
 
+        if ( winnerChange ) {
             let matchButtons = nm( getMatchId( match ) );
             for ( let i = 0; i < matchButtons.length; i++ ) {
-                matchButtons[i].style.borderColor = "";
+                matchButtons[i].classList.remove( "blinkBorder" );
             }
 
-            let nextMatchButtons = nm( getMatchId( next.match ) );
-            nextMatchButtons[ next.isTop ? 0 : 1 ].innerHTML = getDisplayName( match.winner );
-            adjustFontSize( id( "round" + next.match.round ) );
+            let next = bracket.getNextMatch( matchId );
+            if ( next.match ) {
+                next.isTop ? next.match.top = match.winner : next.match.bottom = match.winner;
 
-            if ( next.match.top && next.match.bottom ) {
-                for ( let i = 0; i < nextMatchButtons.length; i++ ) {
-                    nextMatchButtons[i].style.borderColor = "red";
-                    nextMatchButtons[i].classList.remove( "staticInverseButton" );
-                    nextMatchButtons[i].classList.add( "inverseButton" );
+                let nextMatchId = getMatchId( next.match );
+                let nextMatchButtons = nm( nextMatchId );
+                nextMatchButtons[next.isTop ? 0 : 1].innerHTML = getDisplayName( match.winner );
+                adjustFontSize( id( "round" + next.match.round ) );
+
+                if ( next.match.top && next.match.bottom ) {
+                    for ( let i = 0; i < nextMatchButtons.length; i++ ) {
+                        nextMatchButtons[i].classList.add( "blinkBorder" );
+                        nextMatchButtons[i].classList.remove( "staticInverseButton" );
+                        nextMatchButtons[i].classList.add( "inverseButton" );
+                    }
+                }
+
+                next = bracket.getNextMatch( nextMatchId );
+                while ( next.match ) {
+                    next.isTop ? next.match.top = null : next.match.bottom = null;
+
+                    nextMatchId = getMatchId( next.match );
+                    nextMatchButtons = nm( nextMatchId );
+                    nextMatchButtons[next.isTop ? 0 : 1].innerHTML = getDisplayName( { title: "TBD" } );
+                    adjustFontSize( id( "round" + next.match.round ) );
+
+                    for ( let i = 0; i < nextMatchButtons.length; i++ ) {
+                        nextMatchButtons[i].classList.remove( "blinkBorder" );
+                        nextMatchButtons[i].classList.remove( "inverseButton" );
+                        nextMatchButtons[i].classList.add( "staticInverseButton" );
+                    }
+
+                    next = bracket.getNextMatch( nextMatchId );
                 }
             }
-
-            //todo - if you go change a choice 2 rounds back, it makes the future round wrong
-            //  it already fixes the next round's match, but all descendant matches after that need to be fixed
-        }
-        else {
-            alert( "The winner is: " + match.winner.title + "!" );
+            else {
+                alert( "The winner is: " + match.winner.title + "!" );
+            }
         }
     }
     else {
