@@ -17,10 +17,11 @@ class Bracket {
 
     static parseEntries( entries ) {
         if ( typeof entries[0] === "string" ) {
-            entries = entries.map( function( e ) { return { title: e }; } );
+            entries = entries.map( function( e ) { return { title: e, image: "" }; } );
         }
 
         for ( let i = 0; i < entries.length; i++ ) {
+            entries[i].image = entries[i].image || "images/profile.jpg";
             entries[i].seed = i + 1;
         }
 
@@ -204,18 +205,18 @@ let bracket;
 let mode;
 let isLive;
 
-//todo - Also, use comments to split file into sections
+//todo - Use comments to split file into sections
 
 function loadBracket() {
     //todo - cap at 20 chars
     let entries = [
-        "Spider-Man",
-        "Iron Man",
-        "Captain America",
-        "Thor",
-        "Black Panther",
-        "Doctor Strange",
-        "Hulk Smash!"
+        { title: "Spider-Man", image: "https://media.playstation.com/is/image/SCEA/marvels-spider-man-hero-banner-02-ps4-us-16jul18?$native_nt$" },
+        { title: "Iron Man", image: "https://cdn.images.express.co.uk/img/dynamic/36/590x/Avengers-Iron-Man-was-almost-played-by-another-major-star-936289.jpg" },
+        { title: "Captain America", image: "https://cnet2.cbsistatic.com/img/Em3tYAnRSeSVCJH84Lvgv-fThrQ=/1600x900/2017/08/03/75c3b0ae-5a2d-4d75-b72b-055247b4378f/marvelinfinitywar-captainamerica.jpg" },
+        { title: "Thor", image: "https://cdn.mcuexchange.com/wp-content/uploads/2018/06/thor.jpg" },
+        { title: "Black Panther", image: "http://cdn.shopify.com/s/files/1/1916/3081/products/product-image-544753420_1200x1200.jpg?v=1527307028" },
+        { title: "Doctor Strange", image: "https://cdn1us.denofgeek.com/sites/denofgeekus/files/styles/main_wide/public/2016/12/doctor-strange-2-benedict-cumberbatch.jpg?itok=jeAJwK4P" },
+        { title: "The Incredible Hulk", image: "https://i.ytimg.com/vi/jolXso_OO-c/maxresdefault.jpg" }
     ];
     let winners = ("B1").split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
     bracket = new Bracket( entries, winners );
@@ -252,8 +253,7 @@ function displayBracket() {
 
             matchDiv = getMatch( matchDiv, match );
 
-            if ( i > 0 && j > 0 )
-            {
+            if ( i > 0 && j > 0 ) {
                 insertFiller( roundDiv, 1 + ( 2 * ( i - 1 ) ) );
             }
 
@@ -268,10 +268,36 @@ function displayBracket() {
 
 function getMatch( matchDiv, match ) {
     const matchId = getMatchId( match );
+
+    let matchTopDiv = document.createElement( "DIV" );
+    matchTopDiv.style.display = "flex";
+    let imageTop = document.createElement( "IMG" );
+    let sourceTop = match.top ? match.top.image : "images/question.jpg";
+    imageTop.setAttribute( "src", sourceTop );
+    imageTop.id = matchId + "ImageT";
+    imageTop.style.width = "3rem";
+    imageTop.style.height = "3rem";
+    imageTop.style.objectFit = "cover";
     let buttonTop = getButtonFromEntry( match.top, true, matchId );
+    matchTopDiv.appendChild( imageTop );
+    matchTopDiv.appendChild( buttonTop );
+    matchDiv.appendChild( matchTopDiv );
+
+    let matchBottomDiv = document.createElement( "DIV" );
+    matchBottomDiv.style.display = "flex";
+    let imageBottom = document.createElement( "IMG" );
+    let sourceBottom = match.bottom ? match.bottom.image : "images/question.jpg";
+    sourceBottom = match.bye ? "images/blank.jpg" : sourceBottom;
+    imageBottom.setAttribute( "src", sourceBottom );
+    imageBottom.id = matchId + "ImageB";
+    imageBottom.style.width = "3rem";
+    imageBottom.style.height = "3rem";
+    imageBottom.style.objectFit = "cover";
     let buttonBottom = getButtonFromEntry( match.bottom, false, matchId, match.bye );
-    matchDiv.appendChild( buttonTop );
-    matchDiv.appendChild( buttonBottom );
+    matchBottomDiv.appendChild( imageBottom );
+    matchBottomDiv.appendChild( buttonBottom );
+    matchDiv.appendChild( matchBottomDiv );
+
     return matchDiv;
 }
 
@@ -436,10 +462,12 @@ function registerChoice( matchId, isTop ) {
             let next = bracket.getNextMatch( matchId );
             if ( next.match ) {
                 next.isTop ? next.match.top = match.winner : next.match.bottom = match.winner;
+                next.match.winner = null;
 
                 let nextMatchId = getMatchId( next.match );
                 let nextMatchButtons = nm( nextMatchId );
                 nextMatchButtons[next.isTop ? 0 : 1].innerHTML = getDisplayName( match.winner );
+                id( nextMatchId + "Image" + (next.isTop ? "T" : "B") ).setAttribute( "src", next.isTop ? next.match.top.image : next.match.bottom.image );
                 adjustFontSize( id( "round" + next.match.round ) );
 
                 if ( next.match.top && next.match.bottom ) {
@@ -453,10 +481,12 @@ function registerChoice( matchId, isTop ) {
                 next = bracket.getNextMatch( nextMatchId );
                 while ( next.match ) {
                     next.isTop ? next.match.top = null : next.match.bottom = null;
+                    next.match.winner = null;
 
                     nextMatchId = getMatchId( next.match );
                     nextMatchButtons = nm( nextMatchId );
                     nextMatchButtons[next.isTop ? 0 : 1].innerHTML = getDisplayName( { title: "TBD" } );
+                    id( nextMatchId + "Image" + (next.isTop ? "T" : "B") ).setAttribute( "src", "images/question.jpg" );
                     adjustFontSize( id( "round" + next.match.round ) );
 
                     for ( let i = 0; i < nextMatchButtons.length; i++ ) {
