@@ -10,9 +10,7 @@ class Bracket {
         let hasByes = this.magnitude > this.entryCount;
         Bracket.parseWinners( winners, this.bracket, hasByes );
 
-        let current = Bracket.seekCurrentMatch( this.bracket );
-        this.currentRound = current.round;
-        this.currentMatch = current.match;
+        this.updateCurrent();
     }
 
     static parseEntries( entries ) {
@@ -142,12 +140,26 @@ class Bracket {
         return result;
     }
 
+    updateCurrent() {
+        let current = Bracket.seekCurrentMatch( this.bracket );
+        this.currentRound = current.round;
+        this.currentMatch = current.match;
+    }
+
     isLastRound( round ) {
         return round === this.roundCount;
     }
 
     getMaxRounds() {
         return this.roundCount; //only includes rounds with matches
+    }
+
+    getMaxSize() {
+        return this.magnitude;
+    }
+
+    getSize() {
+        return this.entryCount;
     }
 
     getCurrentRound() {
@@ -168,8 +180,8 @@ class Bracket {
         return this.bracket[round][match];
     }
 
-    getMatchesFromRound( round, includeByes ) {
-        return this.bracket[round].filter( m => !m.bye || includeByes );
+    getMatchesFromRound( round, ignoreByes ) {
+        return this.bracket[round].filter( m => !(m.bye && ignoreByes) );
     }
 
     getNextMatch ( matchId ) {
@@ -185,14 +197,30 @@ class Bracket {
         };
     }
 
-    getMatches( includeByes ) {
-        return this.bracket.reduce( (result, r) => { return result.concat( r ); }, [] ).filter( m => !m.bye || includeByes );
+    getMatches( ignoreByes ) {
+        return this.bracket.reduce( (result, r) => { return result.concat( r ); }, [] ).filter( m => !(m.bye && ignoreByes) );
+    }
+
+    getWinner() {
+        return this.bracket[this.getMaxRounds() - 1][0].winner;
     }
 
     toString() {
         return this.entries.map( e => e.title ).join( "," );
     }
 }
+
+let bracket;
+let round;
+let mode;
+let display;
+
+//todo - Clean Common repo
+//todo - set standards for this and future projects
+
+
+/*** DISPLAY ***/
+
 
 const BUTTON_WIDTH          = "12rem";
 const BUTTON_TEXT_HEIGHT    = "3rem";
@@ -201,32 +229,13 @@ const BUTTON_B_MARGIN       = ".75rem";
 const MATCH_B_MARGIN        = "1.5rem";
 const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
 
-let bracket;
-let mode;
-let isLive;
+function loadBracket( bracketInfo ) {
+    bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
+    mode = bracketInfo.mode;
 
-//todo - Use comments to split file into sections
-
-function loadBracket() {
-    //todo - cap at 20 chars
-    let entries = [
-        { title: "Spider-Man", image: "https://media.playstation.com/is/image/SCEA/marvels-spider-man-hero-banner-02-ps4-us-16jul18?$native_nt$" },
-        { title: "Iron Man", image: "https://cdn.images.express.co.uk/img/dynamic/36/590x/Avengers-Iron-Man-was-almost-played-by-another-major-star-936289.jpg" },
-        { title: "Captain America", image: "https://cnet2.cbsistatic.com/img/Em3tYAnRSeSVCJH84Lvgv-fThrQ=/1600x900/2017/08/03/75c3b0ae-5a2d-4d75-b72b-055247b4378f/marvelinfinitywar-captainamerica.jpg" },
-        { title: "Thor", image: "https://cdn.mcuexchange.com/wp-content/uploads/2018/06/thor.jpg" },
-        { title: "Black Panther", image: "http://cdn.shopify.com/s/files/1/1916/3081/products/product-image-544753420_1200x1200.jpg?v=1527307028" },
-        { title: "Doctor Strange", image: "https://cdn1us.denofgeek.com/sites/denofgeekus/files/styles/main_wide/public/2016/12/doctor-strange-2-benedict-cumberbatch.jpg?itok=jeAJwK4P" },
-        { title: "The Incredible Hulk", image: "https://i.ytimg.com/vi/jolXso_OO-c/maxresdefault.jpg" }
-    ];
-    let winners = ("B1").split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
-    bracket = new Bracket( entries, winners );
-    mode = "all";
-    isLive = true;
     displayBracket();
-
-    if ( !isLive ) {
-        id( 'submit' ).style.display = "inline";
-    }
+    setDisplayType();
+    displayRoundTimer( bracketInfo.endTime, bracketInfo.active );
 }
 
 function displayBracket() {
@@ -243,7 +252,7 @@ function displayBracket() {
         roundDiv.style.justifyContent = "center";
         roundDiv.style.marginLeft = "1em";
 
-        let matches = bracket.getMatchesFromRound( i, true );
+        let matches = bracket.getMatchesFromRound( i );
         for ( let j = 0; j < matches.length; j++ ) {
             let match = matches[j];
             let matchDiv = document.createElement( "DIV" );
@@ -263,47 +272,32 @@ function displayBracket() {
         adjustFontSize( roundDiv );
     }
 
-    setClickableMatches( div, mode );
+    setClickableMatches( div );
 }
 
 function getMatch( matchDiv, match ) {
     const matchId = getMatchId( match );
+    const entries = [ match.top, match.bottom ];
 
-    let matchTopDiv = document.createElement( "DIV" );
-    matchTopDiv.style.display = "flex";
-    let imageTop = document.createElement( "IMG" );
-    let sourceTop = match.top ? match.top.image : "images/question.jpg";
-    imageTop.setAttribute( "src", sourceTop );
-    imageTop.id = matchId + "ImageT";
-    imageTop.style.width = "3rem";
-    imageTop.style.height = "3rem";
-    imageTop.style.objectFit = "cover";
-    let buttonTop = getButtonFromEntry( match.top, true, matchId );
-    matchTopDiv.appendChild( imageTop );
-    matchTopDiv.appendChild( buttonTop );
-    matchDiv.appendChild( matchTopDiv );
-
-    let matchBottomDiv = document.createElement( "DIV" );
-    matchBottomDiv.style.display = "flex";
-    let imageBottom = document.createElement( "IMG" );
-    let sourceBottom = match.bottom ? match.bottom.image : "images/question.jpg";
-    sourceBottom = match.bye ? "images/blank.jpg" : sourceBottom;
-    imageBottom.setAttribute( "src", sourceBottom );
-    imageBottom.id = matchId + "ImageB";
-    imageBottom.style.width = "3rem";
-    imageBottom.style.height = "3rem";
-    imageBottom.style.objectFit = "cover";
-    let buttonBottom = getButtonFromEntry( match.bottom, false, matchId, match.bye );
-    matchBottomDiv.appendChild( imageBottom );
-    matchBottomDiv.appendChild( buttonBottom );
-    matchDiv.appendChild( matchBottomDiv );
+    for ( let i = 0; i < entries.length; i++ ) {
+        let isTop = i % 2 === 0;
+        let entryDiv = document.createElement( "DIV" );
+        entryDiv.style.display = "flex";
+        let image = document.createElement( "IMG" );
+        let source = entries[i] ? entries[i].image : "images/question.jpg";
+        source = match.bye && !isTop ? "images/blank.jpg" : source;
+        image.setAttribute( "src", source );
+        image.id = matchId + "Image" + (isTop?"T":"B");
+        image.style.width = BUTTON_TEXT_HEIGHT;
+        image.style.height = BUTTON_TEXT_HEIGHT;
+        image.style.objectFit = "cover";
+        let button = getButtonFromEntry( entries[i], isTop, matchId, (!isTop && match.bye) );
+        entryDiv.appendChild( image );
+        entryDiv.appendChild( button );
+        matchDiv.appendChild( entryDiv );
+    }
 
     return matchDiv;
-}
-
-function getMatchId( match )
-{
-    return "r" + match.round + "m" + match.match;
 }
 
 function getButtonFromEntry( entry, isTop, matchId, isBye ) {
@@ -327,26 +321,16 @@ function getButtonFromEntry( entry, isTop, matchId, isBye ) {
     return result;
 }
 
-function getDisplayName( entry ) {
-    let title = entry.title;
-    if ( !( title === "Bye" || title === "TBD" ) ) {
-        title = "" + entry.seed + ". " + title;
-    }
-
-    return title;
-}
-
-function insertFiller( roundDiv, count ) {
-    for ( let i = 0; i < count; i++ ) {
-        let fillerDiv = document.createElement( "DIV" );
-        fillerDiv.style.display = "flex";
-        fillerDiv.style.flexDirection = "column";
-        fillerDiv.style.marginBottom = MATCH_B_MARGIN;
-        fillerDiv.style.height = TOTAL_MATCH_HEIGHT;
-        //fillerDiv.style.borderStyle = "solid";
-        //fillerDiv.style.borderWidth = "1px";
-        roundDiv.appendChild( fillerDiv );
-    }
+function insertFiller( roundDiv, multiplier ) {
+    let fillerDiv = document.createElement( "DIV" );
+    fillerDiv.setAttribute( "name", "filler" );
+    fillerDiv.style.display = "flex";
+    fillerDiv.style.flexDirection = "column";
+    fillerDiv.style.marginBottom = ( parseFloat(MATCH_B_MARGIN) * multiplier ) + "rem";
+    fillerDiv.style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) * multiplier ) + "rem";
+    //fillerDiv.style.borderStyle = "solid";
+    //fillerDiv.style.borderWidth = "1px";
+    roundDiv.appendChild( fillerDiv );
 }
 
 function adjustFontSize( roundDiv ) {
@@ -390,13 +374,13 @@ function getFullWidth( button ) {
     return parseFloat( result );
 }
 
-function setClickableMatches( div, mode ) {
+function setClickableMatches( div ) {
     let buttons = div.getElementsByTagName( "BUTTON" );
     for ( let i = 0; i < buttons.length; i++ ) {
         buttons[i].classList.add( "staticInverseButton" );
     }
 
-    let matches = bracket.getMatches( true );
+    let matches = bracket.getMatches();
     for ( let i = 0; i < matches.length; i++ ) {
         if ( matches[i].winner ) {
             const matchId = getMatchId( matches[i] );
@@ -446,64 +430,248 @@ function setClickableMatches( div, mode ) {
     }
 }
 
+
+/*** ROUND DISPLAY ***/
+
+
+function setDisplayType() {
+    window.onresize = updateMobile;
+    round = bracket.getCurrentRound() >= 0 ? bracket.getCurrentRound() : 0;
+    display = {};
+    display.isLarge = bracket.getMaxSize() > 32;
+    display.isMobile = isMobile();
+
+    displayRounds();
+}
+
+function updateMobile() {
+    display.isMobile = isMobile();
+    displayRounds();
+}
+
+function isMobile() {
+    let element = cl('mobileDisplay')[0];
+    const currentValue = element.style.display;
+    element.style.display = "";
+    const result = getComputedStyle( element ).display !== "none";
+    element.style.display = currentValue;
+    return result;
+}
+
+function displayRounds() {
+    if ( display.isMobile ) {
+        displaySingleRound();
+    }
+    else if ( display.isLarge ) {
+        displayThreeRounds();
+    }
+    else {
+        displayAllRounds();
+    }
+
+    if ( display.isMobile || display.isLarge ) {
+        updateRoundPicker();
+    }
+}
+
+function displaySingleRound() {
+    for ( let i = 0; i < bracket.getMaxRounds(); i++ ) {
+        id('round' + i).style.display = ( i === round ) ? "flex" : "none";
+    }
+
+    let fillers = nm('filler');
+    for ( let i = 0; i < fillers.length; i++ ) {
+        fillers[i].style.display = "none";
+    }
+
+    adjustFontSize( id( "round" + round ) );
+}
+
+function displayThreeRounds() {
+    id('roundPicker').style.display = "block";
+
+    for ( let i = 0; i < bracket.getMaxRounds(); i++ ) {
+        id('round' + i).style.display = ( i >= round - 1 && i <= round + 1 ) ? "flex" : "none";
+    }
+
+    let fillers = nm('filler');
+    for ( let i = 0; i < fillers.length; i++ ) {
+        fillers[i].style.display = "flex";
+    }
+
+    const farLeftRound = ( round === 0 ) ? 0 : round - 1;
+    fillers = id('round' + farLeftRound).querySelectorAll('[name=filler]');
+    for ( let i = 0; i < fillers.length; i++ ) {
+        fillers[i].style.display = "none";
+    }
+
+    const middleRound = ( round === 0 ) ? 1 : round;
+    fillers = id('round' + middleRound).querySelectorAll('[name=filler]');
+    for ( let i = 0; i < fillers.length; i++ ) {
+        fillers[i].style.marginBottom = ( parseFloat(MATCH_B_MARGIN) ) + "rem";
+        fillers[i].style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) ) + "rem";
+    }
+
+    const farRightRound = ( round === 0 ) ? 2 : round + 1;
+    fillers = id('round' + farRightRound).querySelectorAll('[name=filler]');
+    for ( let i = 0; i < fillers.length; i++ ) {
+        fillers[i].style.marginBottom = ( parseFloat(MATCH_B_MARGIN) * 3 ) + "rem";
+        fillers[i].style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) * 3 ) + "rem";
+    }
+}
+
+function displayAllRounds() {
+    for ( let i = 0; i < bracket.getMaxRounds(); i++ ) {
+        id('round' + i).style.display = "flex";
+    }
+
+    let fillers = nm('filler');
+    for ( let i = 0; i < fillers.length; i++ ) {
+        fillers[i].style.display = "flex";
+    }
+}
+
+function updateRoundPicker() {
+    id('roundSpan').innerHTML = "Round " + ( round + 1 );
+
+    if ( round === 0 ) {
+        id('arrowPrev').style.display = "none";
+    }
+    else if ( round === bracket.getMaxRounds() - 1 || ( display.isLarge && round === bracket.getMaxRounds() - 2 ) ) {
+        id('arrowNext').style.display = "none";
+    }
+    else {
+        id('arrowPrev').style.display = "";
+        id('arrowNext').style.display = "";
+    }
+}
+
+function changeRound( direction ) {
+    if ( direction === "prev" ) {
+        round--;
+    }
+    else if ( direction === "next" ) {
+        round++;
+    }
+
+    let maxRound = bracket.getMaxRounds() - 1;
+    round = round < 0 ? 0 : ( round > maxRound ? maxRound : round );
+
+    displayRounds();
+}
+
+
+/*** TIMER DISPLAY ***/
+
+
+function displayRoundTimer( endTime, active ) {
+    let timerSpan = id('roundTimer');
+    if ( !active ) {
+        timerSpan.innerText = "(Inactive)";
+        id( 'bracketDisplay' ).style.display = "none";
+        id('submit').style.display = "none";
+        id('logo').style.filter = "grayscale(1)";
+    }
+    else if ( endTime ) {
+        timerSpan.display = "block";
+        timerSpan.innerText = "Round Ends: " + endTime;
+    }
+}
+
+
+/*** BRACKET INTERACTION ***/
+
+
 function registerChoice( matchId, isTop ) {
-    if ( isLive ) {
+    if ( mode === "all" ) {
         let match = bracket.getMatchFromId( matchId );
         let winner = isTop ? match.top : match.bottom;
         const winnerChange = winner !== match.winner;
         match.winner = winner;
 
         if ( winnerChange ) {
+            bracket.updateCurrent();
+
             let matchButtons = nm( getMatchId( match ) );
             for ( let i = 0; i < matchButtons.length; i++ ) {
                 matchButtons[i].classList.remove( "blinkBorder" );
+                // .style.filter = "grayscale(100%)";
+                // .style.filter = "saturate(50%)";
             }
 
             let next = bracket.getNextMatch( matchId );
             if ( next.match ) {
-                next.isTop ? next.match.top = match.winner : next.match.bottom = match.winner;
-                next.match.winner = null;
+                updateMatch( next.match, match.winner, next.isTop );
+                next = bracket.getNextMatch( getMatchId( next.match ) );
 
-                let nextMatchId = getMatchId( next.match );
-                let nextMatchButtons = nm( nextMatchId );
-                nextMatchButtons[next.isTop ? 0 : 1].innerHTML = getDisplayName( match.winner );
-                id( nextMatchId + "Image" + (next.isTop ? "T" : "B") ).setAttribute( "src", next.isTop ? next.match.top.image : next.match.bottom.image );
-                adjustFontSize( id( "round" + next.match.round ) );
-
-                if ( next.match.top && next.match.bottom ) {
-                    for ( let i = 0; i < nextMatchButtons.length; i++ ) {
-                        nextMatchButtons[i].classList.add( "blinkBorder" );
-                        nextMatchButtons[i].classList.remove( "staticInverseButton" );
-                        nextMatchButtons[i].classList.add( "inverseButton" );
-                    }
-                }
-
-                next = bracket.getNextMatch( nextMatchId );
                 while ( next.match ) {
-                    next.isTop ? next.match.top = null : next.match.bottom = null;
-                    next.match.winner = null;
-
-                    nextMatchId = getMatchId( next.match );
-                    nextMatchButtons = nm( nextMatchId );
-                    nextMatchButtons[next.isTop ? 0 : 1].innerHTML = getDisplayName( { title: "TBD" } );
-                    id( nextMatchId + "Image" + (next.isTop ? "T" : "B") ).setAttribute( "src", "images/question.jpg" );
-                    adjustFontSize( id( "round" + next.match.round ) );
-
-                    for ( let i = 0; i < nextMatchButtons.length; i++ ) {
-                        nextMatchButtons[i].classList.remove( "blinkBorder" );
-                        nextMatchButtons[i].classList.remove( "inverseButton" );
-                        nextMatchButtons[i].classList.add( "staticInverseButton" );
-                    }
-
-                    next = bracket.getNextMatch( nextMatchId );
+                    updateMatch( next.match, null, next.isTop );
+                    next = bracket.getNextMatch( getMatchId( next.match ) );
                 }
             }
-            else {
-                alert( "The winner is: " + match.winner.title + "!" );
-            }
+        }
+
+        if ( ( display.isMobile && round < bracket.getCurrentRound() ) ||
+             ( display.isLarge  && round < bracket.getCurrentRound() && round < ( bracket.getMaxRounds() - 2 ) ) ) {
+            changeRound( "next" );
         }
     }
     else {
-        alert( matchId + ": " + (isTop ? "top" : "bottom") );
+        //
     }
+}
+
+function updateMatch( match, winner, isTopChange ) {
+    isTopChange ? match.top = winner : match.bottom = winner;
+    match.winner = null;
+
+    let matchId = getMatchId( match );
+    let matchButtons = nm( matchId );
+    matchButtons[isTopChange ? 0 : 1].innerHTML = getDisplayName( winner );
+    const imageId = matchId + "Image" + (isTopChange ? "T" : "B");
+    let imageSource = winner ? (isTopChange ? match.top.image : match.bottom.image) : "images/question.jpg";
+    id( imageId ).setAttribute( "src", imageSource );
+    adjustFontSize( id( "round" + match.round ) );
+
+    const activateBlink = match.top && match.bottom;
+    for ( let i = 0; i < matchButtons.length; i++ ) {
+        let classList = matchButtons[i].classList;
+        classList.remove( "selectedButton" );
+        activateBlink ? classList.remove( "staticInverseButton" ) : classList.add( "staticInverseButton" );
+        activateBlink ? classList.add( "blinkBorder" )                   : classList.remove( "blinkBorder" );
+        activateBlink ? classList.add( "inverseButton" )                 : classList.remove( "inverseButton" );
+    }
+}
+
+function submit() {
+    if ( mode === "all" ) {
+        let winner = bracket.getWinner();
+        if ( winner ) {
+            showMessage( "Winner",
+                "The winner is:<br/>" +
+                "<strong>" + winner.title + "!</strong><br/><br/>" +
+                "<img src='" + winner.image + "' alt='winner' style='height: 12em'>" );
+        }
+        else {
+            showToaster( "Must complete bracket..." );
+        }
+    }
+}
+
+
+/*** UTILITY ***/
+
+
+function getMatchId( match )
+{
+    return "r" + match.round + "m" + match.match;
+}
+
+function getDisplayName( entry ) {
+    let title = entry ? entry.title : "TBD";
+    if ( !( title === "Bye" || title === "TBD" ) ) {
+        title = "" + entry.seed + ". " + title;
+    }
+
+    return title;
 }

@@ -1,0 +1,31 @@
+.exampleTitle {
+    font-family:   "Helvetica Neue","Helvetica","Arial", sans-serif;
+    font-weight:   bold;
+    font-size:     3em;
+}
+
+.logoContainer {
+    display: flex;
+    flex-flow: row;
+    justify-content: center;
+}
+
+.logo {
+    width: 5em;
+    height: 5em;
+
+    border-radius: 50%;
+    overflow: hidden;
+
+    line-height: 5em;
+}
+
+.logoTitle {
+    display: inline-block;
+
+    color: white;
+    text-shadow: 2px 2px 0 black;
+
+    line-height: 1;
+    vertical-align: middle;
+}

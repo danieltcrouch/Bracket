@@ -34,6 +34,10 @@
 
         Home Page:
             dynamic columns of logos
+                gray image for inactive brackets; state inactive under
+
+        Link at the bottom for getting to edit/create page
+        COMMENT-OUT for now
     -->
 
 </body>
