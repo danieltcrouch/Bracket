@@ -6,7 +6,7 @@ class Bracket {
         this.entries = Bracket.parseEntries( arguments[0] );
         this.bracket = Bracket.constructBracket( this.magnitude, this.roundCount, this.entries );
 
-        let winners = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : [];
+        let winners = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : "";
         let hasByes = this.magnitude > this.entryCount;
         Bracket.parseWinners( winners, this.bracket, hasByes );
 
@@ -94,6 +94,7 @@ class Bracket {
     }
 
     static parseWinners( winners, bracket, hasByes ) {
+        winners = winners.split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
 
         for ( let roundIndex = 0; roundIndex < winners.length; roundIndex++ ) {
             let roundWinners = winners[roundIndex];
@@ -412,7 +413,7 @@ function setClickableMatches( div ) {
             }
         }
         break;
-    case "all":
+    case "open":
     default:
         for ( let i = 0; i < matches.length; i++ ) {
             let match = matches[i];
@@ -573,8 +574,8 @@ function displayRoundTimer( endTime, active ) {
         id('logo').style.filter = "grayscale(1)";
     }
     else if ( endTime ) {
-        timerSpan.display = "block";
-        timerSpan.innerText = "Round Ends: " + endTime;
+        timerSpan.style.display = "block";
+        timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + endTime;
     }
 }
 

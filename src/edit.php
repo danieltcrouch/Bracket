@@ -24,10 +24,11 @@
 
     <!--Main-->
     <div class="col-10 main">
-        <div class="col-5 center" style="padding-bottom: 1em">
-            <input id="title"        type="text" class="input" placeholder="Bracket Title">
-            <input id="imageAddress" type="text" class="input" placeholder="Image Address">
-            <textarea id="rules"                 class="input" placeholder="Instructions"></textarea>
+        <div class="col-5" style="padding-bottom: 1em">
+            <input id="titleText"           type="text" class="input" placeholder="Bracket Title">
+            <input id="imageAddress"        type="text" class="input" placeholder="Image Address">
+            <textarea id="instructionsText"             class="input" placeholder="Instructions"></textarea>
+            <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="previewLogo()">Preview</button>
         </div>
         <div class="col-5 center" style="padding-bottom: 0">
             <div id="exampleLogo" class="exampleTitle center"></div>
@@ -43,7 +44,7 @@
                 <input id="entryCount" type="number" class="input" placeholder="Number of Entries" onkeyup="createEntryInputs( event )">
             </div>
             <div id="previewDiv" class="center" style="display: none; margin-bottom: 1em">
-                <button id="preview" class="button" style="width: 8em; margin: .25em;">Preview</button>
+                <button id="previewBracket" class="button" style="width: 8em; margin: .25em;" onclick="previewBracket()">Preview</button>
             </div>
 
             <div id="bracketSettings" class="center" style="display: none; margin-bottom: 1em">
@@ -52,14 +53,9 @@
                 <button id="open"  name="bracketOption" class="button inverseButton" style="width: 5em; margin: .25em;">Open</button>
             </div>
             <div id="frequencySettings" class="center" style="display: none; margin-bottom: 1em">
-                <input id="title" type="datetime-local" class="input" placeholder="End Time">
-
-                <div style="font-weight: bold; margin-bottom: .5em" >Or</div>
-
                 Close voting
                 <select id="frequency" class="select" style="width: auto" onchange="updateFrequencyPoints()">
                     <option value="X"     >--</option>
-                    <option value="min"   >every minute</option>
                     <option value="hour"  >every hour</option>
                     <option value="day"   >every day</option>
                     <option value="2days" >every two days</option>
@@ -72,12 +68,16 @@
                 <select id="frequencyPoint" class="select" style="width: auto">
                     <option value="X"     >--</option>
                 </select>
-                <button id="movie" name="entryType" class="button selectedButton" style="display: none; width: 8em; margin: .25em;">End Voting</button>
+            </div>
+            <div id="closeSettings" class="center" style="display: none; margin-bottom: 1em">
+                <span style="font-weight: bold">Scheduled Close Time:</span>
+                <input id="closeInput" type="datetime-local" class="input">
             </div>
 
             <div class="center" style="margin-bottom: 1em">
                 <button id="create" class="button" style="width: 8em; margin: .25em;">Create</button>
                 <button id="pause"  class="button" style="display: none; width: 8em; margin: .25em;">Pause</button>
+                <button id="close"  class="button" style="display: none; width: 8em; margin: .25em;">Close</button>
             </div>
         </div>
     </div>
@@ -127,6 +127,7 @@
         polling
             bracket_id
             active
+            start_time? how do we keep track of where it is in the cycle?
             frequency
             frequency_point
             end_point
@@ -136,9 +137,6 @@
             name
             image
             seed
-
-
-        Reminder for user: For split bracket, where one side ends going against another, alternate entries
     -->
 
 </body>

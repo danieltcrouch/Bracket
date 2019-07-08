@@ -1,10 +1,11 @@
 function setBracketType( bracketType ) {
     if ( bracketType === "bracket" ) {
         id('bracketSettings').style.display = "block";
+        id('closeSettings').style.display = "none";
     }
     else {
         id('bracketSettings').style.display = "none";
-        id('frequencySettings').style.display = "block";
+        id('closeSettings').style.display = "block";
     }
 
     id('entryDiv').style.display = "block";
@@ -23,26 +24,16 @@ function setBracketRoundType( bracketRoundType ) {
 }
 
 function updateFrequencyPoints() {
-    let frequencySelect = id('frequency');
-    let frequency = frequencySelect.options[frequencySelect.selectedIndex].value;
-
-    let frequencyPointSelect = id('frequencyPoint');
-    for ( let i = 0; i < frequencyPointSelect.options.length; i++ ) { frequencyPointSelect.options[i] = null; }
+    let options = [];
+    let frequency = getSelectedOption( 'frequency' ).value;
     switch ( frequency ) {
         case "X":
-        case "min":
         case "custom":
-            let option = document.createElement("option");
-            option.text = "--";
-            option.value = "X";
-            frequencyPointSelect.appendChild( option );
+            options.push( {text: "--", value: "X"} );
             break;
         case "hour":
             for ( let min = 0; min < 60; min++ ) {
-                let option = document.createElement("option");
-                option.text = min + "";
-                option.value = min + "";
-                frequencyPointSelect.appendChild( option );
+                options.push( {text: min + "", value: min + ""} );
             }
             break;
         case "day":
@@ -51,34 +42,32 @@ function updateFrequencyPoints() {
         case "7days":
             for ( let hour = 0; hour < 24; hour++ ) {
                 let hourDisplay = ("0" + hour).slice( -2 );
-                let option00 = document.createElement("option");
-                let option30 = document.createElement("option");
-                option00.text = hourDisplay + ":00";
-                option00.value = hour + "";
-                option30.text = hourDisplay + ":30";
-                option30.value = hour + ".5";
-                frequencyPointSelect.appendChild( option00 );
-                frequencyPointSelect.appendChild( option30 );
+                options.push( {text: hourDisplay + ":00", value: hour + ""} );
+                options.push( {text: hourDisplay + ":30", value: hour + ".5"} );
             }
             break;
         case "week":
-            // options = [
-            //     new Option( "Sunday (Midnight)",     "0" ),
-            //     new Option( "Monday (Midnight)",     "1" ),
-            //     new Option( "Tuesday (Midnight)",    "2" ),
-            //     new Option( "Wednesday (Midnight)",  "3" ),
-            //     new Option( "Thursday (Midnight)",   "4" ),
-            //     new Option( "Friday (Midnight)",     "5" ),
-            //     new Option( "Saturday (Midnight)",   "6" )
-            // ];
+            options.push( {text: "Sunday Night (12:00)",    value:"0"} );
+            options.push( {text: "Monday Night (12:00)",    value:"1"} );
+            options.push( {text: "Tuesday Night (12:00)",   value:"2"} );
+            options.push( {text: "Wednesday Night (12:00)", value:"3"} );
+            options.push( {text: "Thursday Night (12:00)",  value:"4"} );
+            options.push( {text: "Friday Night (12:00)",    value:"5"} );
+            options.push( {text: "Saturday Night (12:00)",  value:"6"} );
             break;
     }
+
+    addAllToSelect( 'frequencyPoint', options );
 }
 
 function createEntryInputs( e ) {
     if ( e.which === 13 || e.keyCode === 13 ) {
-        let div = id('entryDiv'); //todo - deal with changing number
+        let div = id('entryDiv');
+
         let entryCount = id('entryCount').value;
+        let currentCount = nm('entryNames').length;
+        entryCount -= currentCount;
+
         if ( entryCount > 0 ) {
             for ( let i = 0; i < entryCount; i++ ) {
                 let entryDiv = document.createElement( "DIV" );
@@ -102,6 +91,11 @@ function createEntryInputs( e ) {
                 div.appendChild( entryDiv );
             }
         }
+        else if ( entryCount < 0 ) {
+            for ( let i = 0; i < -entryCount; i++ ) {
+                div.removeChild( div.lastChild );
+            }
+        }
     }
 }
 
@@ -116,4 +110,71 @@ function displayPreview() {
     }
 
     id('previewDiv').style.display = hasAtLeastOneName ? "block" : "none";
+}
+
+function previewLogo() {
+    if ( id('imageAddress').value ) {
+        const helpImage = id('help').firstChild.src;
+
+        let exampleDiv = id('exampleLogo');
+        while ( exampleDiv.firstChild ) {
+            exampleDiv.removeChild( exampleDiv.firstChild );
+        }
+
+        let logoInfo = {
+            title:     id('titleText').value,
+            image:     id('imageAddress').value,
+            help:      id('instructionsText').value,
+            helpImage: helpImage
+        };
+        createTitleLogo( logoInfo, exampleDiv );
+    }
+    else {
+        showToaster( "Image required." );
+    }
+}
+
+function previewBracket() {
+    if ( id('imageAddress').value ) {
+        const data = {
+            logo: {
+                title: id( 'titleText' ).value,
+                image: id( 'imageAddress' ).value,
+                help:  id( 'instructionsText' ).value,
+            },
+            bracket: {
+                active:  true,
+                endTime: getEndTime(),
+                mode:    "open",
+                entries: getEntries(),
+                winners: ""
+            }
+        };
+
+        $.post( 'bracket.php', { data: data, timestamp: Date.now() }, function() {
+            window.open( "https://bracket.religionandstory.com/bracket.php?id=PREVIEW" );
+        } );
+    }
+    else {
+        showToaster( "Logo Image required." );
+    }
+}
+
+function getEndTime() {
+    const frequency = getSelectedOption( 'frequency' ).value;
+    const frequencyPoint = getSelectedOption( 'frequencyPoint' ).value;
+    return getDisplayTime( calculateNextTime( frequency, frequencyPoint ) ); //todo
+}
+
+function getEntries() {
+    let entries = [];
+    let entryInputs = nm('entryNames');
+    let imageInputs = nm('entryImages');
+    for ( let i = 0; i < entryInputs.length; i++ ) {
+        if ( entryInputs[i].value ) {
+            entries.push( {title: entryInputs[i].value, image: imageInputs[i].value} );
+        }
+    }
+
+    return entries;
 }
