@@ -18,7 +18,7 @@ require("php/bracketParse.php");
     <?php includeHeader(); ?>
     <div class="col-10 header">
         <div class="title center"></div>
-        <div id="instructions" style="display: none">
+        <div id="helpText" style="display: none">
             Vote on entries to help find the winner for this bracket. Entries that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished.
         </div>
     </div>
@@ -42,18 +42,22 @@ require("php/bracketParse.php");
             Load from DB
             Save to DB
         (Session monitoring matters)
+
+        Allow users to subscribe
     -->
 
 </body>
 
 <script>
-    let logoInfo = <?php getLogoInfo(); ?>;
-    logoInfo.helpImage = "<?php getHelpImage() ?>";
+    let logoInfo = {};
+    logoInfo = <?php getLogoInfo(); ?>;
 
-    let bracketInfo = <?php getBracketInfo(); ?>;
+    let bracketInfo = {};
+    bracketInfo = <?php getBracketInfo(); ?>;
 
     if ( "<?php echo $_GET['id'] ?>" ) {
-        createTitleLogo( logoInfo );
+        logoInfo.helpImage = "<?php getHelpImage() ?>";
+        createTitleLogo( logoInfo, cl('title')[0] );
         loadBracket( bracketInfo );
     }
     else {

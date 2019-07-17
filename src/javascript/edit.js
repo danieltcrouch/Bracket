@@ -124,7 +124,7 @@ function previewLogo() {
         let logoInfo = {
             title:     id('titleText').value,
             image:     id('imageAddress').value,
-            help:      id('instructionsText').value,
+            help:      id('helpInput').value,
             helpImage: helpImage
         };
         createTitleLogo( logoInfo, exampleDiv );
@@ -140,7 +140,7 @@ function previewBracket() {
             logo: {
                 title: id( 'titleText' ).value,
                 image: id( 'imageAddress' ).value,
-                help:  id( 'instructionsText' ).value,
+                help:  id( 'helpInput' ).value,
             },
             bracket: {
                 active:  true,

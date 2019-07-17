@@ -216,7 +216,7 @@ let round;
 let mode;
 let display;
 
-//todo - Clean Common repo
+//todo - Clean Common repo and custom css files in projects
 //todo - set standards for this and future projects
 
 
@@ -584,7 +584,7 @@ function displayRoundTimer( endTime, active ) {
 
 
 function registerChoice( matchId, isTop ) {
-    if ( mode === "all" ) {
+    if ( mode === "open" ) {
         let match = bracket.getMatchFromId( matchId );
         let winner = isTop ? match.top : match.bottom;
         const winnerChange = winner !== match.winner;
@@ -645,7 +645,7 @@ function updateMatch( match, winner, isTopChange ) {
 }
 
 function submit() {
-    if ( mode === "all" ) {
+    if ( mode === "open" ) {
         let winner = bracket.getWinner();
         if ( winner ) {
             showMessage( "Winner",

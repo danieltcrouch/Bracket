@@ -1,5 +1,4 @@
-function createTitleLogo( logoInfo, exampleDiv ) {
-    let titleDiv = exampleDiv || cl('title')[0];
+function createTitleLogo( logoInfo, titleDiv ) {
     titleDiv.classList.add( "logoContainer" );
 
     let logoDiv = document.createElement( "DIV" );
@@ -26,20 +25,20 @@ function createTitleLogo( logoInfo, exampleDiv ) {
     image.classList.add( "helpIcon" );
     helpDiv.appendChild( image );
 
-    if ( exampleDiv ) {
-        const showExampleInstructions = function() {
-            showMessage( "Instructions",
-            "Vote on entries to help find the winner for this bracket. Entries that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
-        };
+    //if ( exampleDiv ) {
+    //    const showExampleInstructions = function() {
+    //        showMessage( "Instructions",
+    //        "Vote on entries to help find the winner for this bracket. Entries that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
+    //    };
 
-        logoDiv.onclick = showExampleInstructions;
-        helpDiv.onclick = showExampleInstructions;
-    }
-    else {
-        let helpTextDiv = id('instructions');
-        let helpText = helpTextDiv.innerHTML;
-        helpTextDiv.innerHTML = helpText + "<br/><br/>" + logoInfo.help;
-    }
+    //    logoDiv.onclick = showExampleInstructions;
+    //    helpDiv.onclick = showExampleInstructions;
+    //}
+    //else {
+    //    let helpTextDiv = id('helpText');
+    //    let helpText = helpTextDiv.innerHTML;
+    //    helpTextDiv.innerHTML = helpText + "<br/><br/>" + logoInfo.help;
+    //}
 
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
