@@ -148,7 +148,7 @@
         helpImage: "<?php getHelpImage() ?>",
         help:      "Additional instructions will appear here."
     };
-    createTitleLogo( logoInfo, id('exampleLogo') );
+    createTitleLogo( logoInfo, id('exampleLogo'), true );
 
     setRadioCallback( "bracketType", function( bracketType ) {
         setBracketType( bracketType );

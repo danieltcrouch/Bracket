@@ -127,7 +127,7 @@ function previewLogo() {
             help:      id('helpInput').value,
             helpImage: helpImage
         };
-        createTitleLogo( logoInfo, exampleDiv );
+        createTitleLogo( logoInfo, exampleDiv, true );
     }
     else {
         showToaster( "Image required." );

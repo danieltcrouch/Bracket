@@ -87,7 +87,7 @@
             logoDiv.classList.add( "title" );
             logoDiv.classList.add( "center" );
             logosDiv.appendChild( logoDiv );
-            createTitleLogo( logos[i], logoDiv );
+            createTitleLogo( logos[i], logoDiv, true, function() {alert(logos[i].id);} );
 
             if ( !logos[i].active ) {
                 logoDiv.style.filter = "grayscale(1)";

@@ -1,14 +1,18 @@
-function createTitleLogo( logoInfo, titleDiv ) {
+function createTitleLogo( logoInfo, titleDiv, useSpecialHelp, logoClickHandler ) {
     titleDiv.classList.add( "logoContainer" );
 
     let logoDiv = document.createElement( "DIV" );
     logoDiv.id = "logo";
-    logoDiv.classList.add( "clickable" );
     logoDiv.classList.add( "center" );
     logoDiv.classList.add( "logo" );
     logoDiv.style.backgroundImage = "url('" + logoInfo.image + "')";
     logoDiv.style.backgroundSize = "cover";
     logoDiv.style.backgroundPosition = "center";
+
+    if ( logoClickHandler ) {
+        logoDiv.classList.add( "clickable" );
+        logoDiv.onclick = logoClickHandler;
+    }
 
     let titleSpan = document.createElement( "SPAN" );
     titleSpan.innerText = logoInfo.title;
@@ -16,7 +20,7 @@ function createTitleLogo( logoInfo, titleDiv ) {
     logoDiv.appendChild( titleSpan );
 
     let helpDiv = document.createElement( "DIV" );
-    helpDiv.id = "help";
+    helpDiv.id = "helpIcon";
     helpDiv.classList.add( "clickable" );
 
     let image = document.createElement( "IMG" );
@@ -25,20 +29,15 @@ function createTitleLogo( logoInfo, titleDiv ) {
     image.classList.add( "helpIcon" );
     helpDiv.appendChild( image );
 
-    //if ( exampleDiv ) {
-    //    const showExampleInstructions = function() {
-    //        showMessage( "Instructions",
-    //        "Vote on entries to help find the winner for this bracket. Entries that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
-    //    };
+    if ( useSpecialHelp ) {
+        const showExampleInstructions = function() {
+            showMessage( "Instructions",
+                "Vote on entries to help find the winner for this bracket. Entries that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
+        };
 
-    //    logoDiv.onclick = showExampleInstructions;
-    //    helpDiv.onclick = showExampleInstructions;
-    //}
-    //else {
-    //    let helpTextDiv = id('helpText');
-    //    let helpText = helpTextDiv.innerHTML;
-    //    helpTextDiv.innerHTML = helpText + "<br/><br/>" + logoInfo.help;
-    //}
+        helpDiv.id = "help";
+        helpDiv.onclick = showExampleInstructions;
+    }
 
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
