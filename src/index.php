@@ -1,6 +1,6 @@
 <?php
 include("php/startup.php");
-require("php/bracketParse.php");
+require("php/database.php");
 ?>
 <!DOCTYPE html>
 <html lang="en">

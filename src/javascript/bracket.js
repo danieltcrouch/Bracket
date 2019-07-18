@@ -405,8 +405,10 @@ function setClickableMatches( div ) {
         break;
     case "round":
         for ( let i = 0; i < buttons.length; i++ ) {
-            let round = parseInt( buttons[i].parentElement.parentElement.id );
-            if ( bracket.getCurrentRound() === round ) {
+            const round = parseInt( buttons[i].parentElement.parentElement.parentElement.id.replace ( /[^\d.]/g, '' ) );
+            const roundMatches = bracket.getMatchesFromRound( round );
+            const relevantMatch = roundMatches[ parseInt(i/2) ];
+            if ( bracket.getCurrentRound() === round && !(relevantMatch.winner) ) {
                 buttons[i].classList.add( "blinkBorder" );
                 buttons[i].classList.remove( "staticInverseButton" );
                 buttons[i].classList.add( "inverseButton" );

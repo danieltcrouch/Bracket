@@ -42,7 +42,7 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoClickH
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
 
-    if ( active ) {
+    if ( !active ) {
         logoDiv.style.filter = "grayscale(1)";
     }
 }
