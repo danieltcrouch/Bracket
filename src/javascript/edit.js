@@ -127,7 +127,7 @@ function previewLogo() {
             help:      id('helpInput').value,
             helpImage: helpImage
         };
-        createTitleLogo( logoInfo, exampleDiv, true );
+        createTitleLogo( logoInfo, exampleDiv, true, true );
     }
     else {
         showToaster( "Image required." );
@@ -177,4 +177,29 @@ function getEntries() {
     }
 
     return entries;
+}
+
+
+/**********GENERAL**********/
+
+
+function create() {
+
+}
+
+function load() {
+    if ( id('titleText').value ) {
+        //
+    }
+    else {
+        //
+    }
+}
+
+function pause() {
+
+}
+
+function close() {
+
 }

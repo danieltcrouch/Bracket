@@ -57,7 +57,7 @@ require("php/bracketParse.php");
 
     if ( "<?php echo $_GET['id'] ?>" ) {
         logoInfo.helpImage = "<?php getHelpImage() ?>";
-        createTitleLogo( logoInfo, cl('title')[0], true );
+        createTitleLogo( logoInfo, cl('title')[0], logoInfo.active, true );
         loadBracket( bracketInfo );
     }
     else {

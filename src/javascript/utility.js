@@ -1,4 +1,4 @@
-function createTitleLogo( logoInfo, titleDiv, useSpecialHelp, logoClickHandler ) {
+function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoClickHandler ) {
     titleDiv.classList.add( "logoContainer" );
 
     let logoDiv = document.createElement( "DIV" );
@@ -9,7 +9,7 @@ function createTitleLogo( logoInfo, titleDiv, useSpecialHelp, logoClickHandler )
     logoDiv.style.backgroundSize = "cover";
     logoDiv.style.backgroundPosition = "center";
 
-    if ( logoClickHandler ) {
+    if ( active && logoClickHandler ) {
         logoDiv.classList.add( "clickable" );
         logoDiv.onclick = logoClickHandler;
     }
@@ -41,6 +41,10 @@ function createTitleLogo( logoInfo, titleDiv, useSpecialHelp, logoClickHandler )
 
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
+
+    if ( active ) {
+        logoDiv.style.filter = "grayscale(1)";
+    }
 }
 
 function getDisplayTime( date ) {
@@ -98,6 +102,26 @@ function calculateNextTime( frequency, frequencyPoint ) {
         default:
             result = null;
             break;
+    }
+
+    return result;
+}
+
+
+/**********ERROR HANDLING**********/
+
+
+function getErrorMessage( error ) {
+    let result = "";
+
+    if ( error ) {
+        switch ( error ) {
+        case "NoBracketId":
+            result = "Must have a Bracket ID to view the bracket page.";
+            break;
+        default:
+            result = "An error has occurred.";
+        }
     }
 
     return result;

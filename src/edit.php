@@ -1,4 +1,7 @@
-<?php include("php/startup.php"); ?>
+<?php
+include("php/startup.php");
+require("php/bracketParse.php");
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,7 +69,7 @@
                 </select>
                 at
                 <select id="frequencyPoint" class="select" style="width: auto">
-                    <option value="X"     >--</option>
+                    <option value="X">--</option>
                 </select>
             </div>
             <div id="closeSettings" class="center" style="display: none; margin-bottom: 1em">
@@ -75,9 +78,10 @@
             </div>
 
             <div class="center" style="margin-bottom: 1em">
-                <button id="create" class="button" style="width: 8em; margin: .25em;">Create</button>
-                <button id="pause"  class="button" style="display: none; width: 8em; margin: .25em;">Pause</button>
-                <button id="close"  class="button" style="display: none; width: 8em; margin: .25em;">Close</button>
+                <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
+                <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
+                <button id="pause"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
+                <button id="close"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="close()">Close</button>
             </div>
         </div>
     </div>
@@ -148,7 +152,7 @@
         helpImage: "<?php getHelpImage() ?>",
         help:      "Additional instructions will appear here."
     };
-    createTitleLogo( logoInfo, id('exampleLogo'), true );
+    createTitleLogo( logoInfo, id('exampleLogo'), true, true );
 
     setRadioCallback( "bracketType", function( bracketType ) {
         setBracketType( bracketType );

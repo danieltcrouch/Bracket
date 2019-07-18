@@ -1,4 +1,7 @@
-<?php include("php/startup.php"); ?>
+<?php
+include("php/startup.php");
+require("php/bracketParse.php");
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,70 +31,33 @@
         <div id="logos" style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center;"></div>
     </div>
 
-    <!--
-    todo:
-
-        Home Page:
-            dynamic columns of logos
-                gray image for inactive brackets; state inactive under
-    -->
-
 </body>
 
 <script>
-    let logos = [ {
-        title: "Marvel Bracket",
-        image: "https://img.cinemablend.com/filter:scale/cb/8/7/6/f/0/7/a876f07fdc693995a2d33e0252a297ba68c7e7c21b556aa99f2f31b66fd1adb0b.jpg?mw=600",
-        help:  "Vote for characters based on how cool they are.",
-        helpImage: "<?php getHelpImage() ?>",
-        id:     "Marvel",
-        active: true
-    }, {
-        title:     "Your Bracket",
-        image:     "<?php echo $image ?>",
-        help:      "Additional instructions will appear here.",
-        helpImage: "<?php getHelpImage() ?>",
-        id:        "Thing",
-        active:    true
-    }, {
-        title:     "Your Bracket",
-        image:     "<?php echo $image ?>",
-        help:      "Additional instructions will appear here.",
-        helpImage: "<?php getHelpImage() ?>",
-        id:        "Thing2",
-        active:    true
-    }, {
-        title:     "Your Bracket",
-        image:     "<?php echo $image ?>",
-        help:      "Additional instructions will appear here.",
-        helpImage: "<?php getHelpImage() ?>",
-        id:        "Thing3",
-        active:    false
-    }, {
-        title:     "Your Bracket",
-        image:     "<?php echo $image ?>",
-        help:      "Additional instructions will appear here.",
-        helpImage: "<?php getHelpImage() ?>",
-        id:        "Thing4",
-        active:    false
-    } ];
+    let logos = [];
+    logos = <?php getAllLogos() ?>;
 
     displayLogos( logos );
+
+    const error = "<?php echo $_GET['error'] ?>";
+    if ( error ) {
+        showMessage( "Error", getErrorMessage( error ) );
+    }
 
     function displayLogos( logos ) {
         let logosDiv = id('logos');
         for ( let i = 0; i < logos.length; i++ ) {
+            let logoInfo = logos[i];
+            logoInfo.helpImage = "<?php getHelpImage() ?>";
             let logoDiv = document.createElement( "DIV" );
             logoDiv.id = "logo" + i;
             logoDiv.style.margin = "0 3em 2em";
             logoDiv.classList.add( "title" );
             logoDiv.classList.add( "center" );
             logosDiv.appendChild( logoDiv );
-            createTitleLogo( logos[i], logoDiv, true, function() {alert(logos[i].id);} );
-
-            if ( !logos[i].active ) {
-                logoDiv.style.filter = "grayscale(1)";
-            }
+            createTitleLogo( logoInfo, logoDiv, logoInfo.active, true, function() {
+                window.location = "https://bracket.religionandstory.com/bracket.php?id=" + logoInfo.id;
+            } );
         }
     }
 </script>

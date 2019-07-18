@@ -570,8 +570,7 @@ function displayRoundTimer( endTime, active ) {
     if ( !active ) {
         timerSpan.innerText = "(Inactive)";
         id( 'bracketDisplay' ).style.display = "none";
-        id('submit').style.display = "none";
-        id('logo').style.filter = "grayscale(1)";
+        id( 'submit' ).style.display = "none";
     }
     else if ( endTime ) {
         timerSpan.style.display = "block";
