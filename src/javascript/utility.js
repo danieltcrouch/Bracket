@@ -67,8 +67,8 @@ function getDisplayTime( date ) {
 
 //todo - test this heavily
 //todo - timezone differences
-function calculateNextTime( frequency, frequencyPoint, fromTime ) {
-    let result = new Date();
+function calculateNextTime( frequency, frequencyPoint, fromTime, closeTime ) {
+    let result = closeTime || new Date();
 
     let day = null;
     let hour = null;
@@ -149,8 +149,8 @@ function getErrorMessage( error ) {
 
     if ( error ) {
         switch ( error ) {
-        case "NoBracketId":
-            result = "Must have a Bracket ID to view the bracket page.";
+        case "InvalidBracketId":
+            result = "Bracket ID must be present and must correspond to stored ID.";
             break;
         default:
             result = "An error has occurred.";

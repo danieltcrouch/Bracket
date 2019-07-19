@@ -215,6 +215,7 @@ let bracket;
 let round;
 let mode;
 let display;
+let endTime;
 
 //todo - Clean Common repo and custom css files in projects
 //todo - set standards for this and future projects
@@ -233,10 +234,11 @@ const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN)
 function loadBracket( bracketInfo ) {
     bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
     mode = bracketInfo.mode;
+    endTime = calculateNextTime( bracketInfo.endTime.frequency, bracketInfo.endTime.frequencyPoint, bracketInfo.endTime.lastEnd, bracketInfo.endTime.closeTime );
 
     displayBracket();
     setDisplayType();
-    displayRoundTimer( bracketInfo.endTime, bracketInfo.active );
+    displayRoundTimer( endTime, bracketInfo.active );
 }
 
 function displayBracket() {
@@ -575,7 +577,7 @@ function displayRoundTimer( endTime, active ) {
         id( 'submit' ).style.display = "none";
     }
     else if ( endTime ) {
-        const displayTime = getDisplayTime( calculateNextTime( endTime.frequency, endTime.frequencyPoint, endTime.lastEnd ) );
+        const displayTime = getDisplayTime( endTime );
         timerSpan.style.display = "block";
         timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + displayTime;
     }
@@ -645,17 +647,28 @@ function updateMatch( match, winner, isTopChange ) {
 }
 
 function submit() {
-    if ( mode === "open" ) {
-        let winner = bracket.getWinner();
-        if ( winner ) {
-            showMessage( "Winner",
-                "The winner is:<br/>" +
-                "<strong>" + winner.title + "!</strong><br/><br/>" +
-                "<img src='" + winner.image + "' alt='winner' style='height: 12em'>" );
+    if ( endTime >= new Date() ) {
+        if ( mode === "open" ) {
+            let winner = bracket.getWinner();
+            if ( winner ) {
+                showMessage( "Winner",
+                    "The winner is:<br/>" +
+                    "<strong>" + winner.title + "!</strong><br/><br/>" +
+                    "<img src='" + winner.image + "' alt='winner' style='height: 12em'>" );
+            }
+            else {
+                showToaster( "Must complete bracket..." );
+            }
         }
-        else {
-            showToaster( "Must complete bracket..." );
+        else if ( mode === "round" ) {
+
         }
+        else if ( mode === "match" ) {
+
+        }
+    }
+    else {
+        showToaster( "This round has closed." );
     }
 }
 

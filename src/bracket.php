@@ -1,6 +1,6 @@
 <?php
 include("php/startup.php");
-require("php/bracketParse.php");
+require("php/database.php");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,19 +49,28 @@ require("php/bracketParse.php");
 </body>
 
 <script>
-    let logoInfo = {};
-    logoInfo = <?php getLogoInfo(); ?>;
+    const bracketId = "<?php echo $_GET['id'] ?>";
 
-    let bracketInfo = {};
-    bracketInfo = <?php getBracketInfo(); ?>;
+    let logoInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['logo'] ) ? $_POST['logo'] : "{}"; ?>;
+    let bracketInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "{}"; ?>;
 
-    if ( "<?php echo $_GET['id'] ?>" ) {
-        logoInfo.helpImage = "<?php getHelpImage() ?>";
-        createTitleLogo( logoInfo, cl('title')[0], logoInfo.active, true );
-        loadBracket( bracketInfo );
+    if ( bracketId !== "PREVIEW" ) {
+        //AJAX call
+        loadPage();
     }
     else {
-        window.location = "https://bracket.religionandstory.com/home.php?error=NoBracketId";
+        loadPage();
+    }
+
+    function loadPage() {
+        if ( bracketId && logoInfo && bracketInfo ) {
+            logoInfo.helpImage = "<?php getHelpImage() ?>";
+            createTitleLogo( logoInfo, cl('title')[0], logoInfo.active, true );
+            loadBracket( bracketInfo );
+        }
+        else {
+            window.location = "https://bracket.religionandstory.com/home.php?error=InvalidBracketId";
+        }
     }
 </script>
 <?php includeModals(); ?>

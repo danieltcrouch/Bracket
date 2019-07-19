@@ -3,11 +3,16 @@ function setBracketType( bracketType ) {
         id('bracketSettings').style.display = "block";
         id('frequencySettings').style.display = "block";
         id('closeSettings').style.display = "none";
+
+        id('closeSettings').value = null;
     }
     else {
         id('bracketSettings').style.display = "none";
         id('frequencySettings').style.display = "none";
         id('closeSettings').style.display = "block";
+
+        id('frequency').selectedIndex = 0;
+        id('frequencyPoint').selectedIndex = 0;
     }
 
     id('entryDiv').style.display = "block";
@@ -63,8 +68,7 @@ function updateFrequencyPoints() {
 }
 
 function createEntryInputs( e ) {
-    if ( e.which === 13 || e.keyCode === 13 ||
-         e.which === 9  || e.keyCode === 9 ) {
+    if ( e.which === 13 || e.keyCode === 13 ) {
         let div = id('entryDiv');
 
         let entryCount = id('entryCount').value;
@@ -145,24 +149,8 @@ function previewLogo() {
 
 function previewBracket() {
     if ( id('imageAddress').value ) {
-        id('logoData').value = JSON.stringify( {
-            title: id( 'titleText' ).value,
-            image: id( 'imageAddress' ).value,
-            help:  id( 'helpInput' ).value,
-            active:  true
-        });
-        id('bracketData').value = JSON.stringify( {
-            mode:    "open",
-            entries: getEntries(),
-            winners: "",
-            endTime: {
-                lastEnd: null,
-                frequency:      getSelectedOption( 'frequency' ).value,
-                frequencyPoint: getSelectedOption( 'frequencyPoint' ).value
-            },
-            active:  true
-        });
-
+        id('logoData').value = JSON.stringify( getLogoData() );
+        id('bracketData').value = JSON.stringify( getBracketData() );
         id('previewForm').submit();
     }
     else {
@@ -189,7 +177,18 @@ function getEntries() {
 
 function create() {
     //todo
-    window.location = "https://bracket.religionandstory.com/bracket.php?id=Marvel";
+    $.post(
+        "php/database.php",
+        {
+            action:  "saveBracket",
+            logo:    JSON.stringify( getLogoData() ),
+            bracket: JSON.stringify( getBracketData() ),
+        },
+        function ( response ) {
+            alert( JSON.parse( response ) );
+            //window.location = "https://bracket.religionandstory.com/bracket.php?id=" + response;
+        }
+    );
 }
 
 function load() {
@@ -207,4 +206,34 @@ function pause() {
 
 function close() {
     //
+}
+
+function getLogoData() {
+    return {
+        title: id( 'titleText' ).value,
+        image: id( 'imageAddress' ).value,
+        help:  id( 'helpInput' ).value,
+        active:  false
+    };
+}
+
+function getBracketData() {
+    let frequency      = getSelectedOption( 'frequency' );
+    let frequencyPoint = getSelectedOption( 'frequencyPoint' );
+    frequency       = frequency      && frequency.value      !== "X" ? frequency.value      : null;
+    frequencyPoint  = frequencyPoint && frequencyPoint.value !== "X" ? frequencyPoint.value : null;
+    let closeTime = id( 'closeInput' ).value || null;
+
+    return {
+        mode:    getSelectedRadioButton('bracketType') === "bracket" ? getSelectedRadioButton('bracketOption') : "poll",
+        entries: getEntries(),
+        winners: "",
+        endTime: {
+            lastEnd: null,
+            frequency:      frequency,
+            frequencyPoint: frequencyPoint,
+            closeTime:      closeTime
+        },
+        active:  false
+    };
 }

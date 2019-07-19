@@ -1,6 +1,6 @@
 <?php
 include("php/startup.php");
-require("php/database.php");
+require("php/database.php"); //todo - remove this from php files
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -34,8 +34,9 @@ require("php/database.php");
 </body>
 
 <script>
+    //todo - move to helper file and use ajax calls
     let logos = [];
-    logos = <?php getAllLogos() ?>;
+    logos = <?php getAllMetas() ?>;
 
     displayLogos( logos );
 

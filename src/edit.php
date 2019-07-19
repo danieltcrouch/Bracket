@@ -1,6 +1,6 @@
 <?php
 include("php/startup.php");
-require("php/bracketParse.php");
+require("php/database.php");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -108,27 +108,6 @@ require("php/bracketParse.php");
                 Entry count
             Pause buttons
             Pause gives toaster to tell if active or inactive
-
-        DATABASE:
-        meta
-            id
-            name
-            image
-            info
-            mode
-        polling
-            bracket_id
-            active
-            start_time? how do we keep track of where it is in the cycle?
-            frequency
-            frequency_point
-            end_point
-        entry
-            bracket_id
-            id
-            name
-            image
-            seed
     -->
 
 </body>
