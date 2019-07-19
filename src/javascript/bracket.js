@@ -575,8 +575,9 @@ function displayRoundTimer( endTime, active ) {
         id( 'submit' ).style.display = "none";
     }
     else if ( endTime ) {
+        const displayTime = getDisplayTime( calculateNextTime( endTime.frequency, endTime.frequencyPoint, endTime.lastEnd ) );
         timerSpan.style.display = "block";
-        timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + endTime;
+        timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + displayTime;
     }
 }
 
@@ -597,8 +598,6 @@ function registerChoice( matchId, isTop ) {
             let matchButtons = nm( getMatchId( match ) );
             for ( let i = 0; i < matchButtons.length; i++ ) {
                 matchButtons[i].classList.remove( "blinkBorder" );
-                // .style.filter = "grayscale(100%)";
-                // .style.filter = "saturate(50%)";
             }
 
             let next = bracket.getNextMatch( matchId );

@@ -1,6 +1,5 @@
 <?php
 include("php/startup.php");
-require("php/postToSession.php");
 require("php/bracketParse.php");
 ?>
 <!DOCTYPE html>
@@ -42,6 +41,7 @@ require("php/bracketParse.php");
             Load from DB
             Save to DB
         (Session monitoring matters)
+        If submit is within time-frame
 
         Allow users to subscribe
     -->

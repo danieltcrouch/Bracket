@@ -28,9 +28,9 @@ require("php/bracketParse.php");
     <!--Main-->
     <div class="col-10 main">
         <div class="col-5" style="padding-bottom: 1em">
-            <input id="titleText"           type="text" class="input" placeholder="Bracket Title">
-            <input id="imageAddress"        type="text" class="input" placeholder="Image Address">
-            <textarea id="helpInput"                    class="input" placeholder="Instructions"></textarea>
+            <input id="titleText"    type="text" class="input" maxlength="20" placeholder="Bracket Title">
+            <input id="imageAddress" type="text" class="input"                placeholder="Image Address">
+            <textarea id="helpInput" class="input" placeholder="Instructions"></textarea>
             <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="previewLogo()">Preview</button>
         </div>
         <div class="col-5 center" style="padding-bottom: 0">
@@ -71,6 +71,8 @@ require("php/bracketParse.php");
                 <select id="frequencyPoint" class="select" style="width: auto">
                     <option value="X">--</option>
                 </select>
+
+                <div style="font-size: .75em">The first round will last at least one hour for &ldquo;every hour&rdquo; or one day otherwise.</div>
             </div>
             <div id="closeSettings" class="center" style="display: none; margin-bottom: 1em">
                 <span style="font-weight: bold">Scheduled Close Time:</span>
@@ -79,47 +81,33 @@ require("php/bracketParse.php");
 
             <div class="center" style="margin-bottom: 1em">
                 <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
+            </div>
+            <div class="center" style="margin-bottom: 1em">
                 <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
+            </div>
+            <div class="center" style="margin-bottom: 1em">
                 <button id="pause"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
                 <button id="close"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="close()">Close</button>
             </div>
         </div>
     </div>
 
+    <form id="previewForm" method="POST" target="_blank" action="/bracket.php?id=PREVIEW">
+        <input name="logo"    id="logoData"    type="hidden">
+        <input name="bracket" id="bracketData" type="hidden">
+    </form>
+
     <!--
     todo:
 
         Create/Edit Page:
-        [* = grayed for Edit]
-            *image and title for logo
-                (title not required)
-                Dynamic Preview
-                explanation/rules
-            *radio buttons for bracket vs poll
-            *if bracket:
-                mode - Match, Round, Open [may choose between match and round if previously chosen]
-            if poll or not "open":
-                set end time or choose frequency
-                set frequency and frequency point--Close voting [DROPDOWN] at [DROPDOWN]
-                    every minute [no choices]
-                    every hour [0-59]
-                    every day [every thirty minutes]
-                    every two, three, seven [same as day]
-                    every week [day of week (end)]
-                    when I choose [allows user to come in and click "End Voting"]
-                End Voting button [only appears on edit]
-            *entering: number drop-down, dynamically make inputs for title and image
-                Preview in new tab (POST data)
-            Start [Create]/Pause [Edit]
-                Start sends to bracket page
-                Pause gives toaster to tell if active or inactive
-
-            (if no ID in URL, prompt for user and then prompt for choosing bracket/poll)
-                For now, default to single user (me)
-
-            cap at 20 chars
-            allow 128, but only display full bracket at 32 and below
-
+            Edit specific:
+                Change Image, title
+                Change bracket/poll
+                Change match/round to open or vice-versa
+                Entry count
+            Pause buttons
+            Pause gives toaster to tell if active or inactive
 
         DATABASE:
         meta

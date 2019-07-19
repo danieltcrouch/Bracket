@@ -52,49 +52,57 @@ function getDisplayTime( date ) {
 
     if ( date ) {
         const now = new Date();
-        const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
-        const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-        result = date.toLocaleString( "en-US", options );
+        if ( date.toDateString() === now.toDateString() ) {
+            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
+        }
+        else {
+            const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
+            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+            result = date.toLocaleString( "en-US", options );
+        }
     }
 
     return result;
 }
 
-function calculateNextTime( frequency, frequencyPoint ) {
+//todo - test this heavily
+//todo - timezone differences
+function calculateNextTime( frequency, frequencyPoint, fromTime ) {
     let result = new Date();
-    const now = new Date();
 
     let day = null;
     let hour = null;
     let min = null;
-    const fpInt = parseInt( frequencyPoint );
-    const fpFloat = parseFloat( frequencyPoint );
-    const hourMS = 60 * 60 * 1000;
+    const fpInt = frequencyPoint ? parseInt( frequencyPoint ) : 0;
+    const fpFloat = frequencyPoint ? parseFloat( frequencyPoint ) : 0;
 
-    switch ( frequency ) {
-       case "hour":
-            hour = now.getHours() + 1;
-            min = fpInt;
-            result.setHours( hour, min, 0, 0 );
-            if ( result < new Date( now.getTime() + hourMS ) ) {
-                result.setHours( result.getHours() + 1, min, 0, 0 );
-            }
+    const hourMS = 60 * 60 * 1000;
+    const dayMS  = 24 * hourMS;
+    const oneHourFromNow = new Date( fromTime.getTime() + hourMS );
+    const oneDayFromNow  = new Date( fromTime.getTime() + dayMS );
+
+    const isFirstIteration = !(fromTime);
+    frequency = frequency || "X";
+    fromTime = fromTime || new Date();
+
+    switch (frequency) {
+        case "hour":
+            hour = fromTime.getHours() + 1;
+            result.setHours( hour, fpInt, 0, 0 );
             break;
         case "day":
-            day = day || 1;
         case "2days":
-            day = day || 2;
         case "3days":
-            day = day || 3;
         case "7days":
-            day = day || 7;
-            result.setDate( now.getDate() + day );
+            day = parseInt( frequency );
+            result.setDate( fromTime.getDate() + day );
             hour = fpInt;
             min = fpFloat > fpInt ? 30 : 0;
             result.setHours( hour, min, 0, 0 );
             break;
         case "week":
-            result.setDate( now.getDate() + ( fpInt + ( 7 - now.getDay() ) ) % 7 );
+            day = (fpInt + (7 - fromTime.getDay())) % 7;
+            result.setDate( fromTime.getDate() + day );
             result.setHours( 23, 59, 59, 0 );
             break;
         case "X":
@@ -102,6 +110,31 @@ function calculateNextTime( frequency, frequencyPoint ) {
         default:
             result = null;
             break;
+    }
+
+    let dayAdjust = null;
+    if ( isFirstIteration ) {
+        switch (frequency) {
+            case "hour":
+                if ( result < oneHourFromNow ) {
+                    result.setHours( result.getHours() + 1, result.getMinutes(), 0, 0 );
+                }
+                break;
+            case "day":
+            case "2days":
+            case "3days":
+            case "7days":
+                dayAdjust = 1;
+            case "week":
+                dayAdjust = dayAdjust || 7;
+                if ( result < oneDayFromNow ) {
+                    result.setDate( result.getDate() + dayAdjust );
+                    result.setHours( result.getHours(), result.getMinutes(), 0, 0 );
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     return result;

@@ -6,7 +6,7 @@ function getLogoInfo()
     {
         if ( $_GET['id'] === "PREVIEW" && $_POST['logo'] )
         {
-            echo json_encode( $_POST['logo'] );
+            echo $_POST['logo'];
         }
         else
         {
@@ -62,7 +62,7 @@ function getBracketInfo()
     {
         if ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] )
         {
-            echo json_encode( $_POST['bracket'] );
+            echo $_POST['bracket'];
         }
         else
         {
@@ -85,7 +85,11 @@ function getBracketInfo()
             }
             else if ( $_GET['id'] === "DC" ) {
                 echo "{ active:  true,
-                        endTime: \"In a little bit...\",
+                        endTime: {
+                            lastEnd:        null,
+                            frequency:      \"hour\",
+                            frequencyPoint: 59
+                        },
                         mode:    \"round\",
                         winners: \"\",
                         entries: [

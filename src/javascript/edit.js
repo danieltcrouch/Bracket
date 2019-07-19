@@ -1,10 +1,12 @@
 function setBracketType( bracketType ) {
     if ( bracketType === "bracket" ) {
         id('bracketSettings').style.display = "block";
+        id('frequencySettings').style.display = "block";
         id('closeSettings').style.display = "none";
     }
     else {
         id('bracketSettings').style.display = "none";
+        id('frequencySettings').style.display = "none";
         id('closeSettings').style.display = "block";
     }
 
@@ -61,40 +63,47 @@ function updateFrequencyPoints() {
 }
 
 function createEntryInputs( e ) {
-    if ( e.which === 13 || e.keyCode === 13 ) {
+    if ( e.which === 13 || e.keyCode === 13 ||
+         e.which === 9  || e.keyCode === 9 ) {
         let div = id('entryDiv');
 
         let entryCount = id('entryCount').value;
-        let currentCount = nm('entryNames').length;
-        entryCount -= currentCount;
 
-        if ( entryCount > 0 ) {
-            for ( let i = 0; i < entryCount; i++ ) {
-                let entryDiv = document.createElement( "DIV" );
-                let nameInput  = document.createElement( "INPUT" );
-                let imageInput = document.createElement( "INPUT" );
-                nameInput.id  = i + "NameInput";
-                imageInput.id = i + "ImageInput";
-                nameInput.style.width  = "45%";
-                imageInput.style.width = "45%";
-                nameInput.style.margin  = ".5em";
-                imageInput.style.margin = ".5em";
-                nameInput.classList.add(  "input" );
-                imageInput.classList.add( "input" );
-                nameInput.setAttribute(  "name", "entryNames" );
-                imageInput.setAttribute( "name", "entryImages" );
-                nameInput.setAttribute(  "placeholder", "Entry Name" );
-                imageInput.setAttribute( "placeholder", "Image URL" );
-                nameInput.addEventListener( "keyup", displayPreview );
-                entryDiv.appendChild( nameInput );
-                entryDiv.appendChild( imageInput );
-                div.appendChild( entryDiv );
+        if ( entryCount <= 128 ) {
+            let currentCount = nm( 'entryNames' ).length;
+            entryCount -= currentCount;
+
+            if ( entryCount > 0 ) {
+                for ( let i = 0; i < entryCount; i++ ) {
+                    let entryDiv = document.createElement( "DIV" );
+                    let nameInput = document.createElement( "INPUT" );
+                    let imageInput = document.createElement( "INPUT" );
+                    nameInput.id = i + "NameInput";
+                    imageInput.id = i + "ImageInput";
+                    nameInput.style.width = "45%";
+                    imageInput.style.width = "45%";
+                    nameInput.style.margin = ".5em";
+                    imageInput.style.margin = ".5em";
+                    nameInput.classList.add( "input" );
+                    imageInput.classList.add( "input" );
+                    nameInput.setAttribute( "name", "entryNames" );
+                    imageInput.setAttribute( "name", "entryImages" );
+                    nameInput.setAttribute( "placeholder", "Entry Name" );
+                    imageInput.setAttribute( "placeholder", "Image URL" );
+                    nameInput.addEventListener( "keyup", displayPreview );
+                    entryDiv.appendChild( nameInput );
+                    entryDiv.appendChild( imageInput );
+                    div.appendChild( entryDiv );
+                }
+            }
+            else if ( entryCount < 0 ) {
+                for ( let i = 0; i < -entryCount; i++ ) {
+                    div.removeChild( div.lastChild );
+                }
             }
         }
-        else if ( entryCount < 0 ) {
-            for ( let i = 0; i < -entryCount; i++ ) {
-                div.removeChild( div.lastChild );
-            }
+        else {
+            showToaster( "Entry count must be below 128" );
         }
     }
 }
@@ -136,34 +145,29 @@ function previewLogo() {
 
 function previewBracket() {
     if ( id('imageAddress').value ) {
-        const data = {
-            logo: {
-                title: id( 'titleText' ).value,
-                image: id( 'imageAddress' ).value,
-                help:  id( 'helpInput' ).value,
+        id('logoData').value = JSON.stringify( {
+            title: id( 'titleText' ).value,
+            image: id( 'imageAddress' ).value,
+            help:  id( 'helpInput' ).value,
+            active:  true
+        });
+        id('bracketData').value = JSON.stringify( {
+            mode:    "open",
+            entries: getEntries(),
+            winners: "",
+            endTime: {
+                lastEnd: null,
+                frequency:      getSelectedOption( 'frequency' ).value,
+                frequencyPoint: getSelectedOption( 'frequencyPoint' ).value
             },
-            bracket: {
-                active:  true,
-                endTime: getEndTime(),
-                mode:    "open",
-                entries: getEntries(),
-                winners: ""
-            }
-        };
+            active:  true
+        });
 
-        $.post( 'bracket.php', { data: data, timestamp: Date.now() }, function() {
-            window.open( "https://bracket.religionandstory.com/bracket.php?id=PREVIEW" );
-        } );
+        id('previewForm').submit();
     }
     else {
         showToaster( "Logo Image required." );
     }
-}
-
-function getEndTime() {
-    const frequency = getSelectedOption( 'frequency' ).value;
-    const frequencyPoint = getSelectedOption( 'frequencyPoint' ).value;
-    return getDisplayTime( calculateNextTime( frequency, frequencyPoint ) ); //todo
 }
 
 function getEntries() {
@@ -184,7 +188,8 @@ function getEntries() {
 
 
 function create() {
-
+    //todo
+    window.location = "https://bracket.religionandstory.com/bracket.php?id=Marvel";
 }
 
 function load() {
@@ -197,9 +202,9 @@ function load() {
 }
 
 function pause() {
-
+    //
 }
 
 function close() {
-
+    //
 }
