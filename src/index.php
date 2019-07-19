@@ -36,7 +36,9 @@ require("php/database.php"); //todo - remove this from php files
 <script>
     //todo - move to helper file and use ajax calls
     let logos = [];
-    logos = <?php getAllMetas() ?>;
+    logos = <?php
+        print_r( json_encode( getAllMetas() ) );
+    ?>;
 
     displayLogos( logos );
 

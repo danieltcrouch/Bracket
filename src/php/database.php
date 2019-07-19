@@ -5,7 +5,15 @@ function getAllMetas()
     $mysqli = getMySQL();
 
     $metas = [];
-    $result = $mysqli->query("SELECT * FROM meta ORDER BY name DESC ");
+    $result = $mysqli->query( "SELECT
+            id,
+            date,
+            (CASE WHEN active = 0 THEN '' ELSE '1' END) as \"active\",
+            name AS \"title\",
+            image,
+            info AS \"help\"
+        FROM meta
+        ORDER BY name DESC ");
     if ( $result && $result->num_rows > 0 ) {
         while ( $row = $result->fetch_array() ) {
             array_push($metas, $row);
