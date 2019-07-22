@@ -25,7 +25,7 @@ function getAllMetas()
     return $metas;
 }
 
-function getBracketInfo( $bracketId )
+function getBracket( $bracketId )
 {
     $mysqli = getMySQL();
 
@@ -47,7 +47,7 @@ function getBracketInfo( $bracketId )
                 FROM entries e
                 GROUP BY e.bracket_id
             ) ent ON m.id = ent.bracket_id
-        WHERE m.name = '$bracketId' " );
+        WHERE m.id = '$bracketId' " );
     $mysqli->close();
 
     if ( $result ) {
@@ -55,7 +55,7 @@ function getBracketInfo( $bracketId )
         $bracketInfo = [
             'logo' => [
                 'active' => $row['active'],
-                'title'  => $row['title'],
+                'title'  => $row['name'],
                 'image'  => $row['image'],
                 'help'   => $row['help']
             ],
@@ -76,7 +76,7 @@ function getBracketInfo( $bracketId )
         $entryTitles = explode( '|', $row['e_names'] ); //todo - "titles" should be "names" everywhere
         $entryImages = explode( '|', $row['e_images'] );
         foreach( $entryTitles as $index => $title ) {
-            array_push( $bracketInfo['entries'], ['title' => $title, 'image' => $entryImages[$index]] );
+            array_push( $bracketInfo['bracket']['entries'], ['title' => $title, 'image' => $entryImages[$index]] );
         }
     }
 
@@ -146,8 +146,8 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
     if ( isset($_POST['logo']) && isset($_POST['bracket']) ) {
         $result = $action( $_POST['logo'], $_POST['bracket'] );
     }
-    elseif ( false ) {
-        //
+    elseif ( isset($_POST['id']) ) {
+        $result = $action( $_POST['id'] );
     }
     else {
         $result = $action();
@@ -155,4 +155,3 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
 
     echo json_encode($result);
 }
-

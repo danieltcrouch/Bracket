@@ -69,6 +69,9 @@ function getDisplayTime( date ) {
 function calculateNextTime( endTime ) {
     let result = endTime.closeTime || new Date();
 
+    const isFirstIteration = !(endTime.lastTime);
+    const fromTime = isFirstIteration ? new Date() : new Date( endTime.lastTime );
+
     let day = null;
     let hour = null;
     let min = null;
@@ -77,13 +80,10 @@ function calculateNextTime( endTime ) {
 
     const hourMS = 60 * 60 * 1000;
     const dayMS  = 24 * hourMS;
-    const oneHourFromNow = new Date( endTime.lastTime.getTime() + hourMS );
-    const oneDayFromNow  = new Date( endTime.lastTime.getTime() + dayMS );
+    const oneHourFromNow = new Date( fromTime.getTime() + hourMS );
+    const oneDayFromNow  = new Date( fromTime.getTime() + dayMS );
 
-    const isFirstIteration = !(endTime.lastTime);
-    const fromTime = endTime.lastTime || new Date();
     const frequency = endTime.frequency || "X";
-
     switch (frequency) {
         case "hour":
             hour = fromTime.getHours() + 1;
