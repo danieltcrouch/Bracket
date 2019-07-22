@@ -51,12 +51,23 @@ require("php/database.php");
 <script>
     const bracketId = "<?php echo $_GET['id'] ?>";
 
-    let logoInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['logo'] ) ? $_POST['logo'] : "{}"; ?>;
-    let bracketInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "{}"; ?>;
+    let logoInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['logo'] ) ? $_POST['logo'] : "null"; ?>;
+    let bracketInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?>;
 
     if ( bracketId !== "PREVIEW" ) {
-        //AJAX call
-        loadPage();
+        $.post(
+            "php/database.php",
+            {
+                action: "getBracket",
+                id:     bracketId
+            },
+            function ( response ) {
+                response = JSON.parse( response );
+                logoInfo = response.logo;
+                bracketInfo = response.bracket;
+                loadPage();
+            }
+        );
     }
     else {
         loadPage();

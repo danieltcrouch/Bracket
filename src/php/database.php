@@ -1,5 +1,7 @@
 <?php
 
+//todo - clean up meta vs logo
+
 function getAllMetas()
 {
     $mysqli = getMySQL();
@@ -8,12 +10,12 @@ function getAllMetas()
     $result = $mysqli->query( "SELECT
             id,
             date,
-            (CASE WHEN active = 0 THEN '' ELSE '1' END) as \"active\",
+            (CASE WHEN active = 0 THEN '' ELSE active END) as \"active\",
             name AS \"title\",
             image,
             info AS \"help\"
         FROM meta
-        ORDER BY name DESC ");
+        ORDER BY name DESC " );
     if ( $result && $result->num_rows > 0 ) {
         while ( $row = $result->fetch_array() ) {
             array_push($metas, $row);
@@ -23,13 +25,62 @@ function getAllMetas()
     return $metas;
 }
 
-
-function getLogoInfo( $bracketId )
-{
-}
-
 function getBracketInfo( $bracketId )
 {
+    $mysqli = getMySQL();
+
+    $bracketInfo = null;
+    $result = $mysqli->query( "SELECT
+            m.id, m.active, m.name, m.image, m.info as \"help\", m.mode,
+            t.start_time, t.frequency, t.frequency_point, t.end_point,
+            r.top_wins,
+            e_names,
+            e_images
+        FROM meta m
+            JOIN timing t ON m.id = t.bracket_id
+            LEFT OUTER JOIN results r ON m.id = r.bracket_id
+            LEFT OUTER JOIN (
+                SELECT
+                    e.bracket_id,
+                    GROUP_CONCAT(e.name ORDER BY e.seed ASC SEPARATOR '|') as \"e_names\",
+                    GROUP_CONCAT(e.image ORDER BY e.seed ASC SEPARATOR '|') as \"e_images\"
+                FROM entries e
+                GROUP BY e.bracket_id
+            ) ent ON m.id = ent.bracket_id
+        WHERE m.name = '$bracketId' " );
+    $mysqli->close();
+
+    if ( $result ) {
+        $row = $result->fetch_array();
+        $bracketInfo = [
+            'logo' => [
+                'active' => $row['active'],
+                'title'  => $row['title'],
+                'image'  => $row['image'],
+                'help'   => $row['help']
+            ],
+            'bracket' => [
+                'active'  => $row['active'],
+                'mode'    => $row['mode'],
+                'winners' => $row['winners'],
+                'endTime' => [
+                    'lastEnd'        => $row['start_time'],
+                    'frequency'      => $row['frequency'],
+                    'frequencyPoint' => $row['frequencyPoint'],
+                    'closeTime'      => $row['end_point']
+                ],
+                'entries' => []
+            ]
+        ];
+
+        $entryTitles = explode( '|', $row['e_names'] ); //todo - "titles" should be "names" everywhere
+        $entryImages = explode( '|', $row['e_images'] );
+        foreach( $entryTitles as $index => $title ) {
+            array_push( $bracketInfo['entries'], ['title' => $title, 'image' => $entryImages[$index]] );
+        }
+    }
+
+    return $bracketInfo;
 }
 
 function saveBracket( $logo, $bracket )
@@ -48,7 +99,7 @@ function saveBracket( $logo, $bracket )
         VALUES ('$bracketId', '" . cleanse( $logo->title ) . "', '$logo->image', '" . cleanse( $logo->help ) . "', '$bracket->mode')";
     $insertTiming   = "INSERT INTO timing (bracket_id, active, start_time, frequency, frequency_point, end_point)
         VALUES ('$bracketId', 0, NULL, $freq, $freqPoint, $closeTime)";
-    $insertEntries  = "INSERT INTO entry (bracket_id, id, name, image, seed) VALUES ";
+    $insertEntries  = "INSERT INTO entries (bracket_id, id, name, image, seed) VALUES ";
     for ( $i = 0; $i < count( $bracket->entries ); $i++ )
     {
         if ( $i != 0 )

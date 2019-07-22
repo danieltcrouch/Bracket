@@ -34,6 +34,11 @@ require("php/database.php"); //todo - remove this from php files
 </body>
 
 <script>
+    const error = "<?php echo $_GET['error'] ?>";
+    if ( error ) {
+        showMessage( "Error", getErrorMessage( error ) );
+    }
+
     //todo - move to helper file and use ajax calls
     let logos = [];
     logos = <?php
@@ -41,11 +46,6 @@ require("php/database.php"); //todo - remove this from php files
     ?>;
 
     displayLogos( logos );
-
-    const error = "<?php echo $_GET['error'] ?>";
-    if ( error ) {
-        showMessage( "Error", getErrorMessage( error ) );
-    }
 
     function displayLogos( logos ) {
         let logosDiv = id('logos');

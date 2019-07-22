@@ -182,11 +182,10 @@ function create() {
         {
             action:  "saveBracket",
             logo:    JSON.stringify( getLogoData() ),
-            bracket: JSON.stringify( getBracketData() ),
+            bracket: JSON.stringify( getBracketData() )
         },
         function ( response ) {
-            alert( JSON.parse( response ) );
-            //window.location = "https://bracket.religionandstory.com/bracket.php?id=" + response;
+            window.location = "https://bracket.religionandstory.com/bracket.php?id=" + JSON.parse( response );
         }
     );
 }

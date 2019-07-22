@@ -65,25 +65,24 @@ function getDisplayTime( date ) {
     return result;
 }
 
-//todo - test this heavily
 //todo - timezone differences
-function calculateNextTime( frequency, frequencyPoint, fromTime, closeTime ) {
-    let result = closeTime || new Date();
+function calculateNextTime( endTime ) {
+    let result = endTime.closeTime || new Date();
 
     let day = null;
     let hour = null;
     let min = null;
-    const fpInt = frequencyPoint ? parseInt( frequencyPoint ) : 0;
-    const fpFloat = frequencyPoint ? parseFloat( frequencyPoint ) : 0;
+    const fpInt =   endTime.frequencyPoint ? parseInt(   endTime.frequencyPoint ) : 0;
+    const fpFloat = endTime.frequencyPoint ? parseFloat( endTime.frequencyPoint ) : 0;
 
     const hourMS = 60 * 60 * 1000;
     const dayMS  = 24 * hourMS;
-    const oneHourFromNow = new Date( fromTime.getTime() + hourMS );
-    const oneDayFromNow  = new Date( fromTime.getTime() + dayMS );
+    const oneHourFromNow = new Date( endTime.lastTime.getTime() + hourMS );
+    const oneDayFromNow  = new Date( endTime.lastTime.getTime() + dayMS );
 
-    const isFirstIteration = !(fromTime);
-    frequency = frequency || "X";
-    fromTime = fromTime || new Date();
+    const isFirstIteration = !(endTime.lastTime);
+    const fromTime = endTime.lastTime || new Date();
+    const frequency = endTime.frequency || "X";
 
     switch (frequency) {
         case "hour":

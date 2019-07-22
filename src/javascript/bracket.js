@@ -1,14 +1,16 @@
 class Bracket {
     constructor() {
-        this.entryCount = arguments[0].length;
+        let entriesInput = ( arguments && arguments[0] ) ? arguments[0] : "";
+        let winnersInput = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : "";
+
+        this.entryCount = entriesInput.length;
         this.magnitude = Math.pow( 2, Math.ceil( Math.log2( this.entryCount ) ) );
         this.roundCount = Math.log2( this.magnitude );
-        this.entries = Bracket.parseEntries( arguments[0] );
+        this.entries = Bracket.parseEntries( entriesInput );
         this.bracket = Bracket.constructBracket( this.magnitude, this.roundCount, this.entries );
 
-        let winners = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : "";
         let hasByes = this.magnitude > this.entryCount;
-        Bracket.parseWinners( winners, this.bracket, hasByes );
+        Bracket.parseWinners( winnersInput, this.bracket, hasByes );
 
         this.updateCurrent();
     }
@@ -234,7 +236,7 @@ const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN)
 function loadBracket( bracketInfo ) {
     bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
     mode = bracketInfo.mode;
-    endTime = calculateNextTime( bracketInfo.endTime.frequency, bracketInfo.endTime.frequencyPoint, bracketInfo.endTime.lastEnd, bracketInfo.endTime.closeTime );
+    endTime = calculateNextTime( bracketInfo.endTime );
 
     displayBracket();
     setDisplayType();

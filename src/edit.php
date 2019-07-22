@@ -113,6 +113,8 @@ require("php/database.php");
 </body>
 
 <script>
+    let bracketId = "<?php echo $_GET['id'] ?>";
+
     let logoInfo = {
         title:     "Your Bracket",
         image:     "<?php echo $image ?>",
