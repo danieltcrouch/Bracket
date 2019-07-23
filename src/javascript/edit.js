@@ -1,18 +1,8 @@
 function setBracketType( bracketType ) {
-    if ( bracketType === "bracket" ) {
-        id('bracketSettings').style.display = "block";
-        id('frequencySettings').style.display = "block";
-        id('closeSettings').style.display = "none";
+    id('bracketSettings').style.display = ( bracketType === "bracket" ) ? "block" : "none";
 
-        id('closeSettings').value = null;
-    }
-    else {
-        id('bracketSettings').style.display = "none";
-        id('frequencySettings').style.display = "none";
-        id('closeSettings').style.display = "block";
-
-        id('frequency').selectedIndex = 0;
-        id('frequencyPoint').selectedIndex = 0;
+    if ( bracketType === "poll" ) {
+        displayTimingSettings( false, true );
     }
 
     id('entryDiv').style.display = "block";
@@ -21,13 +11,21 @@ function setBracketType( bracketType ) {
 function setBracketRoundType( bracketRoundType ) {
     if ( bracketRoundType === "match" ) {
         id('frequencySettings').style.display = "block";
+        displayTimingSettings( true, false );
     }
     else if ( bracketRoundType === "round" ) {
         id('frequencySettings').style.display = "block";
+        displayTimingSettings( true, false );
     }
     else if ( bracketRoundType === "open" ) {
         id('frequencySettings').style.display = "none";
+        displayTimingSettings( false, true );
     }
+}
+
+function displayTimingSettings( displayFrequency, displayCloseTime ) {
+    id('frequencySettings').style.display = displayFrequency ? "block" : "none";
+    id('closeSettings').style.display = displayCloseTime ? "block" : "none";
 }
 
 function updateFrequencyPoints() {
@@ -112,6 +110,40 @@ function createEntryInputs( e ) {
     }
 }
 
+
+/**********PREVIEW**********/
+
+
+function validateLogo() {
+    let error = null;
+
+    if ( !id('imageAddress').value ) {
+        error = "Image required.";
+    }
+    //title length
+    //image length
+    //help length
+
+    return error;
+}
+
+function validate() {
+    let error = validateLogo();
+
+    if ( !error ) {
+        const isBracket = getSelectedRadioButtonId('bracketType') === "bracket";
+
+        if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
+            error = "Voting type required: match, round, or open.";
+        }
+        //entry title length
+        //entry image length
+        //timing validation
+    }
+
+    return error;
+}
+
 function displayPreview() {
     let hasAtLeastOneName = false;
     let entryNames = nm('entryNames');
@@ -126,49 +158,30 @@ function displayPreview() {
 }
 
 function previewLogo() {
-    if ( id('imageAddress').value ) {
-        const helpImage = id('help').firstChild.src;
-
+    const error = validateLogo();
+    if ( !error ) {
         let exampleDiv = id('exampleLogo');
         while ( exampleDiv.firstChild ) {
             exampleDiv.removeChild( exampleDiv.firstChild );
         }
-
-        let logoInfo = {
-            title:     id('titleText').value,
-            image:     id('imageAddress').value,
-            help:      id('helpInput').value,
-            helpImage: helpImage
-        };
-        createTitleLogo( logoInfo, exampleDiv, true, true );
+        createTitleLogo( getLogoData(), exampleDiv, true, true );
     }
     else {
-        showToaster( "Image required." );
+        showToaster( error );
     }
 }
 
 function previewBracket() {
-    if ( id('imageAddress').value ) {
-        id('logoData').value = JSON.stringify( getLogoData() );
-        id('bracketData').value = JSON.stringify( getBracketData() );
+    const error = validate();
+    if ( !error ) {
+        let bracket = getBracketData();
+        bracket.active = true;
+        id('bracketData').value = JSON.stringify( bracket );
         id('previewForm').submit();
     }
     else {
-        showToaster( "Logo Image required." );
+        showToaster( error );
     }
-}
-
-function getEntries() {
-    let entries = [];
-    let entryInputs = nm('entryNames');
-    let imageInputs = nm('entryImages');
-    for ( let i = 0; i < entryInputs.length; i++ ) {
-        if ( entryInputs[i].value ) {
-            entries.push( {title: entryInputs[i].value, image: imageInputs[i].value} );
-        }
-    }
-
-    return entries;
 }
 
 
@@ -176,18 +189,22 @@ function getEntries() {
 
 
 function create() {
-    //todo
-    $.post(
-        "php/database.php",
-        {
-            action:  "saveBracket",
-            logo:    JSON.stringify( getLogoData() ),
-            bracket: JSON.stringify( getBracketData() )
-        },
-        function ( response ) {
-            window.location = "https://bracket.religionandstory.com/bracket.php?id=" + JSON.parse( response );
-        }
-    );
+    const error = validate();
+    if ( !error ) {
+        $.post(
+            "php/database.php",
+            {
+                action:  "saveBracket",
+                bracket: JSON.stringify( getBracketData() )
+            },
+            function ( response ) {
+                window.location = "https://bracket.religionandstory.com/bracket.php?id=" + JSON.parse( response );
+            }
+        );
+    }
+    else {
+        showToaster( error );
+    }
 }
 
 function load() {
@@ -207,27 +224,38 @@ function close() {
     //
 }
 
+
+/**********PARSE**********/
+
+
 function getLogoData() {
     return {
-        title: id( 'titleText' ).value,
-        image: id( 'imageAddress' ).value,
-        help:  id( 'helpInput' ).value,
+        title:     id( 'titleText' ).value,
+        image:     id( 'imageAddress' ).value,
+        help:      id( 'helpInput' ).value,
+        helpImage: id('help').firstChild.src,
         active:  false
     };
 }
 
 function getBracketData() {
-    let frequency      = getSelectedOption( 'frequency' );
-    let frequencyPoint = getSelectedOption( 'frequencyPoint' );
-    frequency       = frequency      && frequency.value      !== "X" ? frequency.value      : null;
-    frequencyPoint  = frequencyPoint && frequencyPoint.value !== "X" ? frequencyPoint.value : null;
-    let closeTime = id( 'closeInput' ).value || null;
+    const logoData = getLogoData();
+
+    let frequency      = id('frequencySettings').style.display      !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
+    let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
+    frequency       = frequency      !== "X" ? frequency      : null;
+    frequencyPoint  = frequencyPoint !== "X" ? frequencyPoint : null;
+    let closeTime = id('closeSettings').style.display !== "none" ? id( 'closeInput' ).value : null;
 
     return {
-        mode:    getSelectedRadioButton('bracketType') === "bracket" ? getSelectedRadioButton('bracketOption') : "poll",
-        entries: getEntries(),
-        winners: "",
-        endTime: {
+        title:     logoData.title,
+        image:     logoData.image,
+        help:      logoData.help,
+        helpImage: logoData.helpImage,
+        mode:      getSelectedRadioButtonId('votingType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType'),
+        entries:   getEntries(),
+        winners:   "",
+        endTime:   {
             lastEnd: null,
             frequency:      frequency,
             frequencyPoint: frequencyPoint,
@@ -235,4 +263,17 @@ function getBracketData() {
         },
         active:  false
     };
+}
+
+function getEntries() {
+    let entries = [];
+    let entryInputs = nm('entryNames');
+    let imageInputs = nm('entryImages');
+    for ( let i = 0; i < entryInputs.length; i++ ) {
+        if ( entryInputs[i].value ) {
+            entries.push( {title: entryInputs[i].value, image: imageInputs[i].value} );
+        }
+    }
+
+    return entries;
 }

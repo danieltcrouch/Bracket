@@ -1,4 +1,4 @@
-function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoClickHandler ) {
+function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink ) {
     titleDiv.classList.add( "logoContainer" );
 
     let logoDiv = document.createElement( "DIV" );
@@ -8,11 +8,6 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoClickH
     logoDiv.style.backgroundImage = "url('" + logoInfo.image + "')";
     logoDiv.style.backgroundSize = "cover";
     logoDiv.style.backgroundPosition = "center";
-
-    if ( active && logoClickHandler ) {
-        logoDiv.classList.add( "clickable" );
-        logoDiv.onclick = logoClickHandler;
-    }
 
     let titleSpan = document.createElement( "SPAN" );
     titleSpan.innerText = logoInfo.title;
@@ -41,6 +36,14 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoClickH
 
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
+
+    if ( active && logoLink ) {
+        let anchor = document.createElement( "A" );
+        anchor.href = "https://bracket.religionandstory.com/bracket.php?id=885348D6FF0E4CAF8466757AD729065D";
+        anchor.classList.add( "clickable" );
+        logoDiv.parentNode.insertBefore( anchor, logoDiv );
+        anchor.appendChild( logoDiv );
+    }
 
     if ( !active ) {
         logoDiv.style.filter = "grayscale(1)";

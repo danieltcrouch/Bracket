@@ -221,6 +221,7 @@ let endTime;
 
 //todo - Clean Common repo and custom css files in projects
 //todo - set standards for this and future projects
+//todo - mode being set to poll messes it up right now
 
 
 /*** DISPLAY ***/
@@ -232,6 +233,31 @@ const BUTTON_PADDING        = ".5rem";
 const BUTTON_B_MARGIN       = ".75rem";
 const MATCH_B_MARGIN        = "1.5rem";
 const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
+
+function getBracketData( bracketId ) {
+    $.post(
+        "php/database.php",
+        {
+            action: "getBracket",
+            id:     bracketId
+        },
+        function ( response ) {
+            let bracketInfo = JSON.parse( response );
+            bracketInfo.helpImage = helpImage;
+            loadPage( bracketId, bracketInfo );
+        }
+    );
+}
+
+function loadPage( bracketId, bracketInfo ) {
+    if ( bracketId && bracketInfo ) {
+        createTitleLogo( bracketInfo, cl('title')[0], bracketInfo.active, true );
+        loadBracket( bracketInfo );
+    }
+    else {
+        window.location = "https://bracket.religionandstory.com/home.php?error=InvalidBracketId";
+    }
+}
 
 function loadBracket( bracketInfo ) {
     bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
@@ -622,7 +648,7 @@ function registerChoice( matchId, isTop ) {
         }
     }
     else {
-        //
+        //todo
     }
 }
 

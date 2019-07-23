@@ -37,6 +37,7 @@
             Explanation
             Radio button choices
             Round end date/time
+            Show poll results thus far
         (Session monitoring matters)
     -->
 

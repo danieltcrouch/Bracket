@@ -1,7 +1,4 @@
-<?php
-include("php/startup.php");
-require("php/database.php"); //todo - remove this from php files
-?>
+<?php include("php/startup.php"); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,18 +31,22 @@ require("php/database.php"); //todo - remove this from php files
 </body>
 
 <script>
+    //todo make the logos anchor tags so you can open in new tab
+
     const error = "<?php echo $_GET['error'] ?>";
     if ( error ) {
         showMessage( "Error", getErrorMessage( error ) );
     }
 
-    //todo - move to helper file and use ajax calls
-    let logos = [];
-    logos = <?php
-        print_r( json_encode( getAllMetas() ) );
-    ?>;
-
-    displayLogos( logos );
+    $.post(
+        "php/database.php",
+        {
+            action: "getAllLogos"
+        },
+        function ( response ) {
+            displayLogos( JSON.parse( response ) );
+        }
+    );
 
     function displayLogos( logos ) {
         let logosDiv = id('logos');
@@ -58,9 +59,7 @@ require("php/database.php"); //todo - remove this from php files
             logoDiv.classList.add( "title" );
             logoDiv.classList.add( "center" );
             logosDiv.appendChild( logoDiv );
-            createTitleLogo( logoInfo, logoDiv, logoInfo.active, true, function() {
-                window.location = "https://bracket.religionandstory.com/bracket.php?id=" + logoInfo.id;
-            } );
+            createTitleLogo( logoInfo, logoDiv, logoInfo.active, true, "https://bracket.religionandstory.com/bracket.php?id=" + logoInfo.id );
         }
     }
 </script>

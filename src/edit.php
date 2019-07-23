@@ -1,7 +1,4 @@
-<?php
-include("php/startup.php");
-require("php/database.php");
-?>
+<?php include("php/startup.php"); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,9 +48,9 @@ require("php/database.php");
             </div>
 
             <div id="bracketSettings" class="center" style="display: none; margin-bottom: 1em">
-                <button id="match" name="bracketOption" class="button inverseButton" style="width: 5em; margin: .25em;">Match</button>
-                <button id="round" name="bracketOption" class="button inverseButton" style="width: 5em; margin: .25em;">Round</button>
-                <button id="open"  name="bracketOption" class="button inverseButton" style="width: 5em; margin: .25em;">Open</button>
+                <button id="match" name="votingType" class="button inverseButton" style="width: 5em; margin: .25em;">Match</button>
+                <button id="round" name="votingType" class="button inverseButton" style="width: 5em; margin: .25em;">Round</button>
+                <button id="open"  name="votingType" class="button inverseButton" style="width: 5em; margin: .25em;">Open</button>
             </div>
             <div id="frequencySettings" class="center" style="display: none; margin-bottom: 1em">
                 Close voting
@@ -93,7 +90,6 @@ require("php/database.php");
     </div>
 
     <form id="previewForm" method="POST" target="_blank" action="/bracket.php?id=PREVIEW">
-        <input name="logo"    id="logoData"    type="hidden">
         <input name="bracket" id="bracketData" type="hidden">
     </form>
 
@@ -106,6 +102,7 @@ require("php/database.php");
                 Change bracket/poll
                 Change match/round to open or vice-versa
                 Entry count
+            Polls need option show results after choice is made
             Pause buttons
             Pause gives toaster to tell if active or inactive
     -->
@@ -126,8 +123,8 @@ require("php/database.php");
     setRadioCallback( "bracketType", function( bracketType ) {
         setBracketType( bracketType );
     });
-    setRadioCallback( "bracketOption", function( bracketOption ) {
-        setBracketRoundType( bracketOption );
+    setRadioCallback( "votingType", function( votingType ) {
+        setBracketRoundType( votingType );
     });
 </script>
 <?php includeModals(); ?>

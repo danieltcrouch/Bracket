@@ -1,11 +1,12 @@
-<?php
-include("php/startup.php");
-require("php/database.php");
-?>
+<?php include("php/startup.php"); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <?php includeHeadInfo(); ?>
+    <?php
+    include_once("php/database.php");
+    $image = getBracketImage() ?? $image; //todo
+    includeHeadInfo();
+    ?>
     <script src="javascript/bracket.js"></script>
     <script src="javascript/utility.js"></script>
     <link rel="stylesheet" type="text/css" href="https://religionandstory.com/bracket/css/bracket.css"/>
@@ -50,38 +51,13 @@ require("php/database.php");
 
 <script>
     const bracketId = "<?php echo $_GET['id'] ?>";
-
-    let logoInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['logo'] ) ? $_POST['logo'] : "null"; ?>;
-    let bracketInfo = <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?>;
+    const helpImage = "<?php getHelpImage() ?>";
 
     if ( bracketId !== "PREVIEW" ) {
-        $.post(
-            "php/database.php",
-            {
-                action: "getBracket",
-                id:     bracketId
-            },
-            function ( response ) {
-                response = JSON.parse( response );
-                logoInfo = response.logo;
-                bracketInfo = response.bracket;
-                loadPage();
-            }
-        );
+        getBracketData( bracketId );
     }
     else {
-        loadPage();
-    }
-
-    function loadPage() {
-        if ( bracketId && logoInfo && bracketInfo ) {
-            logoInfo.helpImage = "<?php getHelpImage() ?>";
-            createTitleLogo( logoInfo, cl('title')[0], logoInfo.active, true );
-            loadBracket( bracketInfo );
-        }
-        else {
-            window.location = "https://bracket.religionandstory.com/home.php?error=InvalidBracketId";
-        }
+        loadPage( bracketId, <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?> );
     }
 </script>
 <?php includeModals(); ?>
