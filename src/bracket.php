@@ -4,7 +4,10 @@
 <head>
     <?php
     include_once("php/database.php");
-    $image = getBracketImage() ?? $image; //todo
+    $meta = getBracketMeta( $_GET['id'] );
+    $pageTitle   = $meta ? $meta['title'] : $pageTitle;
+    $image       = $meta ? $meta['image'] : $image;
+    $description = $meta ? $meta['help']  : $description;
     includeHeadInfo();
     ?>
     <script src="javascript/bracket.js"></script>

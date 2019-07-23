@@ -1,17 +1,21 @@
 <?php
 
-function getBracketImage( $bracketId )
+function getBracketMeta( $bracketId )
 {
     $mysqli = getMySQL();
 
-    $image = null;
-    $result = $mysqli->query( "SELECT image FROM meta WHERE id = $bracketId " );
+    $meta = null;
+    $result = $mysqli->query( "SELECT name, image, help FROM meta WHERE id = '$bracketId' " );
     if ( $result->num_rows > 0 ) {
         $row = $result->fetch_array();
-        $image = $row['image'];
+        $meta = [
+            'title' => $row['name'],
+            'image' => $row['image'],
+            'help'  => $row['help']
+        ];
     }
 
-    return $image;
+    return $meta;
 }
 
 function getAllLogos()

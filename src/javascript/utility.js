@@ -39,7 +39,7 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
 
     if ( active && logoLink ) {
         let anchor = document.createElement( "A" );
-        anchor.href = "https://bracket.religionandstory.com/bracket.php?id=885348D6FF0E4CAF8466757AD729065D";
+        anchor.href = logoLink;
         anchor.classList.add( "clickable" );
         logoDiv.parentNode.insertBefore( anchor, logoDiv );
         anchor.appendChild( logoDiv );
