@@ -27,7 +27,7 @@
         <div class="col-5" style="padding-bottom: 1em">
             <input id="titleText"    type="text" class="input" maxlength="20" placeholder="Bracket Title">
             <input id="imageAddress" type="text" class="input"                placeholder="Image Address">
-            <textarea id="helpInput" class="input" placeholder="Instructions"></textarea>
+            <textarea id="additionalHelpText" class="input" placeholder="Instructions"></textarea>
             <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="previewLogo()">Preview</button>
         </div>
         <div class="col-5 center" style="padding-bottom: 0">
@@ -74,13 +74,15 @@
             <div id="closeSettings" class="center" style="display: none; margin-bottom: 1em">
                 <span style="font-weight: bold">Scheduled Close Time:</span>
                 <input id="closeInput" type="datetime-local" class="input">
+                <!-- todo: eventually, build your own -->
             </div>
 
             <div class="center" style="margin-bottom: 1em">
                 <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
+                <button id="save" class="button" style="display: none; width: 8em; margin: .25em;" onclick="save()">Save</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
-                <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
+                <button id="load" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
                 <button id="pause"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
@@ -97,11 +99,6 @@
     todo:
 
         Create/Edit Page:
-            Edit specific:
-                Change Image, title
-                Change bracket/poll
-                Change match/round to open or vice-versa
-                Entry count
             Polls need option show results after choice is made
             Pause buttons
             Pause gives toaster to tell if active or inactive
@@ -110,15 +107,15 @@
 </body>
 
 <script>
-    let bracketId = "<?php echo $_GET['id'] ?>";
+    const bracketId = "<?php echo $_GET['id'] ?>";
+    const helpImage = "<?php getHelpImage() ?>";
 
-    let logoInfo = {
-        title:     "Your Bracket",
-        image:     "<?php echo $image ?>",
-        helpImage: "<?php getHelpImage() ?>",
-        help:      "Additional instructions will appear here."
-    };
-    createTitleLogo( logoInfo, id('exampleLogo'), true, true );
+    if ( bracketId ) {
+        initializeEdit( bracketId );
+    }
+    else {
+        initializeCreate();
+    }
 
     setRadioCallback( "bracketType", function( bracketType ) {
         setBracketType( bracketType );

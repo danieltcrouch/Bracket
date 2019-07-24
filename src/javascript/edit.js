@@ -1,3 +1,75 @@
+function initializeCreate() {
+    let logoInfo = {
+        title:     "Your Bracket",
+        image:     "https://bracket.religionandstory.com/images/chess.jpg",
+        helpImage: helpImage,
+        help:      "Additional instructions will appear here."
+    };
+    createTitleLogo( logoInfo, id('exampleLogo'), true, true );
+}
+
+function initializeEdit( bracketId ) {
+    $.post(
+        "php/database.php",
+        {
+            action: "getBracket",
+            id:     bracketId
+        },
+        function ( response ) {
+            let bracketInfo = JSON.parse( response );
+            bracketInfo.helpImage = helpImage;
+
+            //Fill-out page
+            id('titleText').value = bracketInfo.title;
+            id('imageAddress').value = bracketInfo.image;
+            id('additionalHelpText').value = bracketInfo.help;
+            id(bracketInfo.mode).click();
+            if ( bracketInfo.mode !== "poll" ) {
+                id('bracket').click();
+            }
+            id('frequency').value = bracketInfo.endTime.frequency;
+            updateFrequencyPoints();
+            id('frequencyPoint').value = bracketInfo.endTime.frequencyPoint;
+            id('closeInput').valueAsNumber = new Date( bracketInfo.endTime.closeTime ).getTime(); //todo - change name; also, check timezone here
+            id('entryCount').value = bracketInfo.entries.length;
+            createEntryInputs( {which: 13} );
+            for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
+                id( i + "NameInput" ).value = bracketInfo.entries[i].title;
+                id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
+            }
+            previewLogo();
+
+            //Disable Create-only fields
+            id('titleText').disabled = true;
+            id('imageAddress').disabled = true;
+            const bracketType = getSelectedRadioButtonId( "bracketType" ); //disable switching BracketType
+            let buttons = nm('bracketType');
+            buttons.forEach( function( button ) {
+                const isSelected = button.id === bracketType;
+                button.classList.remove( isSelected ? "selectedButton" : "inverseButton" );
+                button.classList.add( isSelected ? "staticSelectedButton" : "staticInverseButton" );
+            });
+            const votingType = getSelectedRadioButtonId( "votingType" ); //disable switching votingType to or from "Open"
+            if ( votingType === "match" || votingType === "round" ) {
+                id('open').classList.remove( "inverseButton" );
+                id('open').classList.add( "staticInverseButton" );
+            }
+            else {
+                buttons = nm('votingType');
+                buttons.forEach( function( button ) {
+                    const isSelected = button.id === votingType;
+                    button.classList.remove( isSelected ? "selectedButton" : "inverseButton" );
+                    button.classList.add( isSelected ? "staticSelectedButton" : "staticInverseButton" );
+                });
+            }
+            id('entryCount').disabled = true;
+
+            id('save').style.display = "";
+            id('create').style.display = "none";
+        }
+    );
+}
+
 function setBracketType( bracketType ) {
     id('bracketSettings').style.display = ( bracketType === "bracket" ) ? "block" : "none";
 
@@ -30,39 +102,41 @@ function displayTimingSettings( displayFrequency, displayCloseTime ) {
 
 function updateFrequencyPoints() {
     let options = [];
-    let frequency = getSelectedOption( 'frequency' ).value;
-    switch ( frequency ) {
-        case "X":
-        case "custom":
-            options.push( {text: "--", value: "X"} );
-            break;
-        case "hour":
-            for ( let min = 0; min < 60; min++ ) {
-                options.push( {text: min + "", value: min + ""} );
-            }
-            break;
-        case "day":
-        case "2days":
-        case "3days":
-        case "7days":
-            for ( let hour = 0; hour < 24; hour++ ) {
-                let hourDisplay = ("0" + hour).slice( -2 );
-                options.push( {text: hourDisplay + ":00", value: hour + ""} );
-                options.push( {text: hourDisplay + ":30", value: hour + ".5"} );
-            }
-            break;
-        case "week":
-            options.push( {text: "Sunday Night (12:00)",    value:"0"} );
-            options.push( {text: "Monday Night (12:00)",    value:"1"} );
-            options.push( {text: "Tuesday Night (12:00)",   value:"2"} );
-            options.push( {text: "Wednesday Night (12:00)", value:"3"} );
-            options.push( {text: "Thursday Night (12:00)",  value:"4"} );
-            options.push( {text: "Friday Night (12:00)",    value:"5"} );
-            options.push( {text: "Saturday Night (12:00)",  value:"6"} );
-            break;
-    }
+    let frequency = getSelectedOptionValue( 'frequency' );
+    if ( frequency ) {
+        switch ( frequency ) {
+            case "X":
+            case "custom":
+                options.push( {text: "--", value: "X"} );
+                break;
+            case "hour":
+                for ( let min = 0; min < 60; min++ ) {
+                    options.push( {text: min + "", value: min + ""} );
+                }
+                break;
+            case "day":
+            case "2days":
+            case "3days":
+            case "7days":
+                for ( let hour = 0; hour < 24; hour++ ) {
+                    let hourDisplay = ("0" + hour).slice( -2 );
+                    options.push( {text: hourDisplay + ":00", value: hour + ""} );
+                    options.push( {text: hourDisplay + ":30", value: hour + ".5"} );
+                }
+                break;
+            case "week":
+                options.push( {text: "Sunday Night (12:00)",    value:"0"} );
+                options.push( {text: "Monday Night (12:00)",    value:"1"} );
+                options.push( {text: "Tuesday Night (12:00)",   value:"2"} );
+                options.push( {text: "Wednesday Night (12:00)", value:"3"} );
+                options.push( {text: "Thursday Night (12:00)",  value:"4"} );
+                options.push( {text: "Friday Night (12:00)",    value:"5"} );
+                options.push( {text: "Saturday Night (12:00)",  value:"6"} );
+                break;
+        }
 
-    addAllToSelect( 'frequencyPoint', options );
+        addAllToSelect( 'frequencyPoint', options );
+    }
 }
 
 function createEntryInputs( e ) {
@@ -136,25 +210,13 @@ function validate() {
         if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
             error = "Voting type required: match, round, or open.";
         }
+        //entry titles filled
         //entry title length
         //entry image length
         //timing validation
     }
 
     return error;
-}
-
-function displayPreview() {
-    let hasAtLeastOneName = false;
-    let entryNames = nm('entryNames');
-    for ( let i = 0; i < entryNames.length; i++ ) {
-        if ( entryNames[i].value.length > 0 ) {
-            hasAtLeastOneName = true;
-            break;
-        }
-    }
-
-    id('previewDiv').style.display = hasAtLeastOneName ? "block" : "none";
 }
 
 function previewLogo() {
@@ -184,6 +246,19 @@ function previewBracket() {
     }
 }
 
+function displayPreview() {
+    let hasAtLeastOneName = false;
+    let entryNames = nm('entryNames');
+    for ( let i = 0; i < entryNames.length; i++ ) {
+        if ( entryNames[i].value.length > 0 ) {
+            hasAtLeastOneName = true;
+            break;
+        }
+    }
+
+    id('previewDiv').style.display = hasAtLeastOneName ? "block" : "none";
+}
+
 
 /**********GENERAL**********/
 
@@ -207,13 +282,67 @@ function create() {
     }
 }
 
+function save() {
+    // const error = validate();
+    // if ( !error ) {
+    //     $.post(
+    //         "php/database.php",
+    //         {
+    //             action:  "saveBracket",
+    //             bracket: JSON.stringify( getBracketData() )
+    //         },
+    //         function ( response ) {
+    //             window.location = "https://bracket.religionandstory.com/bracket.php?id=" + JSON.parse( response );
+    //         }
+    //     );
+    // }
+    // else {
+    //     showToaster( error );
+    // }
+}
+
 function load() {
-    if ( id('titleText').value ) {
-        //
+    // if ( id('titleText').value ) {
+    //     $.post(
+    //         "php/database.php",
+    //         {
+    //             action: "getBracketId",
+    //             title:  id( 'titleText' ).value
+    //         },
+    //         function ( response ) {
+    //             if ( response ) {
+    //                 window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSON.parse( response );
+    //             }
+    //             else {
+    //                 showToaster( "No bracket found with that name." );
+    //             }
+    //         }
+    //     );
+    // }
+    // else {
+        $.post(
+            "php/database.php",
+            {
+                action: "getAllLogos"
+            },
+            function ( response ) {
+                const html = constructEditLinks( JSON.parse( response) );
+                showMessage( "Choose a Bracket", html );
+            }
+        );
+    // }
+}
+
+function constructEditLinks( brackets ) {
+    let result = "";
+    for ( let i = 0; i < brackets.length; i++ )
+    {
+        const bracket = brackets[i];
+        const isDuplicate = brackets.filter( b => b.title === bracket.title && b.date !== bracket.date ).length > 0;
+        const title = bracket.title + (isDuplicate ? "(" + new Date( bracket.date ) + ")" : "");
+        result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + bracket.id + "' class='link'>" + title + "</a><br/>";
     }
-    else {
-        //
-    }
+    return result;
 }
 
 function pause() {
@@ -232,19 +361,17 @@ function getLogoData() {
     return {
         title:     id( 'titleText' ).value,
         image:     id( 'imageAddress' ).value,
-        help:      id( 'helpInput' ).value,
-        helpImage: id('help').firstChild.src,
-        active:  false
+        help:      id( 'additionalHelpText' ).value,
+        helpImage: id( 'helpIcon' ).src,
+        active:    false
     };
 }
 
 function getBracketData() {
     const logoData = getLogoData();
 
-    let frequency      = id('frequencySettings').style.display      !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
+    let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
     let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
-    frequency       = frequency      !== "X" ? frequency      : null;
-    frequencyPoint  = frequencyPoint !== "X" ? frequencyPoint : null;
     let closeTime = id('closeSettings').style.display !== "none" ? id( 'closeInput' ).value : null;
 
     return {

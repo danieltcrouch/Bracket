@@ -18,6 +18,20 @@ function getBracketMeta( $bracketId )
     return $meta;
 }
 
+function getBracketId( $title )
+{
+    $mysqli = getMySQL();
+
+    $id = null;
+    $result = $mysqli->query( "SELECT id FROM meta WHERE name = '$title' LIMIT 1 " );
+    if ( $result->num_rows > 0 ) {
+        $row = $result->fetch_array();
+        $id = $row['id'];
+    }
+
+    return $id;
+}
+
 function getAllLogos()
 {
     $mysqli = getMySQL();
@@ -78,13 +92,13 @@ function getBracket( $bracketId )
             'endTime' => [
                 'lastEnd'        => $row['start_time'],
                 'frequency'      => $row['frequency'],
-                'frequencyPoint' => $row['frequencyPoint'],
+                'frequencyPoint' => $row['frequency_point'],
                 'closeTime'      => $row['end_point']
             ],
             'entries' => []
         ];
 
-        $entryTitles = explode( '|', $row['e_names'] ); //todo - "titles" should be "names" everywhere
+        $entryTitles = explode( '|', $row['e_names'] );
         $entryImages = explode( '|', $row['e_images'] );
         foreach( $entryTitles as $index => $title ) {
             array_push( $bracketInfo['entries'], ['title' => $title, 'image' => $entryImages[$index]] );
@@ -158,6 +172,9 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
     }
     elseif ( isset($_POST['id']) ) {
         $result = $action( $_POST['id'] );
+    }
+    elseif ( isset($_POST['title']) ) {
+        $result = $action( $_POST['title'] );
     }
     else {
         $result = $action();

@@ -70,7 +70,7 @@ function getDisplayTime( date ) {
 
 //todo - timezone differences
 function calculateNextTime( endTime ) {
-    let result = endTime.closeTime || new Date();
+    let result = endTime.closeTime || new Date(); //todo - gets overriden with NULL
 
     const isFirstIteration = !(endTime.lastTime);
     const fromTime = isFirstIteration ? new Date() : new Date( endTime.lastTime );

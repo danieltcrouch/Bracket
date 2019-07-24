@@ -31,8 +31,6 @@
 </body>
 
 <script>
-    //todo make the logos anchor tags so you can open in new tab
-
     const error = "<?php echo $_GET['error'] ?>";
     if ( error ) {
         showMessage( "Error", getErrorMessage( error ) );
