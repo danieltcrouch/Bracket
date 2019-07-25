@@ -347,7 +347,7 @@ function displayBracket() {
         adjustFontSize( roundDiv );
     }
 
-    setClickableMatches( div );
+    setClickableMatches();
 }
 
 function getMatch( matchDiv, match ) {
@@ -362,7 +362,7 @@ function getMatch( matchDiv, match ) {
         let source = entries[i] ? entries[i].image : "images/question.jpg";
         source = match.bye && !isTop ? "images/blank.jpg" : source;
         image.setAttribute( "src", source );
-        image.id = matchId + "Image" + (isTop?"T":"B");
+        image.id = getImageId( matchId, isTop );
         image.style.width = BUTTON_TEXT_HEIGHT;
         image.style.height = BUTTON_TEXT_HEIGHT;
         image.style.objectFit = "cover";
@@ -380,7 +380,7 @@ function getButtonFromEntry( entry, isTop, matchId, isBye ) {
 
     let result = document.createElement( "BUTTON" );
     result.innerHTML = getDisplayName( entry );
-    result.id = matchId + (isTop ? "T" : "B");
+    result.id = getButtonId( matchId, isTop );
     result.name = matchId;
     result.onclick = function() {
         registerChoice( matchId, isTop );
@@ -449,59 +449,40 @@ function getFullWidth( button ) {
     return parseFloat( result );
 }
 
-function setClickableMatches( div ) {
-    let buttons = div.getElementsByTagName( "BUTTON" );
-    for ( let i = 0; i < buttons.length; i++ ) {
-        buttons[i].classList.add( "staticInverseButton" );
-    }
-
-    let matches = bracket.getMatches();
+function setClickableMatches() {
+    const matches = bracket.getMatches();
     for ( let i = 0; i < matches.length; i++ ) {
+        const matchId = getMatchId( matches[i] );
+        freezeRadioButtons( matchId );
+
         if ( matches[i].winner ) {
-            const matchId = getMatchId( matches[i] );
-            const winnerId = matchId + ( matches[i].winner.seed === matches[i].top.seed ? "T" : "B" );
-            let matchButtons = nm( matchId );
-            for ( let j = 0; j < matchButtons.length; j++ ) {
-                matchButtons[j].classList.remove( "staticInverseButton" );
-                matchButtons[j].classList.add( matchButtons[j].id === winnerId ? "staticSelectedButton" : "staticInverseButton" );
-            }
+            const winnerId = getButtonId( matchId, matches[i].winner.seed === matches[i].top.seed );
+            selectRadioButton( winnerId, true );
         }
     }
+
+    const setClickable = function( matchId ) {
+        unfreezeRadioButtons( matchId );
+        getButtonIds( matchId ).forEach( function( buttonId ) { id(buttonId).classList.add( "blinkBorder" ); } );
+    };
 
     switch ( mode ) {
     case "match":
-        let matchButtons = nm( bracket.getCurrentMatchId() );
-        for ( let i = 0; i < matchButtons.length; i++ ) {
-            matchButtons[i].classList.add( "blinkBorder" );
-            matchButtons[i].classList.remove( "staticInverseButton" );
-            matchButtons[i].classList.add( "inverseButton" );
-        }
+        setClickable( bracket.getCurrentMatchId() );
         break;
     case "round":
-        for ( let i = 0; i < buttons.length; i++ ) {
-            const round = parseInt( buttons[i].parentElement.parentElement.parentElement.id.replace ( /[^\d.]/g, '' ) );
-            const roundMatches = bracket.getMatchesFromRound( round );
-            const relevantMatch = roundMatches[ parseInt(i/2) ];
-            if ( bracket.getCurrentRound() === round && !(relevantMatch.winner) ) {
-                buttons[i].classList.add( "blinkBorder" );
-                buttons[i].classList.remove( "staticInverseButton" );
-                buttons[i].classList.add( "inverseButton" );
-            }
+        const roundMatches = bracket.getMatchesFromRound( bracket.getCurrentRound(), true );
+        for ( let i = 0; i < roundMatches.length; i++ ) {
+            setClickable( getMatchId( roundMatches[i] ) );
         }
         break;
     case "open":
     default:
-        for ( let i = 0; i < matches.length; i++ ) {
-            let match = matches[i];
-            if ( !matches[i].winner &&
-                match.top && match.top.seed &&
-                match.bottom && match.bottom.seed ) {
-                let matchButtons = nm( getMatchId( match ) );
-                for ( let j = 0; j < matchButtons.length; j++ ) {
-                    matchButtons[j].classList.add( "blinkBorder" );
-                    matchButtons[j].classList.remove( "staticInverseButton" );
-                    matchButtons[j].classList.add( "inverseButton" );
-                }
+        const nonByeMatches = bracket.getMatches();
+        for ( let i = 0; i < nonByeMatches.length; i++ ) {
+            const match = matches[i];
+            if ( match.top && match.top.seed && match.bottom && match.bottom.seed ) {
+                setClickable( getMatchId( match ) );
             }
         }
     }
@@ -703,7 +684,7 @@ function updateMatch( match, winner, isTopChange ) {
     let matchId = getMatchId( match );
     let matchButtons = nm( matchId );
     matchButtons[isTopChange ? 0 : 1].innerHTML = getDisplayName( winner );
-    const imageId = matchId + "Image" + (isTopChange ? "T" : "B");
+    const imageId = getImageId( matchId, isTopChange );
     let imageSource = winner ? (isTopChange ? match.top.image : match.bottom.image) : "images/question.jpg";
     id( imageId ).setAttribute( "src", imageSource );
     adjustFontSize( id( "round" + match.round ) );
@@ -751,6 +732,24 @@ function submit() {
 function getMatchId( match )
 {
     return "r" + match.round + "m" + match.match;
+}
+
+function getButtonIds( matchId )
+{
+    return [
+        matchId + "T",
+        matchId + "B"
+    ];
+}
+
+function getButtonId( matchId, isTop )
+{
+    return matchId + (isTop?"T":"B");
+}
+
+function getImageId( matchId, isTop )
+{
+    return matchId + "Image" + (isTop?"T":"B");
 }
 
 function getDisplayName( entry ) {

@@ -43,7 +43,12 @@ function initializeEdit( bracketId ) {
             id('titleText').disabled = true;
             id('imageAddress').disabled = true;
             freezeRadioButtons( "bracketType" ); //disable switching BracketType
-            ( getSelectedRadioButtonId( "votingType" ) === "open" ) ? freezeRadioButtons( "votingType" ) : freezeRadioButtons( null, ["open"] ); //disable switching votingType to or from "Open"
+            if ( getSelectedRadioButtonId( "votingType" ) === "open" ) { //disable switching votingType to or from "Open"
+                freezeRadioButtons( "votingType" );
+            }
+            else {
+                freezeRadioButtons( null, ["open"] );
+            }
             id('entryCount').disabled = true;
 
             id('save').style.display = "";

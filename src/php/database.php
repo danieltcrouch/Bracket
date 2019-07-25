@@ -63,7 +63,7 @@ function getBracket( $bracketId )
     $bracketInfo = null;
     $result = $mysqli->query( "SELECT
             m.id, m.active, m.name, m.image, m.help, m.mode,
-            t.start_time, t.frequency, t.frequency_point, t.end_point,
+            t.start_time, t.frequency, t.frequency_point, t.scheduled_close,
             r.top_wins,
             e_names,
             e_images
