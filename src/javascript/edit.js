@@ -27,12 +27,12 @@ function initializeEdit( bracketId ) {
             if ( bracketInfo.mode !== "poll" ) {
                 id('bracket').click();
             }
-            id('frequency').value = bracketInfo.endTime.frequency;
+            id('frequency').value = bracketInfo.timing.frequency;
             updateFrequencyPoints();
-            id('frequencyPoint').value = bracketInfo.endTime.frequencyPoint;
-            id('closeInput').valueAsNumber = new Date( bracketInfo.endTime.closeTime ).getTime(); //todo - change name; also, check timezone here
+            id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
+            bracketInfo.timing.scheduledClose ? id('scheduleInput').valueAsNumber = new Date( bracketInfo.timing.scheduledClose ).getTime() : null;
             id('entryCount').value = bracketInfo.entries.length;
-            createEntryInputs( {which: 13} );
+            createEntryInputs();
             for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
                 id( i + "NameInput" ).value = bracketInfo.entries[i].title;
                 id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
@@ -42,26 +42,8 @@ function initializeEdit( bracketId ) {
             //Disable Create-only fields
             id('titleText').disabled = true;
             id('imageAddress').disabled = true;
-            const bracketType = getSelectedRadioButtonId( "bracketType" ); //disable switching BracketType
-            let buttons = nm('bracketType');
-            buttons.forEach( function( button ) {
-                const isSelected = button.id === bracketType;
-                button.classList.remove( isSelected ? "selectedButton" : "inverseButton" );
-                button.classList.add( isSelected ? "staticSelectedButton" : "staticInverseButton" );
-            });
-            const votingType = getSelectedRadioButtonId( "votingType" ); //disable switching votingType to or from "Open"
-            if ( votingType === "match" || votingType === "round" ) {
-                id('open').classList.remove( "inverseButton" );
-                id('open').classList.add( "staticInverseButton" );
-            }
-            else {
-                buttons = nm('votingType');
-                buttons.forEach( function( button ) {
-                    const isSelected = button.id === votingType;
-                    button.classList.remove( isSelected ? "selectedButton" : "inverseButton" );
-                    button.classList.add( isSelected ? "staticSelectedButton" : "staticInverseButton" );
-                });
-            }
+            freezeRadioButtons( "bracketType" ); //disable switching BracketType
+            ( getSelectedRadioButtonId( "votingType" ) === "open" ) ? freezeRadioButtons( "votingType" ) : freezeRadioButtons( null, ["open"] ); //disable switching votingType to or from "Open"
             id('entryCount').disabled = true;
 
             id('save').style.display = "";
@@ -95,9 +77,9 @@ function setBracketRoundType( bracketRoundType ) {
     }
 }
 
-function displayTimingSettings( displayFrequency, displayCloseTime ) {
+function displayTimingSettings( displayFrequency, displayScheduledClose ) {
     id('frequencySettings').style.display = displayFrequency ? "block" : "none";
-    id('closeSettings').style.display = displayCloseTime ? "block" : "none";
+    id('scheduleSettings').style.display = displayScheduledClose ? "block" : "none";
 }
 
 function updateFrequencyPoints() {
@@ -139,48 +121,51 @@ function updateFrequencyPoints() {
     }
 }
 
-function createEntryInputs( e ) {
+function submitEntryCount( e ) {
     if ( e.which === 13 || e.keyCode === 13 ) {
-        let div = id('entryDiv');
+        createEntryInputs();
+    }
+}
 
-        let entryCount = id('entryCount').value;
+function createEntryInputs() {
+    let div = id('entryDiv');
 
-        if ( entryCount <= 128 ) {
-            let currentCount = nm( 'entryNames' ).length;
-            entryCount -= currentCount;
+    let entryCount = id('entryCount').value;
+    if ( entryCount <= 128 ) {
+        let currentCount = nm( 'entryNames' ).length;
+        entryCount -= currentCount;
 
-            if ( entryCount > 0 ) {
-                for ( let i = 0; i < entryCount; i++ ) {
-                    let entryDiv = document.createElement( "DIV" );
-                    let nameInput = document.createElement( "INPUT" );
-                    let imageInput = document.createElement( "INPUT" );
-                    nameInput.id = i + "NameInput";
-                    imageInput.id = i + "ImageInput";
-                    nameInput.style.width = "45%";
-                    imageInput.style.width = "45%";
-                    nameInput.style.margin = ".5em";
-                    imageInput.style.margin = ".5em";
-                    nameInput.classList.add( "input" );
-                    imageInput.classList.add( "input" );
-                    nameInput.setAttribute( "name", "entryNames" );
-                    imageInput.setAttribute( "name", "entryImages" );
-                    nameInput.setAttribute( "placeholder", "Entry Name" );
-                    imageInput.setAttribute( "placeholder", "Image URL" );
-                    nameInput.addEventListener( "keyup", displayPreview );
-                    entryDiv.appendChild( nameInput );
-                    entryDiv.appendChild( imageInput );
-                    div.appendChild( entryDiv );
-                }
-            }
-            else if ( entryCount < 0 ) {
-                for ( let i = 0; i < -entryCount; i++ ) {
-                    div.removeChild( div.lastChild );
-                }
+        if ( entryCount > 0 ) {
+            for ( let i = 0; i < entryCount; i++ ) {
+                let entryDiv = document.createElement( "DIV" );
+                let nameInput = document.createElement( "INPUT" );
+                let imageInput = document.createElement( "INPUT" );
+                nameInput.id = i + "NameInput";
+                imageInput.id = i + "ImageInput";
+                nameInput.style.width = "45%";
+                imageInput.style.width = "45%";
+                nameInput.style.margin = ".5em";
+                imageInput.style.margin = ".5em";
+                nameInput.classList.add( "input" );
+                imageInput.classList.add( "input" );
+                nameInput.setAttribute( "name", "entryNames" );
+                imageInput.setAttribute( "name", "entryImages" );
+                nameInput.setAttribute( "placeholder", "Entry Name" );
+                imageInput.setAttribute( "placeholder", "Image URL" );
+                nameInput.addEventListener( "keyup", displayPreview );
+                entryDiv.appendChild( nameInput );
+                entryDiv.appendChild( imageInput );
+                div.appendChild( entryDiv );
             }
         }
-        else {
-            showToaster( "Entry count must be below 128" );
+        else if ( entryCount < 0 ) {
+            for ( let i = 0; i < -entryCount; i++ ) {
+                div.removeChild( div.lastChild );
+            }
         }
+    }
+    else {
+        showToaster( "Entry count must be below 128" );
     }
 }
 
@@ -372,7 +357,7 @@ function getBracketData() {
 
     let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
     let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
-    let closeTime = id('closeSettings').style.display !== "none" ? id( 'closeInput' ).value : null;
+    let scheduledClose = id('scheduleSettings').style.display  !== "none" ? id( 'scheduleInput' ).value                : null;
 
     return {
         title:     logoData.title,
@@ -383,10 +368,10 @@ function getBracketData() {
         entries:   getEntries(),
         winners:   "",
         endTime:   {
-            lastEnd: null,
+            startTime:      null,
             frequency:      frequency,
             frequencyPoint: frequencyPoint,
-            closeTime:      closeTime
+            scheduledClose: scheduledClose
         },
         active:  false
     };

@@ -30,7 +30,7 @@
     </div>
 
     <!--
-    todo:
+    todo 4:
 
         Poll Page:
             Logo
@@ -42,5 +42,17 @@
     -->
 
 </body>
+
+<script>
+    const pollId = "<?php echo $_GET['id'] ?>";
+    const helpImage = "<?php getHelpImage() ?>";
+
+    if ( pollId !== "PREVIEW" ) {
+        //getPollData( bracketId );
+    }
+    else {
+        loadPage( bracketId, <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?> );
+    }
+</script>
 <?php includeModals(); ?>
 </html>

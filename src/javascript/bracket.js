@@ -1,3 +1,13 @@
+let bracket;
+let round;
+let mode;
+let display;
+let endTime;
+
+
+/*** BRACKET ***/
+
+
 class Bracket {
     constructor() {
         let entriesInput = ( arguments && arguments[0] ) ? arguments[0] : "";
@@ -213,16 +223,43 @@ class Bracket {
     }
 }
 
-let bracket;
-let round;
-let mode;
-let display;
-let endTime;
 
-//todo - Clean Common repo and custom css files in projects
-//todo - set standards for this and future projects
-//todo - mode being set to poll messes it up right now
+/*** POLL ***/
 
+
+class Poll {
+    constructor() {
+        // let entriesInput = ( arguments && arguments[0] ) ? arguments[0] : "";
+        // let winnersInput = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : "";
+        //
+        // this.entryCount = entriesInput.length;
+        // this.magnitude = Math.pow( 2, Math.ceil( Math.log2( this.entryCount ) ) );
+        // this.roundCount = Math.log2( this.magnitude );
+        // this.entries = Bracket.parseEntries( entriesInput );
+        // this.bracket = Bracket.constructBracket( this.magnitude, this.roundCount, this.entries );
+        //
+        // let hasByes = this.magnitude > this.entryCount;
+        // Bracket.parseWinners( winnersInput, this.bracket, hasByes );
+        //
+        // this.updateCurrent();
+    }
+
+    static parseEntries( entries ) {
+        // if ( typeof entries[0] === "string" ) {
+        //     entries = entries.map( function( e ) { return { title: e, image: "" }; } );
+        // }
+        //
+        // for ( let i = 0; i < entries.length; i++ ) {
+        //     entries[i].image = entries[i].image || "images/profile.jpg";
+        //     entries[i].seed = i + 1;
+        // }
+        //
+        // return entries;
+    }
+}
+
+//todo 6 - Clean Common repo and custom css files in projects
+//todo 6 - set standards for this and future projects
 
 /*** DISPLAY ***/
 
@@ -255,17 +292,24 @@ function loadPage( bracketId, bracketInfo ) {
         loadBracket( bracketInfo );
     }
     else {
-        window.location = "https://bracket.religionandstory.com/home.php?error=InvalidBracketId";
+        window.location = "https://bracket.religionandstory.com/index.php?error=InvalidBracketId";
     }
 }
 
 function loadBracket( bracketInfo ) {
-    bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
     mode = bracketInfo.mode;
-    endTime = calculateNextTime( bracketInfo.endTime );
+    endTime = calculateNextTime( bracketInfo.timing );
 
-    displayBracket();
-    setDisplayType();
+    if ( mode !== "poll" ) {
+        bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
+        displayBracket();
+        setDisplayType();
+    }
+    else {
+        //bracket = new Poll( bracketInfo.entries, bracketInfo.winners );
+        //displayPoll();
+    }
+
     displayRoundTimer( endTime, bracketInfo.active );
 }
 
@@ -648,7 +692,7 @@ function registerChoice( matchId, isTop ) {
         }
     }
     else {
-        //todo
+        //todo 5
     }
 }
 

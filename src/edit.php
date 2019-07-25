@@ -41,7 +41,7 @@
             </div>
 
             <div id="entryDiv" class="center" style="display: none; margin-bottom: 1em">
-                <input id="entryCount" type="number" class="input" placeholder="Number of Entries" onkeyup="createEntryInputs( event )">
+                <input id="entryCount" type="number" class="input" placeholder="Number of Entries" onkeyup="submitEntryCount( event )">
             </div>
             <div id="previewDiv" class="center" style="display: none; margin-bottom: 1em">
                 <button id="previewBracket" class="button" style="width: 8em; margin: .25em;" onclick="previewBracket()">Preview</button>
@@ -71,10 +71,11 @@
 
                 <div style="font-size: .75em">The first round will last at least one hour for &ldquo;every hour&rdquo; or one day otherwise.</div>
             </div>
-            <div id="closeSettings" class="center" style="display: none; margin-bottom: 1em">
+            <div id="scheduleSettings" class="center" style="display: none; margin-bottom: 1em">
                 <span style="font-weight: bold">Scheduled Close Time:</span>
-                <input id="closeInput" type="datetime-local" class="input">
-                <!-- todo: eventually, build your own -->
+                <input id="scheduleInput" type="datetime-local" class="input">
+                <!-- todo 2: remove input from ID -->
+                <!-- todo 7: eventually, build your own date-time picker -->
             </div>
 
             <div class="center" style="margin-bottom: 1em">
@@ -96,12 +97,13 @@
     </form>
 
     <!--
-    todo:
+    todo 2:
 
         Create/Edit Page:
             Polls need option show results after choice is made
             Pause buttons
             Pause gives toaster to tell if active or inactive
+            Display current state (what round, or last startTime, or results)
     -->
 
 </body>

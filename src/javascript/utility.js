@@ -68,74 +68,78 @@ function getDisplayTime( date ) {
     return result;
 }
 
-//todo - timezone differences
-function calculateNextTime( endTime ) {
-    let result = endTime.closeTime || new Date(); //todo - gets overriden with NULL
+//todo 2 - timezone differences
+function calculateNextTime( timing ) {
+    let result = timing.scheduledClose;
 
-    const isFirstIteration = !(endTime.lastTime);
-    const fromTime = isFirstIteration ? new Date() : new Date( endTime.lastTime );
+    const isFirstIteration = !(timing.startTime);
+    const fromTime = isFirstIteration ? new Date() : new Date( timing.startTime );
 
     let day = null;
     let hour = null;
     let min = null;
-    const fpInt =   endTime.frequencyPoint ? parseInt(   endTime.frequencyPoint ) : 0;
-    const fpFloat = endTime.frequencyPoint ? parseFloat( endTime.frequencyPoint ) : 0;
+    const fpInt =   timing.frequencyPoint ? parseInt(   timing.frequencyPoint ) : 0;
+    const fpFloat = timing.frequencyPoint ? parseFloat( timing.frequencyPoint ) : 0;
 
     const hourMS = 60 * 60 * 1000;
     const dayMS  = 24 * hourMS;
     const oneHourFromNow = new Date( fromTime.getTime() + hourMS );
     const oneDayFromNow  = new Date( fromTime.getTime() + dayMS );
 
-    const frequency = endTime.frequency || "X";
-    switch (frequency) {
-        case "hour":
-            hour = fromTime.getHours() + 1;
-            result.setHours( hour, fpInt, 0, 0 );
-            break;
-        case "day":
-        case "2days":
-        case "3days":
-        case "7days":
-            day = parseInt( frequency );
-            result.setDate( fromTime.getDate() + day );
-            hour = fpInt;
-            min = fpFloat > fpInt ? 30 : 0;
-            result.setHours( hour, min, 0, 0 );
-            break;
-        case "week":
-            day = (fpInt + (7 - fromTime.getDay())) % 7;
-            result.setDate( fromTime.getDate() + day );
-            result.setHours( 23, 59, 59, 0 );
-            break;
-        case "X":
-        case "custom":
-        default:
-            result = null;
-            break;
-    }
+    const frequency = timing.frequency || "X";
 
-    let dayAdjust = null;
-    if ( isFirstIteration ) {
+    if ( !result ) {
         switch (frequency) {
             case "hour":
-                if ( result < oneHourFromNow ) {
-                    result.setHours( result.getHours() + 1, result.getMinutes(), 0, 0 );
-                }
+                hour = fromTime.getHours() + 1;
+                result = new Date();
+                result.setHours( hour, fpInt, 0, 0 );
                 break;
             case "day":
             case "2days":
             case "3days":
             case "7days":
-                dayAdjust = 1;
+                day = parseInt( frequency );
+                result.setDate( fromTime.getDate() + day );
+                hour = fpInt;
+                min = fpFloat > fpInt ? 30 : 0;
+                result.setHours( hour, min, 0, 0 );
+                break;
             case "week":
-                dayAdjust = dayAdjust || 7;
-                if ( result < oneDayFromNow ) {
-                    result.setDate( result.getDate() + dayAdjust );
-                    result.setHours( result.getHours(), result.getMinutes(), 0, 0 );
-                }
+                day = (fpInt + (7 - fromTime.getDay())) % 7;
+                result.setDate( fromTime.getDate() + day );
+                result.setHours( 23, 59, 59, 0 );
                 break;
+            case "X":
+            case "custom":
             default:
+                result = null;
                 break;
+        }
+
+        if ( isFirstIteration ) {
+            let dayAdjust = null;
+            switch (frequency) {
+                case "hour":
+                    if ( result < oneHourFromNow ) {
+                        result.setHours( result.getHours() + 1, result.getMinutes(), 0, 0 );
+                    }
+                    break;
+                case "day":
+                case "2days":
+                case "3days":
+                case "7days":
+                    dayAdjust = 1;
+                case "week":
+                    dayAdjust = dayAdjust || 7;
+                    if ( result < oneDayFromNow ) {
+                        result.setDate( result.getDate() + dayAdjust );
+                        result.setHours( result.getHours(), result.getMinutes(), 0, 0 );
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

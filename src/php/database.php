@@ -43,7 +43,8 @@ function getAllLogos()
             (CASE WHEN active = 0 THEN '' ELSE active END) as \"active\",
             name AS \"title\",
             image,
-            help
+            help,
+            mode
         FROM meta
         ORDER BY name DESC " );
     if ( $result && $result->num_rows > 0 ) {
@@ -89,11 +90,11 @@ function getBracket( $bracketId )
             'help'    => $row['help'],
             'mode'    => $row['mode'],
             'winners' => $row['winners'],
-            'endTime' => [
-                'lastEnd'        => $row['start_time'],
+            'timing' => [
+                'startTime'      => $row['start_time'],
                 'frequency'      => $row['frequency'],
                 'frequencyPoint' => $row['frequency_point'],
-                'closeTime'      => $row['end_point']
+                'scheduledClose' => $row['scheduled_close']
             ],
             'entries' => []
         ];
@@ -115,14 +116,14 @@ function saveBracket( $bracket )
     $bracketId = getGUID();
     $bracket = json_decode( $bracket );
 
-    $freq       = $bracket->endTime->frequency      ? ( "'" . $bracket->endTime->frequency      . "'" ) : "NULL";
-    $freqPoint  = $bracket->endTime->frequencyPoint ? ( "'" . $bracket->endTime->frequencyPoint . "'" ) : "NULL";
-    $closeTime  = $bracket->endTime->closeTime      ? ( "'" . $bracket->endTime->closeTime      . "'" ) : "NULL";
+    $frequency      = $bracket->endTime->frequency      ? ( "'" . $bracket->endTime->frequency      . "'" ) : "NULL";
+    $frequencyPoint = $bracket->endTime->frequencyPoint ? ( "'" . $bracket->endTime->frequencyPoint . "'" ) : "NULL";
+    $scheduledClose = $bracket->endTime->scheduledClose ? ( "'" . $bracket->endTime->scheduledClose . "'" ) : "NULL";
 
     $insertMeta     = "INSERT INTO meta (id, name, image, info, mode) 
         VALUES ('$bracketId', '" . cleanse( $bracket->title ) . "', '$bracket->image', '" . cleanse( $bracket->help ) . "', '$bracket->mode')";
-    $insertTiming   = "INSERT INTO timing (bracket_id, active, start_time, frequency, frequency_point, end_point)
-        VALUES ('$bracketId', 0, NULL, $freq, $freqPoint, $closeTime)";
+    $insertTiming   = "INSERT INTO timing (bracket_id, active, start_time, frequency, frequency_point, scheduled_close)
+        VALUES ('$bracketId', 0, NULL, $frequency, $frequencyPoint, $scheduledClose)";
     $insertEntries  = "INSERT INTO entries (bracket_id, id, name, image, seed) VALUES ";
     for ( $i = 0; $i < count( $bracket->entries ); $i++ )
     {
@@ -152,7 +153,7 @@ function cleanse( $value )
     return $value;
 }
 
-function getMySQL() //todo - use best php/mysql practices - bind variables
+function getMySQL() //todo 3 - use best php/mysql practices - bind variables
 {
     return new mysqli('localhost', 'religiv3_admin', '1corinthians3:9', 'religiv3_bracket');
 }
