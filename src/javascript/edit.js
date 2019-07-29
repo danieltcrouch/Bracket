@@ -372,7 +372,7 @@ function getBracketData() {
         mode:      mode,
         entries:   getEntries(),
         winners:   "",
-        endTime:   {
+        timing:   {
             startTime:      null,
             frequency:      frequency,
             frequencyPoint: frequencyPoint,

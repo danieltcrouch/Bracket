@@ -116,14 +116,14 @@ function saveBracket( $bracket )
     $bracketId = getGUID();
     $bracket = json_decode( $bracket );
 
-    $frequency      = $bracket->endTime->frequency      ? ( "'" . $bracket->endTime->frequency      . "'" ) : "NULL";
-    $frequencyPoint = $bracket->endTime->frequencyPoint ? ( "'" . $bracket->endTime->frequencyPoint . "'" ) : "NULL";
-    $scheduledClose = $bracket->endTime->scheduledClose ? ( "'" . $bracket->endTime->scheduledClose . "'" ) : "NULL";
+    $frequency      = $bracket->timing->frequency      ? ( "'" . $bracket->timing->frequency      . "'" ) : "NULL";
+    $frequencyPoint = $bracket->timing->frequencyPoint ? ( "'" . $bracket->timing->frequencyPoint . "'" ) : "NULL";
+    $scheduledClose = $bracket->timing->scheduledClose ? ( "'" . $bracket->timing->scheduledClose . "'" ) : "NULL";
 
-    $insertMeta     = "INSERT INTO meta (id, name, image, info, mode) 
+    $insertMeta     = "INSERT INTO meta (id, name, image, help, mode) 
         VALUES ('$bracketId', '" . cleanse( $bracket->title ) . "', '$bracket->image', '" . cleanse( $bracket->help ) . "', '$bracket->mode')";
-    $insertTiming   = "INSERT INTO timing (bracket_id, active, start_time, frequency, frequency_point, scheduled_close)
-        VALUES ('$bracketId', 0, NULL, $frequency, $frequencyPoint, $scheduledClose)";
+    $insertTiming   = "INSERT INTO timing (bracket_id, start_time, frequency, frequency_point, scheduled_close)
+        VALUES ('$bracketId', NULL, $frequency, $frequencyPoint, $scheduledClose)";
     $insertEntries  = "INSERT INTO entries (bracket_id, id, name, image, seed) VALUES ";
     for ( $i = 0; $i < count( $bracket->entries ); $i++ )
     {

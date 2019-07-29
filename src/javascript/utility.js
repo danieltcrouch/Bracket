@@ -69,11 +69,11 @@ function getDisplayTime( date ) {
 }
 
 function calculateNextTime( timingInfo ) {
-    let result = new Date( timingInfo.scheduledClose );
+    let result = newDateFromUTC( timingInfo.scheduledClose );
 
     if ( !result && timingInfo.frequency ) {
         const isFirstIteration = !(timingInfo.startTime);
-        const fromTime = isFirstIteration ? new Date() : new Date( timingInfo.startTime );
+        const fromTime = isFirstIteration ? new Date() : newDateFromUTC( timingInfo.startTime );
         const frequencyPointInt = timingInfo.frequencyPoint ? parseInt(   timingInfo.frequencyPoint ) : 0;
         const frequencyPointDec = timingInfo.frequencyPoint ? parseFloat( timingInfo.frequencyPoint ) : 0;
         const frequency = timingInfo.frequency;
