@@ -30,7 +30,7 @@ function initializeEdit( bracketId ) {
             id('frequency').value = bracketInfo.timing.frequency;
             updateFrequencyPoints();
             id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
-            bracketInfo.timing.scheduledClose ? id('scheduleInput').valueAsNumber = new Date( bracketInfo.timing.scheduledClose ).getTime() : null;
+            id('scheduleInput').valueAsNumber = getZonedTime( getDateOrNull( bracketInfo.timing.scheduledClose ) );
             id('entryCount').value = bracketInfo.entries.length;
             createEntryInputs();
             for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
@@ -93,7 +93,6 @@ function updateFrequencyPoints() {
     if ( frequency ) {
         switch ( frequency ) {
             case "X":
-            case "custom":
                 options.push( {text: "--", value: "X"} );
                 break;
             case "hour":
@@ -112,13 +111,9 @@ function updateFrequencyPoints() {
                 }
                 break;
             case "week":
-                options.push( {text: "Sunday Night (12:00)",    value:"0"} );
-                options.push( {text: "Monday Night (12:00)",    value:"1"} );
-                options.push( {text: "Tuesday Night (12:00)",   value:"2"} );
-                options.push( {text: "Wednesday Night (12:00)", value:"3"} );
-                options.push( {text: "Thursday Night (12:00)",  value:"4"} );
-                options.push( {text: "Friday Night (12:00)",    value:"5"} );
-                options.push( {text: "Saturday Night (12:00)",  value:"6"} );
+                for ( let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++ ) {
+                    options.push( {text: DAYS_OF_WEEK[dayIndex] + " Night (12:00)", value: dayIndex} );
+                }
                 break;
         }
 
@@ -360,16 +355,21 @@ function getLogoData() {
 function getBracketData() {
     const logoData = getLogoData();
 
+    let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduleInput' ).value : null;
+    scheduledClose = scheduledClose ? new Date( scheduledClose ).toISOString() : null;
     let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
     let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
-    let scheduledClose = id('scheduleSettings').style.display  !== "none" ? id( 'scheduleInput' ).value                : null;
+    frequency      = frequency      === "X" ? null : frequency;
+    frequencyPoint = frequencyPoint === "X" ? null : frequencyPoint;
+
+    let mode = getSelectedRadioButtonId('votingType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
 
     return {
         title:     logoData.title,
         image:     logoData.image,
         help:      logoData.help,
         helpImage: logoData.helpImage,
-        mode:      getSelectedRadioButtonId('votingType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType'),
+        mode:      mode,
         entries:   getEntries(),
         winners:   "",
         endTime:   {

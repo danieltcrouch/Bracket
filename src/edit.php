@@ -62,7 +62,6 @@
                     <option value="3days" >every three days</option>
                     <option value="7days" >every seven days</option>
                     <option value="week"  >every week</option>
-                    <option value="custom">when I choose</option>
                 </select>
                 at
                 <select id="frequencyPoint" class="select" style="width: auto">
@@ -97,7 +96,7 @@
     </form>
 
     <!--
-    todo 2:
+    todo 2.5:
 
         Create/Edit Page:
             Polls need option show results after choice is made

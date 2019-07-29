@@ -68,76 +68,57 @@ function getDisplayTime( date ) {
     return result;
 }
 
-//todo 2 - timezone differences
-function calculateNextTime( timing ) {
-    let result = timing.scheduledClose;
+function calculateNextTime( timingInfo ) {
+    let result = new Date( timingInfo.scheduledClose );
 
-    const isFirstIteration = !(timing.startTime);
-    const fromTime = isFirstIteration ? new Date() : new Date( timing.startTime );
+    if ( !result && timingInfo.frequency ) {
+        const isFirstIteration = !(timingInfo.startTime);
+        const fromTime = isFirstIteration ? new Date() : new Date( timingInfo.startTime );
+        const frequencyPointInt = timingInfo.frequencyPoint ? parseInt(   timingInfo.frequencyPoint ) : 0;
+        const frequencyPointDec = timingInfo.frequencyPoint ? parseFloat( timingInfo.frequencyPoint ) : 0;
+        const frequency = timingInfo.frequency;
 
-    let day = null;
-    let hour = null;
-    let min = null;
-    const fpInt =   timing.frequencyPoint ? parseInt(   timing.frequencyPoint ) : 0;
-    const fpFloat = timing.frequencyPoint ? parseFloat( timing.frequencyPoint ) : 0;
-
-    const hourMS = 60 * 60 * 1000;
-    const dayMS  = 24 * hourMS;
-    const oneHourFromNow = new Date( fromTime.getTime() + hourMS );
-    const oneDayFromNow  = new Date( fromTime.getTime() + dayMS );
-
-    const frequency = timing.frequency || "X";
-
-    if ( !result ) {
         switch (frequency) {
             case "hour":
-                hour = fromTime.getHours() + 1;
-                result = new Date();
-                result.setHours( hour, fpInt, 0, 0 );
+                result = adjustHours( fromTime, 1 );
+                result.setMinutes( frequencyPointInt );
+                result = zeroSecondsAndBelow( result );
                 break;
             case "day":
             case "2days":
             case "3days":
             case "7days":
-                day = parseInt( frequency );
-                result.setDate( fromTime.getDate() + day );
-                hour = fpInt;
-                min = fpFloat > fpInt ? 30 : 0;
-                result.setHours( hour, min, 0, 0 );
+                let dayAdjust = parseInt( frequency );
+                result = adjustDays( fromTime, dayAdjust );
+                let min = frequencyPointDec > frequencyPointInt ? 30 : 0;
+                result.setHours( frequencyPointInt, min );
+                result = zeroSecondsAndBelow( result );
                 break;
             case "week":
-                day = (fpInt + (7 - fromTime.getDay())) % 7;
-                result.setDate( fromTime.getDate() + day );
-                result.setHours( 23, 59, 59, 0 );
+                result = adjustDayOfWeek( fromTime, frequencyPointInt );
+                result = setToAlmostMidnight( result );
                 break;
-            case "X":
-            case "custom":
             default:
-                result = null;
+                result = new Date();
                 break;
         }
 
         if ( isFirstIteration ) {
-            let dayAdjust = null;
             switch (frequency) {
                 case "hour":
-                    if ( result < oneHourFromNow ) {
-                        result.setHours( result.getHours() + 1, result.getMinutes(), 0, 0 );
+                    if ( isDateInNextHours( result, 1 ) ) {
+                        result = adjustHours( result, 1 );
                     }
                     break;
                 case "day":
                 case "2days":
                 case "3days":
                 case "7days":
-                    dayAdjust = 1;
                 case "week":
-                    dayAdjust = dayAdjust || 7;
-                    if ( result < oneDayFromNow ) {
-                        result.setDate( result.getDate() + dayAdjust );
-                        result.setHours( result.getHours(), result.getMinutes(), 0, 0 );
+                    if ( isDateInNextDays( result, 1 ) ) {
+                        const dayAdjust = ( frequency === "week" ) ? 7 : 1;
+                        result = adjustDays( result, dayAdjust );
                     }
-                    break;
-                default:
                     break;
             }
         }
