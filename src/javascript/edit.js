@@ -20,9 +20,9 @@ function initializeEdit( bracketId ) {
             bracketInfo.helpImage = helpImage;
 
             //Fill-out page
-            id('titleText').value = bracketInfo.title;
-            id('imageAddress').value = bracketInfo.image;
-            id('additionalHelpText').value = bracketInfo.help;
+            id('titleInput').value = bracketInfo.title;
+            id('imageInput').value = bracketInfo.image;
+            id('helpInput').value = bracketInfo.help;
             id(bracketInfo.mode).click();
             if ( bracketInfo.mode !== "poll" ) {
                 id('bracket').click();
@@ -30,18 +30,19 @@ function initializeEdit( bracketId ) {
             id('frequency').value = bracketInfo.timing.frequency;
             updateFrequencyPoints();
             id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
-            id('scheduleInput').valueAsNumber = getZonedTime( getDateOrNull( bracketInfo.timing.scheduledClose ) );
+            id('scheduledClose').valueAsNumber = getZonedTime( getDateOrNull( bracketInfo.timing.scheduledClose ) );
             id('entryCount').value = bracketInfo.entries.length;
             createEntryInputs();
             for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
-                id( i + "NameInput" ).value = bracketInfo.entries[i].title;
+                id( i + "NameInput" ).value = bracketInfo.entries[i].name;
                 id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
             }
             previewLogo();
+            displayPreview();
 
             //Disable Create-only fields
-            id('titleText').disabled = true;
-            id('imageAddress').disabled = true;
+            id('titleInput').disabled = true;
+            id('imageInput').disabled = true;
             freezeRadioButtons( "bracketType" ); //disable switching BracketType
             if ( getSelectedRadioButtonId( "votingType" ) === "open" ) { //disable switching votingType to or from "Open"
                 freezeRadioButtons( "votingType" );
@@ -100,7 +101,7 @@ function updateFrequencyPoints() {
                     options.push( {text: min + "", value: min + ""} );
                 }
                 break;
-            case "day":
+            case "1day":
             case "2days":
             case "3days":
             case "7days":
@@ -112,7 +113,7 @@ function updateFrequencyPoints() {
                 break;
             case "week":
                 for ( let dayIndex = 0; dayIndex < DAYS_OF_WEEK.length; dayIndex++ ) {
-                    options.push( {text: DAYS_OF_WEEK[dayIndex] + " Night (12:00)", value: dayIndex} );
+                    options.push( {text: "Midnight " + DAYS_OF_WEEK[dayIndex], value: dayIndex + ""} );
                 }
                 break;
         }
@@ -176,7 +177,7 @@ function createEntryInputs() {
 function validateLogo() {
     let error = null;
 
-    if ( !id('imageAddress').value ) {
+    if ( !id('imageInput').value ) {
         error = "Image required.";
     }
     //title length
@@ -223,6 +224,7 @@ function previewBracket() {
     if ( !error ) {
         let bracket = getBracketData();
         bracket.active = true;
+        bracket.timing.scheduledClose = convertToUTC( bracket.timing.scheduledClose );
         id('bracketData').value = JSON.stringify( bracket );
         id('previewForm').submit();
     }
@@ -344,9 +346,9 @@ function close() {
 
 function getLogoData() {
     return {
-        title:     id( 'titleText' ).value,
-        image:     id( 'imageAddress' ).value,
-        help:      id( 'additionalHelpText' ).value,
+        title:     id( 'titleInput' ).value,
+        image:     id( 'imageInput' ).value,
+        help:      id( 'helpInput' ).value,
         helpImage: id( 'helpIcon' ).src,
         active:    false
     };
@@ -355,14 +357,14 @@ function getLogoData() {
 function getBracketData() {
     const logoData = getLogoData();
 
-    let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduleInput' ).value : null;
+    let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
     scheduledClose = scheduledClose ? new Date( scheduledClose ).toISOString() : null;
     let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
     let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
     frequency      = frequency      === "X" ? null : frequency;
     frequencyPoint = frequencyPoint === "X" ? null : frequencyPoint;
 
-    let mode = getSelectedRadioButtonId('votingType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
+    let mode = getSelectedRadioButtonId('bracketType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
 
     return {
         title:     logoData.title,
@@ -388,7 +390,7 @@ function getEntries() {
     let imageInputs = nm('entryImages');
     for ( let i = 0; i < entryInputs.length; i++ ) {
         if ( entryInputs[i].value ) {
-            entries.push( {title: entryInputs[i].value, image: imageInputs[i].value} );
+            entries.push( {name: entryInputs[i].value, image: imageInputs[i].value} );
         }
     }
 

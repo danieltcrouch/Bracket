@@ -25,9 +25,9 @@
     <!--Main-->
     <div class="col-10 main">
         <div class="col-5" style="padding-bottom: 1em">
-            <input id="titleText"    type="text" class="input" maxlength="20" placeholder="Bracket Title">
-            <input id="imageAddress" type="text" class="input"                placeholder="Image Address">
-            <textarea id="additionalHelpText" class="input" placeholder="Instructions"></textarea>
+            <input id="titleInput" type="text" class="input" maxlength="20" placeholder="Bracket Title">
+            <input id="imageInput" type="text" class="input" placeholder="Image Address">
+            <textarea id="helpInput" class="input" placeholder="Instructions"></textarea>
             <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="previewLogo()">Preview</button>
         </div>
         <div class="col-5 center" style="padding-bottom: 0">
@@ -57,7 +57,7 @@
                 <select id="frequency" class="select" style="width: auto" onchange="updateFrequencyPoints()">
                     <option value="X"     >--</option>
                     <option value="hour"  >every hour</option>
-                    <option value="day"   >every day</option>
+                    <option value="1day"   >every day</option>
                     <option value="2days" >every two days</option>
                     <option value="3days" >every three days</option>
                     <option value="7days" >every seven days</option>
@@ -72,8 +72,7 @@
             </div>
             <div id="scheduleSettings" class="center" style="display: none; margin-bottom: 1em">
                 <span style="font-weight: bold">Scheduled Close Time:</span>
-                <input id="scheduleInput" type="datetime-local" class="input">
-                <!-- todo 2: remove input from ID -->
+                <input id="scheduledClose" type="datetime-local" class="input">
                 <!-- todo 7: eventually, build your own date-time picker -->
             </div>
 
@@ -103,6 +102,9 @@
             Pause buttons
             Pause gives toaster to tell if active or inactive
             Display current state (what round, or last startTime, or results)
+
+            Load has option for New
+            Move preview button to above Create? And always have display
     -->
 
 </body>

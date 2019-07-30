@@ -84,7 +84,7 @@ function calculateNextTime( timingInfo ) {
                 result.setMinutes( frequencyPointInt );
                 result = zeroSecondsAndBelow( result );
                 break;
-            case "day":
+            case "1day":
             case "2days":
             case "3days":
             case "7days":
@@ -103,19 +103,19 @@ function calculateNextTime( timingInfo ) {
                 break;
         }
 
-        if ( isFirstIteration ) {
+        if ( isFirstIteration ) { //todo - could I adjust the fromTime instead of this?
             switch (frequency) {
                 case "hour":
                     if ( isDateInNextHours( result, 1 ) ) {
                         result = adjustHours( result, 1 );
                     }
                     break;
-                case "day":
+                case "1day":
                 case "2days":
                 case "3days":
                 case "7days":
                 case "week":
-                    if ( isDateInNextDays( result, 1 ) ) {
+                    if ( isDateInNextHours( result, 24 ) ) {
                         const dayAdjust = ( frequency === "week" ) ? 7 : 1;
                         result = adjustDays( result, dayAdjust );
                     }

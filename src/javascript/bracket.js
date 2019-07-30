@@ -27,7 +27,7 @@ class Bracket {
 
     static parseEntries( entries ) {
         if ( typeof entries[0] === "string" ) {
-            entries = entries.map( function( e ) { return { title: e, image: "" }; } );
+            entries = entries.map( function( e ) { return { name: e, image: "" }; } );
         }
 
         for ( let i = 0; i < entries.length; i++ ) {
@@ -219,7 +219,7 @@ class Bracket {
     }
 
     toString() {
-        return this.entries.map( e => e.title ).join( "," );
+        return this.entries.map( e => e.name ).join( "," );
     }
 }
 
@@ -246,7 +246,7 @@ class Poll {
 
     static parseEntries( entries ) {
         // if ( typeof entries[0] === "string" ) {
-        //     entries = entries.map( function( e ) { return { title: e, image: "" }; } );
+        //     entries = entries.map( function( e ) { return { name: e, image: "" }; } );
         // }
         //
         // for ( let i = 0; i < entries.length; i++ ) {
@@ -376,7 +376,7 @@ function getMatch( matchDiv, match ) {
 }
 
 function getButtonFromEntry( entry, isTop, matchId, isBye ) {
-    entry = entry || {title: (isBye ? "Bye" : "TBD"), seed: 0};
+    entry = entry || {name: (isBye ? "Bye" : "TBD"), seed: 0};
 
     let result = document.createElement( "BUTTON" );
     result.innerHTML = getDisplayName( entry );
@@ -706,7 +706,7 @@ function submit() {
             if ( winner ) {
                 showMessage( "Winner",
                     "The winner is:<br/>" +
-                    "<strong>" + winner.title + "!</strong><br/><br/>" +
+                    "<strong>" + winner.name + "!</strong><br/><br/>" +
                     "<img src='" + winner.image + "' alt='winner' style='height: 12em'>" );
             }
             else {
@@ -753,10 +753,9 @@ function getImageId( matchId, isTop )
 }
 
 function getDisplayName( entry ) {
-    let title = entry ? entry.title : "TBD";
-    if ( !( title === "Bye" || title === "TBD" ) ) {
-        title = "" + entry.seed + ". " + title;
+    let name = entry ? entry.name : "TBD";
+    if ( !( name === "Bye" || name === "TBD" ) ) {
+        name = "" + entry.seed + ". " + name;
     }
-
-    return title;
+    return name;
 }

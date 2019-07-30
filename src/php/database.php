@@ -5,11 +5,11 @@ function getBracketMeta( $bracketId )
     $mysqli = getMySQL();
 
     $meta = null;
-    $result = $mysqli->query( "SELECT name, image, help FROM meta WHERE id = '$bracketId' " );
+    $result = $mysqli->query( "SELECT title, image, help FROM meta WHERE id = '$bracketId' " );
     if ( $result->num_rows > 0 ) {
         $row = $result->fetch_array();
         $meta = [
-            'title' => $row['name'],
+            'title' => $row['title'],
             'image' => $row['image'],
             'help'  => $row['help']
         ];
@@ -41,12 +41,12 @@ function getAllLogos()
             id,
             date,
             (CASE WHEN active = 0 THEN '' ELSE active END) as \"active\",
-            name AS \"title\",
+            title,
             image,
             help,
             mode
         FROM meta
-        ORDER BY name DESC " );
+        ORDER BY title DESC " );
     if ( $result && $result->num_rows > 0 ) {
         while ( $row = $result->fetch_array() ) {
             array_push( $logos, $row );
@@ -62,7 +62,7 @@ function getBracket( $bracketId )
 
     $bracketInfo = null;
     $result = $mysqli->query( "SELECT
-            m.id, m.active, m.name, m.image, m.help, m.mode,
+            m.id, m.active, m.title, m.image, m.help, m.mode,
             t.start_time, t.frequency, t.frequency_point, t.scheduled_close,
             r.top_wins,
             e_names,
@@ -85,7 +85,7 @@ function getBracket( $bracketId )
         $row = $result->fetch_array();
         $bracketInfo = [
             'active'  => $row['active'],
-            'title'   => $row['name'],
+            'title'   => $row['title'],
             'image'   => $row['image'],
             'help'    => $row['help'],
             'mode'    => $row['mode'],
@@ -99,10 +99,10 @@ function getBracket( $bracketId )
             'entries' => []
         ];
 
-        $entryTitles = explode( '|', $row['e_names'] );
+        $entryNames = explode( '|', $row['e_names'] );
         $entryImages = explode( '|', $row['e_images'] );
-        foreach( $entryTitles as $index => $title ) {
-            array_push( $bracketInfo['entries'], ['title' => $title, 'image' => $entryImages[$index]] );
+        foreach( $entryNames as $index => $name ) {
+            array_push( $bracketInfo['entries'], ['name' => $name, 'image' => $entryImages[$index]] );
         }
     }
 
@@ -119,8 +119,9 @@ function saveBracket( $bracket )
     $frequency      = $bracket->timing->frequency      ? ( "'" . $bracket->timing->frequency      . "'" ) : "NULL";
     $frequencyPoint = $bracket->timing->frequencyPoint ? ( "'" . $bracket->timing->frequencyPoint . "'" ) : "NULL";
     $scheduledClose = $bracket->timing->scheduledClose ? ( "'" . $bracket->timing->scheduledClose . "'" ) : "NULL";
+    $frequencyPoint = $bracket->timing->frequencyPoint === "0" ? "'0'" : $frequencyPoint;
 
-    $insertMeta     = "INSERT INTO meta (id, name, image, help, mode) 
+    $insertMeta     = "INSERT INTO meta (id, title, image, help, mode) 
         VALUES ('$bracketId', '" . cleanse( $bracket->title ) . "', '$bracket->image', '" . cleanse( $bracket->help ) . "', '$bracket->mode')";
     $insertTiming   = "INSERT INTO timing (bracket_id, start_time, frequency, frequency_point, scheduled_close)
         VALUES ('$bracketId', NULL, $frequency, $frequencyPoint, $scheduledClose)";
@@ -133,7 +134,7 @@ function saveBracket( $bracket )
         }
 
         $entryId = getGUID();
-        $name = $bracket->entries[$i]->title;
+        $name = $bracket->entries[$i]->name;
         $image = $bracket->entries[$i]->image;
         $insertEntries .= "('$bracketId', '$entryId', '" . cleanse( $name ) . "', '$image', $i)";
     }
