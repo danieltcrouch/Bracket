@@ -1,3 +1,6 @@
+let bracketId = null;
+let state = "ready";
+
 function initializeCreate() {
     let logoInfo = {
         title:     "Your Bracket",
@@ -8,18 +11,20 @@ function initializeCreate() {
     createTitleLogo( logoInfo, id('exampleLogo'), true, true );
 }
 
-function initializeEdit( bracketId ) {
+function initializeEdit( id ) {
     $.post(
         "php/database.php",
         {
             action: "getBracket",
-            id:     bracketId
+            id:     id
         },
         function ( response ) {
             let bracketInfo = JSON.parse( response );
             bracketInfo.helpImage = helpImage;
 
             //Fill-out page
+            bracketId = id;
+            state = bracketInfo.state;
             id('titleInput').value = bracketInfo.title;
             id('imageInput').value = bracketInfo.image;
             id('helpInput').value = bracketInfo.help;
@@ -38,7 +43,6 @@ function initializeEdit( bracketId ) {
                 id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
             }
             previewLogo();
-            displayPreview();
 
             //Disable Create-only fields
             id('titleInput').disabled = true;
@@ -54,6 +58,16 @@ function initializeEdit( bracketId ) {
 
             id('save').style.display = "";
             id('create').style.display = "none";
+            if ( state === "ready" ) {
+                id('start').style.display = "";
+            }
+            else if ( state === "complete" ) {
+                id('hide').style.display = "";
+            }
+            else {
+                id('pause').style.display = "";
+                id('close').style.display = "";
+            }
         }
     );
 }
@@ -153,7 +167,6 @@ function createEntryInputs() {
                 imageInput.setAttribute( "name", "entryImages" );
                 nameInput.setAttribute( "placeholder", "Entry Name" );
                 imageInput.setAttribute( "placeholder", "Image URL" );
-                nameInput.addEventListener( "keyup", displayPreview );
                 entryDiv.appendChild( nameInput );
                 entryDiv.appendChild( imageInput );
                 div.appendChild( entryDiv );
@@ -174,20 +187,7 @@ function createEntryInputs() {
 /**********PREVIEW**********/
 
 
-function validateLogo() {
-    let error = null;
-
-    if ( !id('imageInput').value ) {
-        error = "Image required.";
-    }
-    //title length
-    //image length
-    //help length
-
-    return error;
-}
-
-function validate() {
+function validate() { //todo 2.6
     let error = validateLogo();
 
     if ( !error ) {
@@ -201,6 +201,19 @@ function validate() {
         //entry image length
         //timing validation
     }
+
+    return error;
+}
+
+function validateLogo() {
+    let error = null;
+
+    if ( !id('imageInput').value ) {
+        error = "Image required.";
+    }
+    //title length
+    //image length
+    //help length
 
     return error;
 }
@@ -233,19 +246,6 @@ function previewBracket() {
     }
 }
 
-function displayPreview() {
-    let hasAtLeastOneName = false;
-    let entryNames = nm('entryNames');
-    for ( let i = 0; i < entryNames.length; i++ ) {
-        if ( entryNames[i].value.length > 0 ) {
-            hasAtLeastOneName = true;
-            break;
-        }
-    }
-
-    id('previewDiv').style.display = hasAtLeastOneName ? "block" : "none";
-}
-
 
 /**********GENERAL**********/
 
@@ -256,11 +256,11 @@ function create() {
         $.post(
             "php/database.php",
             {
-                action:  "saveBracket",
+                action:  "createBracket",
                 bracket: JSON.stringify( getBracketData() )
             },
             function ( response ) {
-                window.location = "https://bracket.religionandstory.com/bracket.php?id=" + JSON.parse( response );
+                window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSON.parse( response );
             }
         );
     }
@@ -270,54 +270,37 @@ function create() {
 }
 
 function save() {
-    // const error = validate();
-    // if ( !error ) {
-    //     $.post(
-    //         "php/database.php",
-    //         {
-    //             action:  "saveBracket",
-    //             bracket: JSON.stringify( getBracketData() )
-    //         },
-    //         function ( response ) {
-    //             window.location = "https://bracket.religionandstory.com/bracket.php?id=" + JSON.parse( response );
-    //         }
-    //     );
-    // }
-    // else {
-    //     showToaster( error );
-    // }
-}
-
-function load() {
-    // if ( id('titleText').value ) {
-    //     $.post(
-    //         "php/database.php",
-    //         {
-    //             action: "getBracketId",
-    //             title:  id( 'titleText' ).value
-    //         },
-    //         function ( response ) {
-    //             if ( response ) {
-    //                 window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSON.parse( response );
-    //             }
-    //             else {
-    //                 showToaster( "No bracket found with that name." );
-    //             }
-    //         }
-    //     );
-    // }
-    // else {
+    const error = validate();
+    if ( !error ) {
+        let bracketInfo = getBracketData();
+        bracketInfo.id = bracketId;
         $.post(
             "php/database.php",
             {
-                action: "getAllLogos"
+                action:  "updateBracket",
+                bracket: JSON.stringify( bracketInfo )
             },
             function ( response ) {
-                const html = constructEditLinks( JSON.parse( response) );
-                showMessage( "Choose a Bracket", html );
+                showToaster( "Saved." );
             }
         );
-    // }
+    }
+    else {
+        showToaster( error );
+    }
+}
+
+function load() {
+    $.post(
+        "php/database.php",
+        {
+            action: "getAllBracketMetas"
+        },
+        function ( response ) {
+            const html = constructEditLinks( JSON.parse( response) );
+            showMessage( "Choose a Bracket", html );
+        }
+    );
 }
 
 function constructEditLinks( brackets ) {
@@ -329,15 +312,73 @@ function constructEditLinks( brackets ) {
         const title = bracket.title + (isDuplicate ? "(" + new Date( bracket.date ) + ")" : "");
         result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + bracket.id + "' class='link'>" + title + "</a><br/>";
     }
+    result += "<a href='https://bracket.religionandstory.com/edit.php' class='link'>Create New Bracket</a><br/>";
     return result;
 }
 
+function review() {
+    //todo 6 - Display current state (what round, last startTime, results)
+}
+
+//todo 2.5 - need a way to extend voting - is startTime needed? all based on end time?
+
 function pause() {
-    //
+    const stateToBe = state === "active" ? "inactive" : "active";
+
+    $.post(
+        "php/database.php",
+        {
+            action:     "setBracketState",
+            id:         bracketId,
+            state:      stateToBe
+        },
+        function ( response ) {
+            showToaster( "Bracket is now " + stateToBe );
+        }
+    );
+}
+
+function start() {
+    $.post(
+        "php/database.php",
+        {
+            action:     "startBracket",
+            id:         bracketId,
+            time:       new Date().toISOString()
+        },
+        function ( response ) {
+            showToaster( "Bracket started... " );
+        }
+    );
 }
 
 function close() {
-    //
+    //todo 7
+    // $.post(
+    //     "php/database.php",
+    //     {
+    //         action:     "setBracketState",
+    //         id:         bracketId,
+    //         state:      "complete"
+    //     },
+    //     function ( response ) {
+    //         showToaster( "Bracket is now " + stateToBe );
+    //     }
+    // );
+}
+
+function hide() {
+    $.post(
+        "php/database.php",
+        {
+            action:     "setBracketState",
+            id:         bracketId,
+            state:      "hidden"
+        },
+        function ( response ) {
+            window.location = "https://bracket.religionandstory.com/";
+        }
+    );
 }
 
 
@@ -349,8 +390,7 @@ function getLogoData() {
         title:     id( 'titleInput' ).value,
         image:     id( 'imageInput' ).value,
         help:      id( 'helpInput' ).value,
-        helpImage: id( 'helpIcon' ).src,
-        active:    false
+        helpImage: id( 'helpIcon' ).src
     };
 }
 
@@ -369,6 +409,7 @@ function getBracketData() {
     return {
         title:     logoData.title,
         image:     logoData.image,
+        state:     state,
         help:      logoData.help,
         helpImage: logoData.helpImage,
         mode:      mode,
@@ -379,8 +420,7 @@ function getBracketData() {
             frequency:      frequency,
             frequencyPoint: frequencyPoint,
             scheduledClose: scheduledClose
-        },
-        active:  false
+        }
     };
 }
 

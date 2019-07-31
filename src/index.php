@@ -50,14 +50,17 @@
         let logosDiv = id('logos');
         for ( let i = 0; i < logos.length; i++ ) {
             let logoInfo = logos[i];
-            logoInfo.helpImage = "<?php getHelpImage() ?>";
-            let logoDiv = document.createElement( "DIV" );
-            logoDiv.id = "logo" + i;
-            logoDiv.style.margin = "0 3em 2em";
-            logoDiv.classList.add( "title" );
-            logoDiv.classList.add( "center" );
-            logosDiv.appendChild( logoDiv );
-            createTitleLogo( logoInfo, logoDiv, logoInfo.active, true, "https://bracket.religionandstory.com/bracket.php?id=" + logoInfo.id );
+            if ( logoInfo.state !== "ready" ) {
+                logoInfo.helpImage = "<?php getHelpImage() ?>";
+                let logoDiv = document.createElement( "DIV" );
+                logoDiv.id = "logo" + i;
+                logoDiv.style.margin = "0 3em 2em";
+                logoDiv.classList.add( "title" );
+                logoDiv.classList.add( "center" );
+                logosDiv.appendChild( logoDiv );
+                const isActive = logoInfo.state === "active"
+                createTitleLogo( logoInfo, logoDiv, isActive, true, "https://bracket.religionandstory.com/bracket.php?id=" + logoInfo.id );
+            }
         }
     }
 </script>

@@ -37,7 +37,7 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
 
-    if ( active && logoLink ) {
+    if ( logoLink ) {
         let anchor = document.createElement( "A" );
         anchor.href = logoLink;
         anchor.classList.add( "clickable" );
@@ -68,12 +68,12 @@ function getDisplayTime( date ) {
     return result;
 }
 
-function calculateNextTime( timingInfo ) {
+function calculateNextTime( timingInfo ) { //todo 2.5 - save roundEndTime ?
     let result = newDateFromUTC( timingInfo.scheduledClose );
 
     if ( !result && timingInfo.frequency ) {
-        const isFirstIteration = !(timingInfo.startTime);
-        const fromTime = isFirstIteration ? new Date() : newDateFromUTC( timingInfo.startTime );
+        const isFirstRound = timingInfo.isFirstRound;
+        const fromTime = newDateFromUTC( timingInfo.startTime );
         const frequencyPointInt = timingInfo.frequencyPoint ? parseInt(   timingInfo.frequencyPoint ) : 0;
         const frequencyPointDec = timingInfo.frequencyPoint ? parseFloat( timingInfo.frequencyPoint ) : 0;
         const frequency = timingInfo.frequency;
@@ -103,7 +103,7 @@ function calculateNextTime( timingInfo ) {
                 break;
         }
 
-        if ( isFirstIteration ) { //todo - could I adjust the fromTime instead of this?
+        if ( isFirstRound ) {
             switch (frequency) {
                 case "hour":
                     if ( isDateInNextHours( result, 1 ) ) {

@@ -9,6 +9,6 @@ WHERE m.id = '9A33671CD6AE079B512AF922F5BBF0D4';
 
 /*** VIEW ***/
 SELECT m.title, t.*
-FROM `timing` t
-JOIN `meta` m ON m.id = t.bracket_id
+FROM timing t
+JOIN meta m ON m.id = t.bracket_id
 WHERE 1;

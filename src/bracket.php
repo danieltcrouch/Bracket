@@ -36,18 +36,24 @@
         <div id="roundTimer" class="center" style="display: none; font-size: 1.25em; margin-bottom: 1em"></div>
         <div id="bracketDisplay" class="center"></div>
         <div class="center"><button id="submit" class="button" style="width: 8em" onclick="submit()">Submit</button></div>
+        <div class="center"><button id="result" class="button" style="width: 8em" onclick="viewResults()">View Results</button></div>
     </div>
 
     <!--
     todo 5:
-
         Bracket Page:
             Load from DB
             Save to DB
         (Session monitoring matters)
         If submit is within time-frame
-
+        Add Results button
+            launch modal (with graphic)
+            launch same modal on submit
         Allow users to subscribe
+
+    todo 7:
+        Update rounds and close time
+        Anything that might be related to a daemon
     -->
 
 </body>

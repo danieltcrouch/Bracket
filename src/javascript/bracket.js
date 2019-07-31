@@ -258,8 +258,8 @@ class Poll {
     }
 }
 
-//todo 6 - Clean Common repo and custom css files in projects
-//todo 6 - set standards for this and future projects
+//todo 9 - Clean Common repo and custom css files in projects
+//todo 9 - set standards for this and future projects
 
 /*** DISPLAY ***/
 
@@ -287,13 +287,17 @@ function getBracketData( bracketId ) {
 }
 
 function loadPage( bracketId, bracketInfo ) {
-    if ( bracketId && bracketInfo ) {
-        createTitleLogo( bracketInfo, cl('title')[0], bracketInfo.active, true );
+    if ( bracketId && bracketInfo && isBracketAvailable( bracketInfo.state ) ) {
+        createTitleLogo( bracketInfo, cl('title')[0], bracketInfo.state === "active", true );
         loadBracket( bracketInfo );
     }
     else {
         window.location = "https://bracket.religionandstory.com/index.php?error=InvalidBracketId";
     }
+}
+
+function isBracketAvailable( state ) {
+    return state && state !== "hidden" && state !== "ready";
 }
 
 function loadBracket( bracketInfo ) {
@@ -310,7 +314,7 @@ function loadBracket( bracketInfo ) {
         //displayPoll();
     }
 
-    displayRoundTimer( endTime, bracketInfo.active );
+    displayRoundTimer( endTime, bracketInfo.state );
 }
 
 function displayBracket() {
@@ -622,10 +626,10 @@ function changeRound( direction ) {
 /*** TIMER DISPLAY ***/
 
 
-function displayRoundTimer( endTime, active ) {
+function displayRoundTimer( endTime, state ) {
     let timerSpan = id('roundTimer');
-    if ( !active ) {
-        timerSpan.innerText = "(Inactive)";
+    if ( state !== "active" ) {
+        timerSpan.innerText = "(" + state.charAt(0).toUpperCase() + state.slice(1) + ")";
         id( 'bracketDisplay' ).style.display = "none";
         id( 'submit' ).style.display = "none";
     }
@@ -719,10 +723,20 @@ function submit() {
         else if ( mode === "match" ) {
 
         }
+
+        //viewResults();
     }
     else {
         showToaster( "This round has closed." );
     }
+}
+
+
+/*** RESULTS ***/
+
+
+function viewResults() {
+    //todo 6
 }
 
 

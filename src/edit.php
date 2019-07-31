@@ -43,9 +43,6 @@
             <div id="entryDiv" class="center" style="display: none; margin-bottom: 1em">
                 <input id="entryCount" type="number" class="input" placeholder="Number of Entries" onkeyup="submitEntryCount( event )">
             </div>
-            <div id="previewDiv" class="center" style="display: none; margin-bottom: 1em">
-                <button id="previewBracket" class="button" style="width: 8em; margin: .25em;" onclick="previewBracket()">Preview</button>
-            </div>
 
             <div id="bracketSettings" class="center" style="display: none; margin-bottom: 1em">
                 <button id="match" name="votingType" class="button inverseButton" style="width: 5em; margin: .25em;">Match</button>
@@ -55,13 +52,13 @@
             <div id="frequencySettings" class="center" style="display: none; margin-bottom: 1em">
                 Close voting
                 <select id="frequency" class="select" style="width: auto" onchange="updateFrequencyPoints()">
-                    <option value="X"     >--</option>
-                    <option value="hour"  >every hour</option>
-                    <option value="1day"   >every day</option>
-                    <option value="2days" >every two days</option>
-                    <option value="3days" >every three days</option>
-                    <option value="7days" >every seven days</option>
-                    <option value="week"  >every week</option>
+                    <option value="X"    >--</option>
+                    <option value="hour" >every hour</option>
+                    <option value="1day" >every day</option>
+                    <option value="2days">every two days</option>
+                    <option value="3days">every three days</option>
+                    <option value="7days">every seven days</option>
+                    <option value="week" >every week</option>
                 </select>
                 at
                 <select id="frequencyPoint" class="select" style="width: auto">
@@ -73,19 +70,29 @@
             <div id="scheduleSettings" class="center" style="display: none; margin-bottom: 1em">
                 <span style="font-weight: bold">Scheduled Close Time:</span>
                 <input id="scheduledClose" type="datetime-local" class="input">
-                <!-- todo 7: eventually, build your own date-time picker -->
+                <!-- todo 8: eventually, build your own date-time picker -->
             </div>
 
             <div class="center" style="margin-bottom: 1em">
                 <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
                 <button id="save" class="button" style="display: none; width: 8em; margin: .25em;" onclick="save()">Save</button>
             </div>
+            <div class="center" style="display: none; margin-bottom: 1em">
+                <button id="previewBracket" class="button" style="width: 8em; margin: .25em;" onclick="previewBracket()">Preview</button>
+            </div>
+            <div class="center" style="display: none; margin-bottom: 1em">
+                <button id="review" class="button" style="width: 8em; margin: .25em;" onclick="review()">Review</button>
+            </div>
             <div class="center" style="margin-bottom: 1em">
                 <button id="load" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
-                <button id="pause"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
-                <button id="close"  class="button" style="display: none; width: 8em; margin: .25em;" onclick="close()">Close</button>
+                <button id="pause" class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
+            </div>
+            <div class="center" style="margin-bottom: 1em">
+                <button id="start" class="button" style="display: none; width: 8em; margin: .25em;" onclick="start()">Start</button>
+                <button id="close" class="button" style="display: none; width: 8em; margin: .25em;" onclick="close()">Close</button>
+                <button id="hide" class="button" style="display: none; width: 8em; margin: .25em;" onclick="hide()">Hide</button>
             </div>
         </div>
     </div>
@@ -93,19 +100,6 @@
     <form id="previewForm" method="POST" target="_blank" action="/bracket.php?id=PREVIEW">
         <input name="bracket" id="bracketData" type="hidden">
     </form>
-
-    <!--
-    todo 2.5:
-
-        Create/Edit Page:
-            Polls need option show results after choice is made
-            Pause buttons
-            Pause gives toaster to tell if active or inactive
-            Display current state (what round, or last startTime, or results)
-
-            Load has option for New
-            Move preview button to above Create? And always have display
-    -->
 
 </body>
 
