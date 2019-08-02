@@ -168,24 +168,6 @@ function calculateNextTime( timingInfo, lastCloseTime = null ) {
     return result ? result.toISOString() : null;
 }
 
-function getDisplayTime( date ) {
-    let result = "";
-
-    if ( date ) {
-        const now = new Date();
-        if ( date.toDateString() === now.toDateString() ) {
-            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
-        }
-        else {
-            const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
-            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-            result = date.toLocaleString( "en-US", options );
-        }
-    }
-
-    return result;
-}
-
 
 /**********ERROR HANDLING**********/
 

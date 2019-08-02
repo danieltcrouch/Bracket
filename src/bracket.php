@@ -10,6 +10,8 @@
     $description = $meta ? $meta['help']  : $description;
     includeHeadInfo();
     ?>
+    <script src="javascript/bracketClass.js"></script>
+    <script src="javascript/pollClass.js"></script>
     <script src="javascript/bracket.js"></script>
     <script src="javascript/utility.js"></script>
     <link rel="stylesheet" type="text/css" href="https://religionandstory.com/bracket/css/bracket.css"/>
@@ -40,6 +42,9 @@
     </div>
 
     <!--
+    todo 4:
+        Make Polls viable
+
     todo 5:
         Bracket Page:
             Load from DB

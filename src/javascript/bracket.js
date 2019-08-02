@@ -1,275 +1,23 @@
+//todo 9 - Clean Common repo and custom css files in projects
+//todo 9 - set standards for this and future projects
+
 let bracket;
 let round;
+let state;
 let mode;
 let display;
 let endTime;
 
 
-/*** BRACKET ***/
-
-
-class Bracket {
-    constructor() {
-        let entriesInput = ( arguments && arguments[0] ) ? arguments[0] : "";
-        let winnersInput = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : "";
-
-        this.entryCount = entriesInput.length;
-        this.magnitude = Math.pow( 2, Math.ceil( Math.log2( this.entryCount ) ) );
-        this.roundCount = Math.log2( this.magnitude );
-        this.entries = Bracket.parseEntries( entriesInput );
-        this.bracket = Bracket.constructBracket( this.magnitude, this.roundCount, this.entries );
-
-        let hasByes = this.magnitude > this.entryCount;
-        Bracket.parseWinners( winnersInput, this.bracket, hasByes );
-
-        this.updateCurrent();
-    }
-
-    static parseEntries( entries ) {
-        if ( typeof entries[0] === "string" ) {
-            entries = entries.map( function( e ) { return { name: e, image: "" }; } );
-        }
-
-        for ( let i = 0; i < entries.length; i++ ) {
-            entries[i].image = entries[i].image || "images/profile.jpg";
-            entries[i].seed = i + 1;
-        }
-
-        return entries;
-    }
-
-    static constructBracket( bracketSize, roundCount, entries ) {
-        let bracket = [];
-
-        let firstRound = Bracket.constructFirstRound( bracketSize, roundCount - 1, entries );
-        bracket.push( firstRound );
-
-        for ( let roundIndex = 1; roundIndex < roundCount; roundIndex++ ) {
-            let round = [];
-            let prevRound = bracket[roundIndex - 1];
-            let matchCount = bracketSize / Math.pow( 2, roundIndex + 1 );
-
-            for ( let i = 0; i < matchCount; i++ ) {
-                let prevMatches = {
-                    top:    prevRound[i * 2],
-                    bottom: prevRound[i * 2 + 1]
-                };
-                let match = {
-                    bye:    false,
-                    top:    null,
-                    bottom: null,
-                    prev:   prevMatches,
-                    match:  i,
-                    round:  roundIndex
-                };
-                round.push( match );
-            }
-            bracket.push( round );
-        }
-
-        return bracket;
-    }
-
-    static constructFirstRound( bracketSize, roundCount, entries ) {
-        let firstRound = [];
-
-        let roundSeeds = [1, 2];
-        for ( let i = 0; i < roundCount; i++ ) {
-            let temp = [];
-            let length = roundSeeds.length * 2 + 1;
-            roundSeeds.forEach( function( seed ) {
-                temp.push( seed );
-                temp.push( length - seed );
-            } );
-            roundSeeds = temp;
-        }
-
-        let matchCount = bracketSize / 2;
-        for ( let i = 0; i < matchCount; i++ ) {
-            let tSeed = roundSeeds[i * 2];
-            let bSeed = roundSeeds[i * 2 + 1];
-            let isBye = ( bSeed - 1 >= entries.length );
-            let top    = entries.find( function( e ) { return e.seed === tSeed } );
-            let bottom = isBye ? null : entries.find( function( e ) { return e.seed === bSeed } );
-
-            firstRound.push( {
-                bye:    isBye,
-                top:    top,
-                bottom: bottom,
-                prev:   null,
-                match:  i,
-                round:  0
-            } );
-        }
-
-        return firstRound;
-    }
-
-    static parseWinners( winners, bracket, hasByes ) {
-        winners = winners.split(',').reduce( function( result, w ) { result.push( Array.from( w ) ); return result; }, [] );
-
-        for ( let roundIndex = 0; roundIndex < winners.length; roundIndex++ ) {
-            let roundWinners = winners[roundIndex];
-            for ( let matchIndex = 0; matchIndex < roundWinners.length; matchIndex++ ) {
-                let matchWinner = roundWinners[matchIndex];
-                let match = bracket[roundIndex][matchIndex];
-                match.winner = matchWinner === '0' ? match.bottom : match.top;
-
-                let nextMatch = bracket[roundIndex + 1][Math.floor(matchIndex / 2)];
-                matchIndex % 2 === 0 ? nextMatch.top = match.winner : nextMatch.bottom = match.winner;
-            }
-        }
-
-        if ( hasByes )
-        {
-            let firstRound = bracket[0];
-            for ( let matchIndex = 0; matchIndex < firstRound.length; matchIndex++ ) {
-                let match = firstRound[matchIndex];
-                if ( match.bye ) {
-                    match.winner = match.top;
-                    let nextMatch = bracket[1][Math.floor(matchIndex / 2)];
-                    matchIndex % 2 === 0 ? nextMatch.top = match.winner : nextMatch.bottom = match.winner;
-                }
-            }
-        }
-    }
-
-    static seekCurrentMatch( bracket ) {
-        let result = {round: -1, match: -1};
-        for ( let roundIndex = 0; roundIndex < bracket.length; roundIndex++ ) {
-            let round = bracket[roundIndex];
-            for ( let matchIndex = 0; matchIndex < round.length; matchIndex++ ) {
-                if ( !round[matchIndex].winner ) {
-                    result.round = roundIndex;
-                    result.match = matchIndex;
-                    break;
-                }
-            }
-
-            if ( result.match >= 0 ) {
-                break;
-            }
-        }
-        return result;
-    }
-
-    updateCurrent() {
-        let current = Bracket.seekCurrentMatch( this.bracket );
-        this.currentRound = current.round;
-        this.currentMatch = current.match;
-    }
-
-    isLastRound( round ) {
-        return round === this.roundCount;
-    }
-
-    getMaxRounds() {
-        return this.roundCount; //only includes rounds with matches
-    }
-
-    getMaxSize() {
-        return this.magnitude;
-    }
-
-    getSize() {
-        return this.entryCount;
-    }
-
-    getCurrentRound() {
-        return this.currentRound;
-    }
-
-    getCurrentMatch() {
-        return this.currentMatch;
-    }
-
-    getCurrentMatchId() {
-        return "r" + this.currentRound + "m" + this.currentMatch;
-    }
-
-    getMatchFromId( matchId ) {
-        let round = parseInt( matchId.split('m')[0].substring( 1 ) );
-        let match = parseInt( matchId.split('m')[1] );
-        return this.bracket[round][match];
-    }
-
-    getMatchesFromRound( round, ignoreByes ) {
-        return this.bracket[round].filter( m => !(m.bye && ignoreByes) );
-    }
-
-    getNextMatch ( matchId ) {
-        let round = parseInt( matchId.split('m')[0].substring( 1 ) );
-        let match = parseInt( matchId.split('m')[1] );
-        let isTop = match % 2 === 0;
-        round++;
-        match = Math.floor(match / 2);
-        let result = this.isLastRound( round ) ? null : this.bracket[round][match];
-        return {
-            match: result,
-            isTop: isTop
-        };
-    }
-
-    getMatches( ignoreByes ) {
-        return this.bracket.reduce( (result, r) => { return result.concat( r ); }, [] ).filter( m => !(m.bye && ignoreByes) );
-    }
-
-    getWinner() {
-        return this.bracket[this.getMaxRounds() - 1][0].winner;
-    }
-
-    toString() {
-        return this.entries.map( e => e.name ).join( "," );
-    }
-}
-
-
-/*** POLL ***/
-
-
-class Poll {
-    constructor() {
-        // let entriesInput = ( arguments && arguments[0] ) ? arguments[0] : "";
-        // let winnersInput = ( arguments.length > 1 && arguments[1] ) ? arguments[1] : "";
-        //
-        // this.entryCount = entriesInput.length;
-        // this.magnitude = Math.pow( 2, Math.ceil( Math.log2( this.entryCount ) ) );
-        // this.roundCount = Math.log2( this.magnitude );
-        // this.entries = Bracket.parseEntries( entriesInput );
-        // this.bracket = Bracket.constructBracket( this.magnitude, this.roundCount, this.entries );
-        //
-        // let hasByes = this.magnitude > this.entryCount;
-        // Bracket.parseWinners( winnersInput, this.bracket, hasByes );
-        //
-        // this.updateCurrent();
-    }
-
-    static parseEntries( entries ) {
-        // if ( typeof entries[0] === "string" ) {
-        //     entries = entries.map( function( e ) { return { name: e, image: "" }; } );
-        // }
-        //
-        // for ( let i = 0; i < entries.length; i++ ) {
-        //     entries[i].image = entries[i].image || "images/profile.jpg";
-        //     entries[i].seed = i + 1;
-        // }
-        //
-        // return entries;
-    }
-}
-
-//todo 9 - Clean Common repo and custom css files in projects
-//todo 9 - set standards for this and future projects
-
 /*** DISPLAY ***/
 
 
-const BUTTON_WIDTH          = "12rem";
-const BUTTON_TEXT_HEIGHT    = "3rem";
-const BUTTON_PADDING        = ".5rem";
-const BUTTON_B_MARGIN       = ".75rem";
-const MATCH_B_MARGIN        = "1.5rem";
-const TOTAL_MATCH_HEIGHT    = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
+const BUTTON_WIDTH       = "12rem";
+const BUTTON_TEXT_HEIGHT = "3rem";
+const BUTTON_PADDING     = ".5rem";
+const BUTTON_B_MARGIN    = ".75rem";
+const MATCH_B_MARGIN     = "1.5rem";
+const TOTAL_MATCH_HEIGHT = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
 
 function getBracketData( bracketId ) {
     $.post(
@@ -296,24 +44,26 @@ function loadPage( bracketId, bracketInfo ) {
     }
 }
 
-function isBracketAvailable( state ) {
-    return state && state !== "hidden" && state !== "ready";
-}
-
 function loadBracket( bracketInfo ) {
+    state = bracketInfo.state;
     mode = bracketInfo.mode;
     if ( mode !== "poll" ) {
         bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
         displayBracket();
-        setDisplayType();
     }
     else {
-        //bracket = new Poll( bracketInfo.entries, bracketInfo.winners );
-        //displayPoll();
+        bracket = new Poll( bracketInfo.entries, bracketInfo.winners );
+        displayPoll();
     }
 
-    displayRoundTimer( bracketInfo.timing.scheduledClose, bracketInfo.state );
+    endTime = scheduledClose;
+    displayRoundTimer(); //todo 4 - make Poll-proof
+    setDisplayType(); //todo 4 - make Poll-proof
 }
+
+
+/*** DISPLAY - BRACKET ***/
+
 
 function displayBracket() {
     let div = id( 'bracketDisplay' );
@@ -360,14 +110,7 @@ function getMatch( matchDiv, match ) {
         let isTop = i % 2 === 0;
         let entryDiv = document.createElement( "DIV" );
         entryDiv.style.display = "flex";
-        let image = document.createElement( "IMG" );
-        let source = entries[i] ? entries[i].image : "images/question.jpg";
-        source = match.bye && !isTop ? "images/blank.jpg" : source;
-        image.setAttribute( "src", source );
-        image.id = getImageId( matchId, isTop );
-        image.style.width = BUTTON_TEXT_HEIGHT;
-        image.style.height = BUTTON_TEXT_HEIGHT;
-        image.style.objectFit = "cover";
+        let image = getImageFromEntry( entries[i], isTop, matchId, (!isTop && match.bye) );
         let button = getButtonFromEntry( entries[i], isTop, matchId, (!isTop && match.bye) );
         entryDiv.appendChild( image );
         entryDiv.appendChild( button );
@@ -377,25 +120,29 @@ function getMatch( matchDiv, match ) {
     return matchDiv;
 }
 
-function getButtonFromEntry( entry, isTop, matchId, isBye ) {
-    entry = entry || {name: (isBye ? "Bye" : "TBD"), seed: 0};
+function getImageFromEntry( entry, isTop, matchId, isBye ) {
+    let image = getImage();
 
-    let result = document.createElement( "BUTTON" );
-    result.innerHTML = getDisplayName( entry );
-    result.id = getButtonId( matchId, isTop );
-    result.name = matchId;
-    result.onclick = function() {
+    image.id = getImageId( matchId, isTop );
+    let source = entry ? entry.image : "images/question.jpg";
+    source = isBye && !isTop ? "images/blank.jpg" : source;
+    image.setAttribute( "src", source );
+
+    return image;
+}
+
+function getButtonFromEntry( entry, isTop, matchId, isBye ) {
+    let button = getButton();
+
+    entry = entry || {name: (isBye ? "Bye" : "TBD"), seed: 0};
+    button.innerHTML = getDisplayName( entry );
+    button.id = getButtonId( matchId, isTop );
+    button.name = matchId;
+    button.onclick = function() {
         registerChoice( matchId, isTop );
     };
-    result.style.width = BUTTON_WIDTH;
-    result.style.height = BUTTON_TEXT_HEIGHT;
-    result.style.lineHeight = "100%";
-    result.style.padding = BUTTON_PADDING;
-    result.style.marginBottom = BUTTON_B_MARGIN;
-    result.style.textAlign = "left";
-    result.style.whiteSpace = "nowrap";
-    result.classList.add( "button" );
-    return result;
+
+    return button;
 }
 
 function insertFiller( roundDiv, multiplier ) {
@@ -408,47 +155,6 @@ function insertFiller( roundDiv, multiplier ) {
     //fillerDiv.style.borderStyle = "solid";
     //fillerDiv.style.borderWidth = "1px";
     roundDiv.appendChild( fillerDiv );
-}
-
-function adjustFontSize( roundDiv ) {
-    let buttons = roundDiv.getElementsByTagName( "BUTTON" );
-
-    const defaultStyle = getComputedStyle( buttons[0] );
-    const defaultWidth = parseFloat( defaultStyle.width );
-    const defaultFontSize = parseFloat( defaultStyle.fontSize );
-    let minFontSize = defaultFontSize;
-    for ( let i = 0; i < buttons.length; i++ ) {
-        let button = buttons[i];
-        let width = getFullWidth( button );
-        if ( width > defaultWidth ) {
-            const minSize = 12;
-            for ( let size = defaultFontSize; size > minSize; size-- ) {
-                button.style.fontSize = size + "px";
-                width = getFullWidth( button );
-                if ( width <= defaultWidth ) {
-                    minFontSize = size < minFontSize ? size : minFontSize;
-                    break;
-                }
-                if ( size - 1 === minSize ) {
-                    button.innerHTML = button.innerHTML.substring( 0, 15 ) + "...";
-                    minFontSize = size < minFontSize ? size : minFontSize;
-                }
-            }
-        }
-    }
-
-    if ( minFontSize < defaultFontSize ) {
-        for ( let i = 0; i < buttons.length; i++ ) {
-            buttons[i].style.fontSize = minFontSize + "px";
-        }
-    }
-}
-
-function getFullWidth( button ) {
-    button.style.width = "";
-    let result = getComputedStyle( button ).width;
-    button.style.width = BUTTON_WIDTH;
-    return parseFloat( result );
 }
 
 function setClickableMatches() {
@@ -488,6 +194,48 @@ function setClickableMatches() {
             }
         }
     }
+}
+
+
+/*** DISPLAY - POLL ***/
+
+
+function displayPoll() {
+    let div = id( 'bracketDisplay' );
+    div.style.justifyContent = "center";
+    div.innerHTML = "";
+
+    let pollDiv = document.createElement( "DIV" );
+    pollDiv.style.display = "flex";
+    pollDiv.style.flexDirection = "column";
+    pollDiv.style.justifyContent = "center";
+
+    let matchId = "pollButtons";
+    let entries = bracket.getEntries();
+    for ( let i = 0; i < entries.length; i++ ) {
+        let entry = entries[i];
+        let entryDiv = document.createElement( "DIV" );
+        entryDiv.style.display = "flex";
+
+        let image = getImage();
+        image.setAttribute( "src", entry.image );
+        image.id = "pollImage" + i;
+        let button = getButton();
+        button.innerHTML = entry.name;
+        button.id = "pollButton" + i;
+        button.name = matchId;
+        button.onclick = function() {
+            //registerChoice( matchId, i ); //todo 4 - make Poll-proof
+        };
+
+        entryDiv.appendChild( image );
+        entryDiv.appendChild( button );
+        pollDiv.appendChild( entryDiv );
+    }
+    div.appendChild( pollDiv );
+    adjustFontSize( pollDiv );
+
+    //setClickableMatches(); //todo 4 - make Poll-proof
 }
 
 
@@ -624,7 +372,7 @@ function changeRound( direction ) {
 /*** TIMER DISPLAY ***/
 
 
-function displayRoundTimer( endTime, state ) {
+function displayRoundTimer() {
     let timerSpan = id('roundTimer');
     if ( state !== "active" ) {
         timerSpan.innerText = "(" + state.charAt(0).toUpperCase() + state.slice(1) + ")";
@@ -636,6 +384,24 @@ function displayRoundTimer( endTime, state ) {
         timerSpan.style.display = "block";
         timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + displayTime;
     }
+}
+
+function getDisplayTime( date ) {
+    let result = "";
+
+    if ( date ) {
+        const now = new Date();
+        if ( date.toDateString() === now.toDateString() ) {
+            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
+        }
+        else {
+            const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
+            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+            result = date.toLocaleString( "en-US", options );
+        }
+    }
+
+    return result;
 }
 
 
@@ -770,4 +536,70 @@ function getDisplayName( entry ) {
         name = "" + entry.seed + ". " + name;
     }
     return name;
+}
+
+function getImage() {
+    let image = document.createElement( "IMG" );
+    image.style.width = BUTTON_TEXT_HEIGHT;
+    image.style.height = BUTTON_TEXT_HEIGHT;
+    image.style.objectFit = "cover";
+    return image;
+}
+
+function getButton() {
+    let button = document.createElement( "BUTTON" );
+    button.style.width = BUTTON_WIDTH;
+    button.style.height = BUTTON_TEXT_HEIGHT;
+    button.style.lineHeight = "100%";
+    button.style.padding = BUTTON_PADDING;
+    button.style.marginBottom = BUTTON_B_MARGIN;
+    button.style.textAlign = "left";
+    button.style.whiteSpace = "nowrap";
+    button.classList.add( "button" );
+    return button;
+}
+
+function isBracketAvailable( state ) {
+    return state && state !== "hidden" && state !== "ready";
+}
+
+function adjustFontSize( roundDiv ) {
+    let buttons = roundDiv.getElementsByTagName( "BUTTON" );
+
+    const defaultStyle = getComputedStyle( buttons[0] );
+    const defaultWidth = parseFloat( defaultStyle.width );
+    const defaultFontSize = parseFloat( defaultStyle.fontSize );
+    let minFontSize = defaultFontSize;
+    for ( let i = 0; i < buttons.length; i++ ) {
+        let button = buttons[i];
+        let width = getFullWidth( button );
+        if ( width > defaultWidth ) {
+            const minSize = 12;
+            for ( let size = defaultFontSize; size > minSize; size-- ) {
+                button.style.fontSize = size + "px";
+                width = getFullWidth( button );
+                if ( width <= defaultWidth ) {
+                    minFontSize = size < minFontSize ? size : minFontSize;
+                    break;
+                }
+                if ( size - 1 === minSize ) {
+                    button.innerHTML = button.innerHTML.substring( 0, 15 ) + "...";
+                    minFontSize = size < minFontSize ? size : minFontSize;
+                }
+            }
+        }
+    }
+
+    if ( minFontSize < defaultFontSize ) {
+        for ( let i = 0; i < buttons.length; i++ ) {
+            buttons[i].style.fontSize = minFontSize + "px";
+        }
+    }
+}
+
+function getFullWidth( button ) {
+    button.style.width = "";
+    let result = getComputedStyle( button ).width;
+    button.style.width = BUTTON_WIDTH;
+    return parseFloat( result );
 }
