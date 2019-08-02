@@ -1,5 +1,4 @@
-let bracketId = null;
-let state = "ready";
+let state = null;
 
 function initializeCreate() {
     let logoInfo = {
@@ -11,65 +10,71 @@ function initializeCreate() {
     createTitleLogo( logoInfo, id('exampleLogo'), true, true );
 }
 
-function initializeEdit( id ) {
+function initializeEdit( bracketId ) {
     $.post(
         "php/database.php",
         {
             action: "getBracket",
-            id:     id
+            id:     bracketId
         },
         function ( response ) {
             let bracketInfo = JSON.parse( response );
             bracketInfo.helpImage = helpImage;
-
-            //Fill-out page
-            bracketId = id;
-            state = bracketInfo.state;
-            id('titleInput').value = bracketInfo.title;
-            id('imageInput').value = bracketInfo.image;
-            id('helpInput').value = bracketInfo.help;
-            id(bracketInfo.mode).click();
-            if ( bracketInfo.mode !== "poll" ) {
-                id('bracket').click();
-            }
-            id('frequency').value = bracketInfo.timing.frequency;
-            updateFrequencyPoints();
-            id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
-            id('scheduledClose').valueAsNumber = getZonedTime( getDateOrNull( bracketInfo.timing.scheduledClose ) );
-            id('entryCount').value = bracketInfo.entries.length;
-            createEntryInputs();
-            for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
-                id( i + "NameInput" ).value = bracketInfo.entries[i].name;
-                id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
-            }
-            previewLogo();
-
-            //Disable Create-only fields
-            id('titleInput').disabled = true;
-            id('imageInput').disabled = true;
-            freezeRadioButtons( "bracketType" ); //disable switching BracketType
-            if ( getSelectedRadioButtonId( "votingType" ) === "open" ) { //disable switching votingType to or from "Open"
-                freezeRadioButtons( "votingType" );
-            }
-            else {
-                freezeRadioButtons( null, ["open"] );
-            }
-            id('entryCount').disabled = true;
-
-            id('save').style.display = "";
-            id('create').style.display = "none";
-            if ( state === "ready" ) {
-                id('start').style.display = "";
-            }
-            else if ( state === "complete" ) {
-                id('hide').style.display = "";
-            }
-            else {
-                id('pause').style.display = "";
-                id('close').style.display = "";
-            }
+            updateBracketTiming( bracketId, bracketInfo, initializeEditCallback );
         }
     );
+}
+
+function initializeEditCallback( bracketId, bracketInfo ) {
+
+    //Fill-out page
+    state = bracketInfo.state;
+    id('titleInput').value = bracketInfo.title;
+    id('imageInput').value = bracketInfo.image;
+    id('helpInput').value = bracketInfo.help;
+    id(bracketInfo.mode).click();
+    if ( bracketInfo.mode !== "poll" ) {
+        id('bracket').click();
+    }
+    id('frequency').value = bracketInfo.timing.frequency;
+    updateFrequencyPoints();
+    id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
+    if ( bracketInfo.timing.scheduledClose ) {
+        id('scheduledClose').valueAsNumber = getZonedTime( new Date( bracketInfo.timing.scheduledClose ) );
+    }
+    id('entryCount').value = bracketInfo.entries.length;
+    createEntryInputs();
+    for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
+        id( i + "NameInput" ).value = bracketInfo.entries[i].name;
+        id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
+    }
+    previewLogo();
+
+    //Disable Create-only fields
+    //todo 7 - what if bracket is complete?
+    id('titleInput').disabled = true;
+    id('imageInput').disabled = true;
+    freezeRadioButtons( "bracketType" ); //disable switching BracketType
+    if ( getSelectedRadioButtonId( "votingType" ) === "open" ) { //disable switching votingType to or from "Open"
+        freezeRadioButtons( "votingType" );
+    }
+    else {
+        freezeRadioButtons( null, ["open"] );
+    }
+    id('entryCount').disabled = true;
+
+    id('save').style.display = "";
+    id('create').style.display = "none";
+    if ( state === "ready" ) {
+        id('start').style.display = "";
+    }
+    else if ( state === "complete" ) {
+        id('hide').style.display = "";
+    }
+    else {
+        id('pause').style.display = "";
+        id('close').style.display = "";
+    }
 }
 
 function setBracketType( bracketType ) {
@@ -187,19 +192,27 @@ function createEntryInputs() {
 /**********PREVIEW**********/
 
 
-function validate() { //todo 2.6
+function validate() {
     let error = validateLogo();
 
     if ( !error ) {
         const isBracket = getSelectedRadioButtonId('bracketType') === "bracket";
+        const entryNamesFilled = nm( 'entryNames' ).map( e => e.value ).filter( n => !n ).length > 0;
+        const entryNamesLength = nm( 'entryNames' ).map( e => e.value ).filter( n => n.length > 20 ).length > 0;
+        const entryImagesLength = nm( 'entryImages' ).map( e => e.value ).filter( i => i.length > 256 ).length > 0;
 
         if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
             error = "Voting type required: match, round, or open.";
         }
-        //entry titles filled
-        //entry title length
-        //entry image length
-        //timing validation
+        else if ( !entryNamesFilled ) {
+            error = "Entry names required.";
+        }
+        else if ( !entryNamesLength ) {
+            error = "Entry name length too long. (Max of 20 characters)";
+        }
+        else if ( !entryImagesLength ) {
+            error = "Entry image length too long. (Max of 256 characters)";
+        }
     }
 
     return error;
@@ -211,9 +224,15 @@ function validateLogo() {
     if ( !id('imageInput').value ) {
         error = "Image required.";
     }
-    //title length
-    //image length
-    //help length
+    else if ( id('titleInput').value.length > 20 ) {
+        error = "Title length too long. (Max of 20 characters)";
+    }
+    else if ( id('imageInput').value.length > 256 ) {
+        error = "Image length too long. (Max of 256 characters)";
+    }
+    else if ( id('helpInput').value.length > 512 ) {
+        error = "Help length too long. (Max of 512 characters)";
+    }
 
     return error;
 }
@@ -317,14 +336,28 @@ function constructEditLinks( brackets ) {
 }
 
 function review() {
-    //todo 6 - Display current state (what round, last startTime, results)
+    //todo 6 - Display current state (what round, last close/start time, results)
 }
 
-//todo 2.5 - need a way to extend voting - is startTime needed? all based on end time?
-
 function pause() {
-    const stateToBe = state === "active" ? "inactive" : "active";
+    showBinaryChoice(
+        "Pause",
+        "Pause voting or pause automatic close?", "Voting", "Closing",
+        function( answer ) {
+            if ( answer )
+            {
+                pauseVoting();
+            }
+            else
+            {
+                pauseClosing();
+            }
+        }
+    );
+}
 
+function pauseVoting() {
+    const stateToBe = state === "active" ? "paused" : "active";
     $.post(
         "php/database.php",
         {
@@ -334,6 +367,21 @@ function pause() {
         },
         function ( response ) {
             showToaster( "Bracket is now " + stateToBe );
+            state = stateToBe;
+        }
+    );
+}
+
+function pauseClosing() {
+    $.post(
+        "php/database.php",
+        {
+            action:     "setCloseTime",
+            id:         bracketId,
+            time:       null
+        },
+        function ( response ) {
+            showToaster( "Bracket will close when you tell it to..." );
         }
     );
 }
@@ -344,7 +392,7 @@ function start() {
         {
             action:     "startBracket",
             id:         bracketId,
-            time:       new Date().toISOString()
+            time:       calculateNextTime( getTiming() ).toISOString()
         },
         function ( response ) {
             showToaster( "Bracket started... " );
@@ -396,14 +444,6 @@ function getLogoData() {
 
 function getBracketData() {
     const logoData = getLogoData();
-
-    let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
-    scheduledClose = scheduledClose ? new Date( scheduledClose ).toISOString() : null;
-    let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
-    let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
-    frequency      = frequency      === "X" ? null : frequency;
-    frequencyPoint = frequencyPoint === "X" ? null : frequencyPoint;
-
     let mode = getSelectedRadioButtonId('bracketType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
 
     return {
@@ -415,12 +455,22 @@ function getBracketData() {
         mode:      mode,
         entries:   getEntries(),
         winners:   "",
-        timing:   {
-            startTime:      null,
-            frequency:      frequency,
-            frequencyPoint: frequencyPoint,
-            scheduledClose: scheduledClose
-        }
+        timing:   getTiming()
+    };
+}
+
+function getTiming() {
+    let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
+    scheduledClose = scheduledClose ? new Date( scheduledClose ).toISOString() : null;
+    let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
+    let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
+    frequency      = frequency      === "X" ? null : frequency;
+    frequencyPoint = frequencyPoint === "X" ? null : frequencyPoint;
+
+    return {
+        frequency:      frequency,
+        frequencyPoint: frequencyPoint,
+        scheduledClose: scheduledClose
     };
 }
 
@@ -430,7 +480,7 @@ function getEntries() {
     let imageInputs = nm('entryImages');
     for ( let i = 0; i < entryInputs.length; i++ ) {
         if ( entryInputs[i].value ) {
-            entries.push( {name: entryInputs[i].value, image: imageInputs[i].value} );
+            entries.push( {name: entryInputs[i].value, image: imageInputs[i].value, seed: i} );
         }
     }
 

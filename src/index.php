@@ -32,17 +32,17 @@
 
 <script>
     const error = "<?php echo $_GET['error'] ?>";
-    if ( error ) {
-        showMessage( "Error", getErrorMessage( error ) );
-    }
 
     $.post(
         "php/database.php",
         {
-            action: "getAllLogos"
+            action: "getAllBracketMetas"
         },
         function ( response ) {
             displayLogos( JSON.parse( response ) );
+            if ( error ) {
+                showMessage( "Error", getErrorMessage( error ) );
+            }
         }
     );
 

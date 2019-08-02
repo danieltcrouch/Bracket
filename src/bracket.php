@@ -66,7 +66,7 @@
         getBracketData( bracketId );
     }
     else {
-        loadPage( bracketId, <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?> );
+        updateBracketTiming( bracketId, <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?>, loadPage );
     }
 </script>
 <?php includeModals(); ?>

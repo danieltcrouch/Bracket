@@ -50,30 +50,74 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
     }
 }
 
-function getDisplayTime( date ) {
-    let result = "";
 
-    if ( date ) {
-        const now = new Date();
-        if ( date.toDateString() === now.toDateString() ) {
-            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
-        }
-        else {
-            const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
-            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-            result = date.toLocaleString( "en-US", options );
+/**********TIMING**********/
+
+
+function updateBracketTiming( bracketId, bracketInfo, callback ) {
+    let bracketUpdated = false;
+    if ( bracketInfo.state === "active" || bracketInfo.state === "paused" )
+    {
+        const closeTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
+        if ( isDateBefore( closeTime, new Date(), true ) ) {
+            bracketUpdated = true;
+            const isLastRound = bracketInfo.winners.length === bracketInfo.entries.length - 2;
+            if ( isLastRound ) {
+                bracketInfo.timing.scheduledClose = null;
+                bracketInfo.state = "complete";
+
+                $.post(
+                    "php/database.php",
+                    {
+                        action: "setBracketState",
+                        id:     bracketId,
+                        state:  "complete"
+                    },
+                    function ( response ) {}
+                );
+            }
+            else {
+                bracketInfo.timing.scheduledClose = calculateNextTime( bracketInfo.timing, closeTime.toISOString() );
+            }
+
+            $.post(
+                "php/database.php",
+                {
+                    action: "setCloseTime",
+                    id:     bracketId,
+                    time:   bracketInfo.timing.scheduledClose
+                },
+                function ( response ) {
+                    $.post(
+                        "php/database.php",
+                        {
+                            action: "getWinners",
+                            id:     bracketId
+                        },
+                        function ( response ) {
+                            bracketInfo.winners = JSON.parse( response );
+                            callback( bracketId, bracketInfo );
+                        }
+                    );
+                }
+            );
         }
     }
 
-    return result;
+    if ( !bracketUpdated ) {
+        callback( bracketId, bracketInfo );
+    }
 }
 
-function calculateNextTime( timingInfo ) { //todo 2.5 - save roundEndTime ?
-    let result = newDateFromUTC( timingInfo.scheduledClose );
+function calculateNextTime( timingInfo, lastCloseTime = null ) {
+    let result = null;
 
-    if ( !result && timingInfo.frequency ) {
-        const isFirstRound = timingInfo.isFirstRound;
-        const fromTime = newDateFromUTC( timingInfo.startTime );
+    if ( timingInfo.scheduledClose ) {
+        result = newDateFromUTC( timingInfo.scheduledClose );
+    }
+    else if ( timingInfo.frequency ) {
+        const isFirstRound = !lastCloseTime;
+        const fromTime = newDateFromUTC( lastCloseTime ) || new Date();
         const frequencyPointInt = timingInfo.frequencyPoint ? parseInt(   timingInfo.frequencyPoint ) : 0;
         const frequencyPointDec = timingInfo.frequencyPoint ? parseFloat( timingInfo.frequencyPoint ) : 0;
         const frequency = timingInfo.frequency;
@@ -98,9 +142,6 @@ function calculateNextTime( timingInfo ) { //todo 2.5 - save roundEndTime ?
                 result = adjustDayOfWeek( fromTime, frequencyPointInt );
                 result = setToAlmostMidnight( result );
                 break;
-            default:
-                result = new Date();
-                break;
         }
 
         if ( isFirstRound ) {
@@ -124,6 +165,24 @@ function calculateNextTime( timingInfo ) { //todo 2.5 - save roundEndTime ?
         }
     }
 
+    return result ? result.toISOString() : null;
+}
+
+function getDisplayTime( date ) {
+    let result = "";
+
+    if ( date ) {
+        const now = new Date();
+        if ( date.toDateString() === now.toDateString() ) {
+            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
+        }
+        else {
+            const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
+            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+            result = date.toLocaleString( "en-US", options );
+        }
+    }
+
     return result;
 }
 
@@ -137,7 +196,10 @@ function getErrorMessage( error ) {
     if ( error ) {
         switch ( error ) {
         case "InvalidBracketId":
-            result = "Bracket ID must be present and must correspond to stored ID.";
+            result = "Invalid Bracket ID in URL.";
+            break;
+        case "DisabledBracket":
+            result = "This Bracket is disabled.";
             break;
         default:
             result = "An error has occurred.";

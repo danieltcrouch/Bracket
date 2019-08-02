@@ -281,7 +281,7 @@ function getBracketData( bracketId ) {
         function ( response ) {
             let bracketInfo = JSON.parse( response );
             bracketInfo.helpImage = helpImage;
-            loadPage( bracketId, bracketInfo );
+            updateBracketTiming( bracketId, bracketInfo, loadPage );
         }
     );
 }
@@ -302,8 +302,6 @@ function isBracketAvailable( state ) {
 
 function loadBracket( bracketInfo ) {
     mode = bracketInfo.mode;
-    endTime = calculateNextTime( bracketInfo.timing );
-
     if ( mode !== "poll" ) {
         bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
         displayBracket();
@@ -314,7 +312,7 @@ function loadBracket( bracketInfo ) {
         //displayPoll();
     }
 
-    displayRoundTimer( endTime, bracketInfo.state );
+    displayRoundTimer( bracketInfo.timing.scheduledClose, bracketInfo.state );
 }
 
 function displayBracket() {

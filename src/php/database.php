@@ -7,7 +7,7 @@ function getBracket( $bracketId )
     $bracketInfo = null;
     $result = $mysqli->query( "SELECT
             m.id, m.state, m.title, m.image, m.help, m.mode,
-            t.start_time, t.first_round, t.frequency, t.frequency_point, t.scheduled_close,
+            t.frequency, t.frequency_point, t.scheduled_close,
             r.top_wins,
             e_names,
             e_images
@@ -35,8 +35,6 @@ function getBracket( $bracketId )
             'mode'    => $row['mode'],
             'winners' => $row['winners'],
             'timing' => [
-                'startTime'      => $row['start_time'],
-                'isFirstRound'   => $row['first_round'],
                 'frequency'      => $row['frequency'],
                 'frequencyPoint' => $row['frequency_point'],
                 'scheduledClose' => $row['scheduled_close']
@@ -68,8 +66,8 @@ function createBracket( $bracket )
 
     $insertMeta     = "INSERT INTO meta (id, state, title, image, help, mode) 
         VALUES ('$bracketId', 'ready', '" . cleanse( $bracket->title ) . "', '$bracket->image', '" . cleanse( $bracket->help ) . "', '$bracket->mode')";
-    $insertTiming   = "INSERT INTO timing (bracket_id, start_time, frequency, frequency_point, scheduled_close)
-        VALUES ('$bracketId', NULL, $frequency, $frequencyPoint, $scheduledClose)";
+    $insertTiming   = "INSERT INTO timing (bracket_id, frequency, frequency_point, scheduled_close)
+        VALUES ('$bracketId', $frequency, $frequencyPoint, $scheduledClose)";
     $insertEntries  = "INSERT INTO entries (bracket_id, id, name, image, seed) VALUES ";
     for ( $i = 0; $i < count( $bracket->entries ); $i++ )
     {
@@ -204,6 +202,20 @@ function getBracketId( $title )
     return $id;
 }
 
+function getWinners( $bracketId )
+{
+    $mysqli = getMySQL();
+
+    $winners = "";
+    $result = $mysqli->query( "SELECT top_wins FROM results WHERE bracket_id = '$bracketId' " );
+    if ( $result->num_rows > 0 ) {
+        $row = $result->fetch_array();
+        $winners = $row['top_wins'];
+    }
+
+    return $winners;
+}
+
 function isVotingAllowed( $bracketId )
 {
     $mysqli = getMySQL();
@@ -229,11 +241,22 @@ function setBracketState( $bracketId, $state )
     return true;
 }
 
-function startBracket( $bracketId, $startTime )
+function setCloseTime( $bracketId, $closeTime )
 {
     $mysqli = getMySQL();
 
-    $query = "UPDATE meta m, timing t SET m.state = 'active', t.start_time = $startTime, t.first_round = '1' WHERE m.id = '$bracketId' AND t.bracket_id = '$bracketId' ";
+    $query = "UPDATE timing SET scheduled_close = $closeTime WHERE bracket_id = '$bracketId' ";
+	$mysqli->query($query);
+	$mysqli->close();
+
+    return true;
+}
+
+function startBracket( $bracketId, $closeTime )
+{
+    $mysqli = getMySQL();
+
+    $query = "UPDATE meta m, timing t SET m.state = 'active', t.scheduled_close = $closeTime WHERE m.id = '$bracketId' AND t.bracket_id = '$bracketId' ";
 	$mysqli->query($query);
 	$mysqli->close();
 
