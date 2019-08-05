@@ -56,9 +56,9 @@ function loadBracket( bracketInfo ) {
         displayPoll();
     }
 
-    endTime = scheduledClose;
-    displayRoundTimer(); //todo 4 - make Poll-proof
-    setDisplayType(); //todo 4 - make Poll-proof
+    endTime = bracketInfo.timing.scheduledClose;
+    displayRoundTimer();
+    setDisplayType();
 }
 
 
@@ -169,11 +169,6 @@ function setClickableMatches() {
         }
     }
 
-    const setClickable = function( matchId ) {
-        unfreezeRadioButtons( matchId );
-        getButtonIds( matchId ).forEach( function( buttonId ) { id(buttonId).classList.add( "blinkBorder" ); } );
-    };
-
     switch ( mode ) {
     case "match":
         setClickable( bracket.getCurrentMatchId() );
@@ -224,9 +219,6 @@ function displayPoll() {
         button.innerHTML = entry.name;
         button.id = "pollButton" + i;
         button.name = matchId;
-        button.onclick = function() {
-            //registerChoice( matchId, i ); //todo 4 - make Poll-proof
-        };
 
         entryDiv.appendChild( image );
         entryDiv.appendChild( button );
@@ -235,7 +227,7 @@ function displayPoll() {
     div.appendChild( pollDiv );
     adjustFontSize( pollDiv );
 
-    //setClickableMatches(); //todo 4 - make Poll-proof
+    setClickable( matchId );
 }
 
 
@@ -243,13 +235,18 @@ function displayPoll() {
 
 
 function setDisplayType() {
-    window.onresize = updateMobile;
-    round = bracket.getCurrentRound() >= 0 ? bracket.getCurrentRound() : 0;
-    display = {};
-    display.isLarge = bracket.getMaxSize() > 32;
-    display.isMobile = isMobile();
+    if ( mode === "poll" ) {
+        cl('mobileDisplay')[0].style.display = "none";
+    }
+    else {
+        window.onresize = updateMobile;
+        round = bracket.getCurrentRound() >= 0 ? bracket.getCurrentRound() : 0;
+        display = {};
+        display.isLarge = bracket.getMaxSize() > 32;
+        display.isMobile = isMobile();
 
-    displayRounds();
+        displayRounds();
+    }
 }
 
 function updateMobile() {
@@ -376,7 +373,7 @@ function displayRoundTimer() {
     let timerSpan = id('roundTimer');
     if ( state !== "active" ) {
         timerSpan.innerText = "(" + state.charAt(0).toUpperCase() + state.slice(1) + ")";
-        id( 'bracketDisplay' ).style.display = "none";
+        id( 'bracketDisplay' ).style.display = "none"; //todo - do we want to do this for Inactive?
         id( 'submit' ).style.display = "none";
     }
     else if ( endTime ) {
@@ -487,6 +484,9 @@ function submit() {
         else if ( mode === "match" ) {
 
         }
+        else if ( mode === "poll" ) {
+
+        }
 
         //viewResults();
     }
@@ -561,6 +561,11 @@ function getButton() {
 
 function isBracketAvailable( state ) {
     return state && state !== "hidden" && state !== "ready";
+}
+
+function setClickable( matchId ) {
+    unfreezeRadioButtons( matchId );
+    nm( matchId ).forEach( function( button ) { button.classList.add( "blinkBorder" ); } );
 }
 
 function adjustFontSize( roundDiv ) {

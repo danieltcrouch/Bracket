@@ -42,9 +42,6 @@
     </div>
 
     <!--
-    todo 4:
-        Make Polls viable
-
     todo 5:
         Bracket Page:
             Load from DB
