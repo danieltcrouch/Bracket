@@ -59,7 +59,7 @@ function updateBracketTiming( bracketId, bracketInfo, callback ) {
     if ( bracketInfo.state === "active" || bracketInfo.state === "paused" )
     {
         const closeTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
-        if ( isDateBefore( closeTime, new Date(), true ) ) {
+        if ( closeTime && isDateBefore( closeTime, new Date(), true ) ) {
             bracketUpdated = true;
             const isLastRound = bracketInfo.winners.length === bracketInfo.entries.length - 2;
             if ( isLastRound ) {

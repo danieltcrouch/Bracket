@@ -56,7 +56,7 @@ function loadBracket( bracketInfo ) {
         displayPoll();
     }
 
-    endTime = bracketInfo.timing.scheduledClose;
+    endTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
     displayRoundTimer();
     setDisplayType();
 }
@@ -235,7 +235,7 @@ function displayPoll() {
 
 
 function setDisplayType() {
-    if ( mode === "poll" ) {
+    if ( mode === "poll" || state !== "active" ) {
         cl('mobileDisplay')[0].style.display = "none";
     }
     else {
@@ -388,11 +388,11 @@ function getDisplayTime( date ) {
 
     if ( date ) {
         const now = new Date();
-        if ( date.toDateString() === now.toDateString() ) {
+        if ( isDateEqual( date, now ) ) {
             result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
         }
         else {
-            const withinWeek = date < new Date( now.getFullYear(), now.getMonth(), now.getDate() + 7 );
+            const withinWeek = isDateInNext( date, null, null, 7, null, null, true, false );
             const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
             result = date.toLocaleString( "en-US", options );
         }
@@ -465,7 +465,7 @@ function updateMatch( match, winner, isTopChange ) {
 }
 
 function submit() {
-    if ( endTime >= new Date() ) {
+    if ( isDateBeforeOrEqual( new Date(), endTime, true ) ) {
         if ( mode === "open" ) {
             let winner = bracket.getWinner();
             if ( winner ) {

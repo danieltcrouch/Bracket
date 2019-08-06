@@ -1,5 +1,7 @@
 class Bracket {
     constructor( entriesInput, winnersInput ) {
+        entriesInput = entriesInput || "";
+        winnersInput = winnersInput || "";
         this.entryCount = entriesInput.length;
         this.magnitude = Math.pow( 2, Math.ceil( Math.log2( this.entryCount ) ) );
         this.roundCount = Math.log2( this.magnitude );

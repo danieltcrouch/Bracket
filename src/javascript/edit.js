@@ -40,7 +40,7 @@ function initializeEditCallback( bracketId, bracketInfo ) {
     updateFrequencyPoints();
     id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
     if ( bracketInfo.timing.scheduledClose ) {
-        id('scheduledClose').valueAsNumber = getZonedTime( new Date( bracketInfo.timing.scheduledClose ) );
+        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( bracketInfo.timing.scheduledClose ) );
     }
     id('entryCount').value = bracketInfo.entries.length;
     createEntryInputs();
@@ -80,25 +80,28 @@ function initializeEditCallback( bracketId, bracketInfo ) {
 function setBracketType( bracketType ) {
     id('bracketSettings').style.display = ( bracketType === "bracket" ) ? "block" : "none";
 
-    if ( bracketType === "poll" ) {
+    if ( bracketType === "bracket" ) {
+        setVotingType( getSelectedRadioButtonId( "votingType" ) );
+    }
+    else {
         displayTimingSettings( false, true );
     }
 
     id('entryDiv').style.display = "block";
 }
 
-function setBracketRoundType( bracketRoundType ) {
+function setVotingType( bracketRoundType ) {
     if ( bracketRoundType === "match" ) {
-        id('frequencySettings').style.display = "block";
         displayTimingSettings( true, false );
     }
     else if ( bracketRoundType === "round" ) {
-        id('frequencySettings').style.display = "block";
         displayTimingSettings( true, false );
     }
     else if ( bracketRoundType === "open" ) {
-        id('frequencySettings').style.display = "none";
         displayTimingSettings( false, true );
+    }
+    else {
+        displayTimingSettings( false, false );
     }
 }
 
@@ -392,7 +395,7 @@ function start() {
         {
             action:     "startBracket",
             id:         bracketId,
-            time:       calculateNextTime( getTiming() ).toISOString()
+            time:       calculateNextTime( getTiming() )
         },
         function ( response ) {
             showToaster( "Bracket started... " );

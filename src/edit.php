@@ -73,10 +73,6 @@
                 <!-- todo 8: eventually, build your own date-time picker -->
             </div>
 
-            <div class="center" style="margin-bottom: 1em">
-                <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
-                <button id="save" class="button" style="display: none; width: 8em; margin: .25em;" onclick="save()">Save</button>
-            </div>
             <div class="center" style="display: none; margin-bottom: 1em">
                 <button id="previewBracket" class="button" style="width: 8em; margin: .25em;" onclick="previewBracket()">Preview</button>
             </div>
@@ -84,7 +80,8 @@
                 <button id="review" class="button" style="width: 8em; margin: .25em;" onclick="review()">Review</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
-                <button id="load" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
+                <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
+                <button id="save" class="button" style="display: none; width: 8em; margin: .25em;" onclick="save()">Save</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
                 <button id="pause" class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
@@ -93,6 +90,9 @@
                 <button id="start" class="button" style="display: none; width: 8em; margin: .25em;" onclick="start()">Start</button>
                 <button id="close" class="button" style="display: none; width: 8em; margin: .25em;" onclick="close()">Close</button>
                 <button id="hide" class="button" style="display: none; width: 8em; margin: .25em;" onclick="hide()">Hide</button>
+            </div>
+            <div class="center" style="margin-bottom: 1em">
+                <button id="load" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>
             </div>
         </div>
     </div>
@@ -118,7 +118,7 @@
         setBracketType( bracketType );
     });
     setRadioCallback( "votingType", function( votingType ) {
-        setBracketRoundType( votingType );
+        setVotingType( votingType );
     });
 </script>
 <?php includeModals(); ?>
