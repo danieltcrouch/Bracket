@@ -54,13 +54,8 @@ function initializeEditCallback( bracketId, bracketInfo ) {
     //todo 7 - what if bracket is complete?
     id('titleInput').disabled = true;
     id('imageInput').disabled = true;
-    freezeRadioButtons( "bracketType" ); //disable switching BracketType
-    if ( getSelectedRadioButtonId( "votingType" ) === "open" ) { //disable switching votingType to or from "Open"
-        freezeRadioButtons( "votingType" );
-    }
-    else {
-        freezeRadioButtons( null, ["open"] );
-    }
+    freezeRadioButtons( "bracketType" );
+    freezeRadioButtons( "votingType" );
     id('entryCount').disabled = true;
 
     id('save').style.display = "";

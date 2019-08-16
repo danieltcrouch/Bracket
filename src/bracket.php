@@ -10,8 +10,10 @@
     $description = $meta ? $meta['help']  : $description;
     includeHeadInfo();
     ?>
-    <script src="javascript/bracketClass.js"></script>
-    <script src="javascript/pollClass.js"></script>
+    <script src="javascript/bracket/bracketClass.js"></script>
+    <script src="javascript/bracket/bracketUtility.js"></script>
+    <script src="javascript/bracket/pollClass.js"></script>
+    <script src="javascript/bracket/pollUtility.js"></script>
     <script src="javascript/bracket.js"></script>
     <script src="javascript/utility.js"></script>
     <link rel="stylesheet" type="text/css" href="https://religionandstory.com/bracket/css/bracket.css"/>
@@ -38,20 +40,15 @@
         <div id="roundTimer" class="center" style="display: none; font-size: 1.25em; margin-bottom: 1em"></div>
         <div id="bracketDisplay" class="center"></div>
         <div class="center" style="margin-bottom: 1em"><button id="submit" class="button" style="width: 8em" onclick="submit()">Submit</button></div>
-        <div class="center" style="margin-bottom: 1em"><button id="result" class="button" style="width: 8em" onclick="viewResults()">View Results</button></div>
+        <div class="center" style="margin-bottom: 1em"><button id="result" class="button" style="width: 8em" onclick="viewResults()">Review</button></div>
     </div>
 
     <!--
-    todo 5:
-        Bracket Page:
-            Load from DB
-            Save to DB
-        (Session monitoring matters)
-        If submit is within time-frame
+    todo 6:
         Add Results button
             launch modal (with graphic)
             launch same modal on submit
-        Allow users to subscribe
+            Allow users to subscribe
 
     todo 7:
         Update rounds and close time
@@ -66,10 +63,10 @@
     const helpImage = "<?php getHelpImage() ?>";
 
     if ( bracketId !== "PREVIEW" ) {
-        getBracketData( bracketId );
+        getBracketInfo( bracketId );
     }
     else {
-        updateBracketTiming( bracketId, <?php echo ( $_GET['id'] === "PREVIEW" && $_POST['bracket'] ) ? $_POST['bracket'] : "null"; ?>, loadPage );
+        loadPage( bracketId, <?php echo $_POST['bracket']; ?> );
     }
 </script>
 <?php includeModals(); ?>

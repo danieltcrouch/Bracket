@@ -56,6 +56,18 @@ function createBracket( $bracket )
     $bracket = json_decode( $bracket );
     $entries = $bracket->entries;
     $state = "active";
+    $activeId = null;
+    switch ( $bracket->mode )
+    {
+    case "match":
+        $activeId = "m0";
+        break;
+    case "round":
+        $activeId = "r0";
+        break;
+    default:
+        $activeId = "o";
+    }
 
     $entryValues = "";
     for ( $i = 0; $i < count( $entries ); $i++ )
@@ -64,7 +76,7 @@ function createBracket( $bracket )
         $entryValues .= "(:bracketId, :entryId, :entryName$i, :entryImage$i, :entrySeed$i)";
     }
     $insertMeta = "INSERT INTO meta (id, state, title, image, help, mode) VALUES (:bracketId, :state, :title, :image, :help, :mode)";
-    $insertTiming = "INSERT INTO timing (bracket_id, frequency, frequency_point, scheduled_close) VALUES (:bracketId, :frequency, :frequencyPoint, :scheduledClose)";
+    $insertTiming = "INSERT INTO timing (bracket_id, frequency, frequency_point, scheduled_close, active_id) VALUES (:bracketId, :frequency, :frequencyPoint, :scheduledClose, :activeId)";
     $insertEntries = "INSERT INTO entries (bracket_id, id, name, image, seed) VALUES $entryValues";
 
     $query =
@@ -83,6 +95,7 @@ function createBracket( $bracket )
     $statement->bindParam(':frequency',      $bracket->frequency);
     $statement->bindParam(':frequencyPoint', $bracket->frequencyPoint);
     $statement->bindParam(':scheduledClose', $bracket->scheduledClose);
+    $statement->bindParam(':activeId',       $activeId);
     for ( $i = 0; $i < count( $entries ); $i++ )
     {
         $entry = $entries[$i];
@@ -113,12 +126,12 @@ function updateBracket( $bracket )
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
+    $statement->bindParam(':bracketId',      $bracketId);
     $statement->bindParam(':help',           $bracket->help);
     $statement->bindParam(':mode',           $bracket->mode);
     $statement->bindParam(':frequency',      $bracket->frequency);
     $statement->bindParam(':frequencyPoint', $bracket->frequencyPoint);
     $statement->bindParam(':scheduledClose', $bracket->scheduledClose);
-    $statement->bindParam(':bracketId',      $bracketId);
     $statement->execute();
 
     $connection = null;
@@ -144,6 +157,7 @@ function updateEntries( $bracketId, $entries )
     $connection = getConnection();
     $statement = $connection->prepare( $query );
 
+    $statement->bindParam(':bracketId', $bracketId);
     for ( $i = 0; $i < count( $entries ); $i++ )
     {
         $entry = $entries[$i];
@@ -151,7 +165,6 @@ function updateEntries( $bracketId, $entries )
         $statement->bindParam(":entryName$i",  $entry->name);
         $statement->bindParam(":entryImage$i", $entry->image);
     }
-    $statement->bindParam(':bracketId', $bracketId);
 
     $statement->execute();
 
@@ -224,18 +237,77 @@ function getWinners( $bracketId )
     return $winners;
 }
 
-function isVotingAllowed( $bracketId )
+function vote( $bracketId, $votes )
 {
-    $query = "SELECT (CASE WHEN state = 'active' THEN '1' ELSE '' END) FROM meta WHERE id = :bracketId ";
+    $result['isSuccess'] = false;
+    $result['messages'] = checkVote( $bracketId, $votes );
+    if ( !$result['messages'] ) {
+        $result['isSuccess'] = saveVote( $bracketId, $votes );
+    }
+    return $result;
+}
+
+function checkVote( $bracketId, $votes )
+{
+    $query = "SELECT
+                IF(m.state = 'active', '1', '') AS \"active\",
+                t.active_id
+              FROM meta m
+                JOIN timing t ON m.id = t.bracket_id
+              WHERE m.id = :bracketId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':bracketId', $bracketId);
     $statement->execute();
 
-    $isVotingAllowed = $statement->fetch();
+    $votingConditions = $statement->fetch();
+
+    $result = null;
+    if ( !$votingConditions->active )
+    {
+        $result = "This bracket is not currently active.";
+    }
+    else
+    {
+        for ( $i = 0; $i < count( $votes ); $i++ )
+        {
+            if ( strpos( $votes[$i], $votingConditions->active_id ) === false )
+            {
+                $result = "The voting window for these matches has closed.";
+                break;
+            }
+        }
+    }
 
     $connection = null;
-    return $isVotingAllowed;
+    return $result;
+}
+
+function saveVote( $bracketId, $votes )
+{
+    $voteId = getGUID();
+    $userIp = $_SERVER['REMOTE_ADDR'];
+
+    $query = "INSERT INTO voting
+              (bracket_id, id, user, match_id, vote)
+              VALUES ( :bracketId, :voteId, :userIp, :matchId, :vote )
+              ON DUPLICATE KEY UPDATE
+              vote = :vote ";
+
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':voteId',    $voteId);
+    $statement->bindParam(':userIp',    $userIp);
+
+    for ( $i = 0; $i < count( $votes ); $i++ )
+    {
+        $statement->bindParam(':matchId', $votes->id);
+        $statement->bindParam(':vote',    $votes->vote);
+        $statement->execute();
+    }
+
+    return true;
 }
 
 function setBracketState( $bracketId, $state )
@@ -243,8 +315,24 @@ function setBracketState( $bracketId, $state )
     $query = "UPDATE meta SET state = :state WHERE id = :bracketId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':state', $state);
     $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':state', $state);
+    $statement->execute();
+
+    $connection = null;
+    return true;
+}
+
+function startBracket( $bracketId, $closeTime )
+{
+    $state = "active";
+
+    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime WHERE m.id = :bracketId AND t.bracket_id = :bracketId ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':state',     $state);
+    $statement->bindParam(':closeTime', $closeTime);
     $statement->execute();
 
     $connection = null;
@@ -264,16 +352,14 @@ function setCloseTime( $bracketId, $closeTime )
     return true;
 }
 
-function startBracket( $bracketId, $closeTime )
+function updateVotingPeriod( $bracketId, $closeTime, $activeId )
 {
-    $state = "active";
-
-    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime WHERE m.id = :bracketId AND t.bracket_id = :bracketId ";
+    $query = "UPDATE timing SET scheduled_close = :closeTime, active_id = :activeId WHERE bracket_id = :bracketId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':state',     $state);
-    $statement->bindParam(':closeTime', $closeTime);
     $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':closeTime', $closeTime);
+    $statement->bindParam(':activeId',  $activeId);
     $statement->execute();
 
     $connection = null;
@@ -303,11 +389,17 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
     $result = null;
 
     try {
-        if ( isset($_POST['id']) && isset($_POST['state']) ) {
+        if ( isset($_POST['id']) && isset($_POST['time']) && isset($_POST['activeId']) ) {
+            $result = $action( $_POST['id'], $_POST['state'], $_POST['activeId'] );
+        }
+        elseif ( isset($_POST['id']) && isset($_POST['state']) ) {
             $result = $action( $_POST['id'], $_POST['state'] );
         }
         elseif ( isset($_POST['id']) && isset($_POST['time']) ) {
             $result = $action( $_POST['id'], $_POST['time'] );
+        }
+        elseif ( isset($_POST['id']) && isset($_POST['votes']) ) {
+            $result = $action( $_POST['id'], $_POST['votes'] );
         }
         elseif ( isset($_POST['bracket']) ) {
             $result = $action( $_POST['bracket'] );

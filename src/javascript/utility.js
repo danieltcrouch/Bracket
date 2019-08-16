@@ -66,6 +66,8 @@ function updateBracketTiming( bracketId, bracketInfo, callback ) {
                 bracketInfo.timing.scheduledClose = null;
                 bracketInfo.state = "complete";
 
+                //todo 10 - consolidate multiple DB calls one after another (service.php ?)
+                // search throughout project
                 $.post(
                     "php/database.php",
                     {
@@ -83,9 +85,10 @@ function updateBracketTiming( bracketId, bracketInfo, callback ) {
             $.post(
                 "php/database.php",
                 {
-                    action: "setCloseTime",
-                    id:     bracketId,
-                    time:   bracketInfo.timing.scheduledClose
+                    action:     "updateVotingPeriod",
+                    id:         bracketId,
+                    time:       bracketInfo.timing.scheduledClose,
+                    activeId:   getActiveId( bracket, mode )
                 },
                 function ( response ) {
                     $.post(
@@ -166,6 +169,32 @@ function calculateNextTime( timingInfo, lastCloseTime = null ) {
     }
 
     return result ? result.toISOString() : null;
+}
+
+
+/**********ID GENERATION**********/
+
+
+function getMatchId( match )
+{
+    return "r" + match.round + "m" + match.match;
+}
+
+function getActiveId( bracket, mode )
+{
+    let result;
+    switch ( mode )
+    {
+    case "match":
+        result = bracket.getCurrentMatchId();
+        break;
+    case "round":
+        result = "r" + bracket.getCurrentRound();
+        break;
+    default:
+        result = "o";
+    }
+    return result;
 }
 
 

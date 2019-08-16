@@ -3,6 +3,7 @@ class Poll {
         this.entryCount = entriesInput.length;
         this.entries = Poll.parseEntries( entriesInput );
         this.poll = Poll.constructPoll( this.entries );
+        this.winner = null;
     }
 
     static parseEntries( entries ) {
@@ -12,7 +13,6 @@ class Poll {
 
         for ( let i = 0; i < entries.length; i++ ) {
             entries[i].image = entries[i].image || "images/profile.jpg";
-            entries[i].seed = i + 1;
         }
 
         return entries;
@@ -24,5 +24,17 @@ class Poll {
 
     getEntries() {
         return this.entries;
+    }
+
+    getWinner() {
+        return this.entries[this.winnerIndex];
+    }
+
+    getWinnerIndex() {
+        return this.winnerIndex;
+    }
+
+    setWinner( index ) {
+        this.winnerIndex = index;
     }
 }
