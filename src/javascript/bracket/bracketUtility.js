@@ -330,7 +330,7 @@ function getBracketVotes() {
     let votes = null;
     let relevantMatches = null;
     if ( mode === "open" ) {
-        relevantMatches = bracketObject.getMatches();
+        relevantMatches = bracketObject.getMatches( true );
         if ( areMatchesFinished( relevantMatches ) ) {
             votes = parseVotes( relevantMatches );
         }
@@ -339,7 +339,7 @@ function getBracketVotes() {
         }
     }
     else if ( mode === "round" ) {
-        relevantMatches = bracketObject.getMatchesFromRound( round )();
+        relevantMatches = bracketObject.getMatchesFromRound( round, true );
         if ( areMatchesFinished( relevantMatches ) ) {
             votes = parseVotes( relevantMatches );
         }
@@ -348,7 +348,7 @@ function getBracketVotes() {
         }
     }
     else if ( mode === "match" ) {
-        relevantMatches = bracketObject.getCurrentMatch();
+        relevantMatches = [ bracketObject.getMatchFromId( bracketObject.getCurrentMatchId() ) ];
         if ( areMatchesFinished( relevantMatches ) ) {
             votes = parseVotes( relevantMatches );
         }
@@ -361,7 +361,6 @@ function getBracketVotes() {
 }
 
 function areMatchesFinished( matches ) {
-    matches = Array.isArray( matches ) ? matches : [ matches ];
     let result = true;
     for ( let i = 0; i < matches.length; i++) {
         const match = ( typeof matches[i] === "string" ) ? bracketObject.getMatchFromId( matches[i] ) : matches[i];
@@ -375,16 +374,44 @@ function areMatchesFinished( matches ) {
 
 function parseVotes( relevantMatches ) {
     relevantMatches = Array.isArray( relevantMatches ) ? relevantMatches : [ relevantMatches ];
-    return relevantMatches.map( m => function() { return { id: getMatchId( m ), vote: getTopIndex( m.winner.isTop ) }; } );
+    return relevantMatches.map( m => function() { return { id: getMatchId( m ), vote: m.winner.seed }; } );
+}
+
+
+/*** RESULTS ***/
+
+
+function getBracketVoteDisplay( currentVotes ) {
+    let result = "";
+    let relevantMatches;
+    switch ( mode ) {
+        //case "open":
+        //    relevantMatches = bracketObject.getMatches( true );
+        //    break;
+        case "round":
+            relevantMatches = bracketObject.getMatchesFromRound( round, true );
+            break;
+        case "match":
+            relevantMatches = [ bracketObject.getMatchFromId( bracketObject.getCurrentMatchId() ) ];
+            break;
+        default:
+            relevantMatches = [];
+    }
+
+    for ( let i = 0; i < relevantMatches.length; i++) {
+        const match = relevantMatches[i];
+        result += match.top.name + ": " + currentVotes[match.top.seed - 1].voteCount;
+        result += "<br/>";
+        result += match.bottom.name + ": " + currentVotes[match.bottom.seed - 1].voteCount;
+        result += "<br/><br/>";
+    }
+
+    return result;
 }
 
 
 /*** UTILITY ***/
 
-
-function getTopIndex( isTop ) {
-    return isTop ? 0 : 1;
-}
 
 function getButtonId( matchId, isTop )
 {

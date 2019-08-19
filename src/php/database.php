@@ -3,23 +3,33 @@
 function getBracket( $bracketId )
 {
     $query = "SELECT
-                m.id, m.state, m.title, m.image, m.help, m.mode,
-                t.frequency, t.frequency_point, t.scheduled_close,
-                r.index_wins,
-                e_names,
-                e_images
-            FROM meta m
-                JOIN timing t ON m.id = t.bracket_id
-                LEFT OUTER JOIN results r ON m.id = r.bracket_id
-                LEFT OUTER JOIN (
-                    SELECT
-                        e.bracket_id,
-                        GROUP_CONCAT(e.name ORDER BY e.seed ASC SEPARATOR '|') as \"e_names\",
-                        GROUP_CONCAT(e.image ORDER BY e.seed ASC SEPARATOR '|') as \"e_images\"
-                    FROM entries e
-                    GROUP BY e.bracket_id
-                ) ent ON m.id = ent.bracket_id
-            WHERE m.id = :bracketId ";
+                  m.id, m.state, m.title, m.image, m.help, m.mode,
+                  t.frequency, t.frequency_point, t.scheduled_close,
+                  r.index_wins,
+                  current_votes,
+                  e_names,
+                  e_images
+              FROM meta m
+                  JOIN timing t ON m.id = t.bracket_id
+                  LEFT OUTER JOIN results r ON m.id = r.bracket_id
+                  LEFT OUTER JOIN (
+                      SELECT
+                          v.bracket_id,
+                          GROUP_CONCAT((v.match_id + ',' + v.entry_seed)) as \"current_votes\"
+                      FROM voting v
+                          JOIN timing t ON v.bracket_id = t.bracket_id
+                      WHERE active_id = '' OR match_id LIKE (active_id + '%')
+                      GROUP BY v.bracket_id
+                  ) vot ON m.id = vot.bracket_id
+                  LEFT OUTER JOIN (
+                      SELECT
+                          e.bracket_id,
+                          GROUP_CONCAT(e.name ORDER BY e.seed ASC SEPARATOR '|') as \"e_names\",
+                          GROUP_CONCAT(e.image ORDER BY e.seed ASC SEPARATOR '|') as \"e_images\"
+                      FROM entries e
+                      GROUP BY e.bracket_id
+                  ) ent ON m.id = ent.bracket_id
+              WHERE m.id = :bracketId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':bracketId', $bracketId);
@@ -38,12 +48,16 @@ function getBracket( $bracketId )
             'frequencyPoint' => $result['frequency_point'],
             'scheduledClose' => $result['scheduled_close']
         ],
-        'entries' => []
+        'currentVotes' => [],
+        'entries'      => []
     ];
     $entryNames  = explode( '|', $result['e_names'] );
     $entryImages = explode( '|', $result['e_images'] );
+    $voteIndexes = explode( ',', $result['current_votes'] );
+    $votesByIndex = array_count_values( $voteIndexes );
     foreach( $entryNames as $index => $name ) {
-        array_push( $bracketInfo['entries'], ['name' => $name, 'image' => $entryImages[$index]] );
+        array_push( $bracketInfo['entries'],      ['name' => $name, 'image' => $entryImages[$index]] );
+        array_push( $bracketInfo['currentVotes'], ['name' => $name, 'voteCount' => $votesByIndex[$index] ?? 0] );
     }
 
     $connection = null;
@@ -223,18 +237,38 @@ function getBracketId( $title )
     return $id;
 }
 
+function getCurrentVotes( $bracketId )
+{
+//    $query = "SELECT
+//                  GROUP_CONCAT((v.match_id + ',' + v.entry_seed)) as \"current_votes\"
+//              FROM voting v
+//                  JOIN timing t ON v.bracket_id = t.bracket_id
+//              WHERE (active_id = '' OR match_id LIKE (active_id + '%'))
+//                  AND v.bracket_id = :bracketId ";
+//    $connection = getConnection();
+//    $statement = $connection->prepare( $query );
+//    $statement->bindParam(':bracketId', $bracketId);
+//    $statement->execute();
+//
+//    $result = $statement->fetch();
+//    $currentVotes = [];
+//
+//    $connection = null;
+//    return $result;
+}
+
 function getWinners( $bracketId )
 {
-    $query = "SELECT index_wins FROM results WHERE bracket_id = :bracketId ";
-    $connection = getConnection();
-    $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
-    $statement->execute();
-
-    $winners = $statement->fetch();
-
-    $connection = null;
-    return $winners;
+//    $query = "SELECT index_wins FROM results WHERE bracket_id = :bracketId ";
+//    $connection = getConnection();
+//    $statement = $connection->prepare( $query );
+//    $statement->bindParam(':bracketId', $bracketId);
+//    $statement->execute();
+//
+//    $winners = $statement->fetch();
+//
+//    $connection = null;
+//    return $winners;
 }
 
 function vote( $bracketId, $votes )
@@ -289,10 +323,10 @@ function saveVote( $bracketId, $votes )
     $userIp = $_SERVER['REMOTE_ADDR'];
 
     $query = "INSERT INTO voting
-              (bracket_id, id, user, match_id, vote)
-              VALUES ( :bracketId, :voteId, :userIp, :matchId, :vote )
+              (bracket_id, id, user, match_id, entry_seed)
+              VALUES ( :bracketId, :voteId, :userIp, :matchId, :entrySeed )
               ON DUPLICATE KEY UPDATE
-              vote = :vote ";
+              entry_seed = :entrySeed ";
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
@@ -303,8 +337,8 @@ function saveVote( $bracketId, $votes )
     for ( $i = 0; $i < count( $votes ); $i++ )
     {
         $vote = $votes[$i];
-        $statement->bindParam(':matchId', $vote['id']);
-        $statement->bindParam(':vote',    $vote['vote']);
+        $statement->bindParam(':matchId',   $vote['id']);
+        $statement->bindParam(':entrySeed', $vote['entrySeed']);
         $statement->execute();
     }
 

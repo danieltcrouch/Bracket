@@ -6,6 +6,7 @@ let round;
 let state;
 let mode;
 let endTime;
+let currentVotes;
 
 
 /*** DISPLAY ***/
@@ -52,6 +53,7 @@ function loadPage( bracketId, bracketInfo ) {
 
         endTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
         displayRoundTimer();
+        currentVotes = bracketInfo.currentVotes;
     }
     else {
         window.location = "https://bracket.religionandstory.com/index.php?error=InvalidBracketId";
@@ -136,8 +138,10 @@ function saveVote( votes ) {
 
 
 function viewResults() {
-    //todo 6
-    // there needs to be a way to see this even when inactive
+    let voteDisplay = bracket.isBracket ? getBracketVoteDisplay( currentVotes ) : getPollVoteDisplay( currentVotes );
+    showMessage( "Current Votes", voteDisplay );
+    //todo 6 - give dynamic graphic
+    //todo 6 - there needs to be a way to see this even when inactive
 }
 
 

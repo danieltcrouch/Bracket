@@ -65,3 +65,11 @@ function getPollVotes() {
     }
     return votes;
 }
+
+
+/*** RESULTS ***/
+
+
+function getPollVoteDisplay( currentVotes ) {
+    return currentVotes.map( v => { return v.name + ": " + v.voteCount } ).join( "<br/>" );
+}
