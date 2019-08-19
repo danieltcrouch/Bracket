@@ -99,7 +99,7 @@ function getDisplayTime( date ) {
 
 
 function submit() {
-    if ( isDateBeforeOrEqual( new Date(), endTime, true ) ) {
+    if ( !endTime || isDateBeforeOrEqual( new Date(), endTime, true ) ) {
         let votes = bracket.isBracket ? getBracketVotes() : getPollVotes();
         if ( votes ) {
             saveVote( votes );
@@ -121,7 +121,7 @@ function saveVote( votes ) {
         function ( response ) {
             response = JSON.parse( response );
             if ( response.isSuccess ) {
-                showToaster( "Votes submitted..." );
+                showToaster( "Votes submitted." );
                 //todo 6 - viewResults();
             }
             else {

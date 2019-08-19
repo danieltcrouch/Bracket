@@ -5,7 +5,7 @@ function getBracket( $bracketId )
     $query = "SELECT
                 m.id, m.state, m.title, m.image, m.help, m.mode,
                 t.frequency, t.frequency_point, t.scheduled_close,
-                r.top_wins,
+                r.index_wins,
                 e_names,
                 e_images
             FROM meta m
@@ -225,7 +225,7 @@ function getBracketId( $title )
 
 function getWinners( $bracketId )
 {
-    $query = "SELECT top_wins FROM results WHERE bracket_id = :bracketId ";
+    $query = "SELECT index_wins FROM results WHERE bracket_id = :bracketId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':bracketId', $bracketId);
@@ -240,8 +240,8 @@ function getWinners( $bracketId )
 function vote( $bracketId, $votes )
 {
     $result['isSuccess'] = false;
-    $result['messages'] = checkVote( $bracketId, $votes );
-    if ( !$result['messages'] ) {
+    $result['message'] = checkVote( $bracketId, $votes );
+    if ( !$result['message'] ) {
         $result['isSuccess'] = saveVote( $bracketId, $votes );
     }
     return $result;
@@ -263,15 +263,15 @@ function checkVote( $bracketId, $votes )
     $votingConditions = $statement->fetch();
 
     $result = null;
-    if ( !$votingConditions->active )
+    if ( !$votingConditions['active'] )
     {
         $result = "This bracket is not currently active.";
     }
-    else
+    elseif ( $votingConditions['active_id'] )
     {
         for ( $i = 0; $i < count( $votes ); $i++ )
         {
-            if ( strpos( $votes[$i], $votingConditions->active_id ) === false )
+            if ( strpos( $votes[$i], $votingConditions['active_id'] ) === false )
             {
                 $result = "The voting window for these matches has closed.";
                 break;
@@ -302,8 +302,9 @@ function saveVote( $bracketId, $votes )
 
     for ( $i = 0; $i < count( $votes ); $i++ )
     {
-        $statement->bindParam(':matchId', $votes->id);
-        $statement->bindParam(':vote',    $votes->vote);
+        $vote = $votes[$i];
+        $statement->bindParam(':matchId', $vote['id']);
+        $statement->bindParam(':vote',    $vote['vote']);
         $statement->execute();
     }
 

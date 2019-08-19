@@ -58,7 +58,7 @@ function registerPollChoice( index ) {
 function getPollVotes() {
     let votes = null;
     if ( pollObject.getWinner() ) {
-        votes = { id: "pollButtons", vote: pollObject.getWinnerIndex() };
+        votes = [{ id: "", vote: pollObject.getWinnerIndex() }];
     }
     else {
         showToaster( "Must choose one entry..." );

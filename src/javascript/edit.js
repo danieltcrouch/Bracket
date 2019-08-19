@@ -1,4 +1,6 @@
 let state = null;
+let winners = "";
+let currentVotes = "";
 
 function initializeCreate() {
     let logoInfo = {
@@ -29,6 +31,8 @@ function initializeEditCallback( bracketId, bracketInfo ) {
 
     //Fill-out page
     state = bracketInfo.state;
+    winners = bracketInfo.winners;
+    currentVotes = bracketInfo.currentVotes;
     id('titleInput').value = bracketInfo.title;
     id('imageInput').value = bracketInfo.image;
     id('helpInput').value = bracketInfo.help;
@@ -254,7 +258,7 @@ function previewBracket() {
     if ( !error ) {
         let bracket = getBracketData();
         bracket.active = true;
-        bracket.timing.scheduledClose = convertToUTC( bracket.timing.scheduledClose );
+        bracket.timing.scheduledClose = adjustToUTC( bracket.timing.scheduledClose );
         id('bracketData').value = JSON.stringify( bracket );
         id('previewForm').submit();
     }
