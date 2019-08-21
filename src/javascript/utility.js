@@ -171,6 +171,50 @@ function calculateNextTime( timingInfo, lastCloseTime = null ) {
     return result ? result.toISOString() : null;
 }
 
+function getDisplayTime( date ) {
+    let result = "";
+
+    if ( date ) {
+        const now = new Date();
+        if ( isDateEqual( date, now ) ) {
+            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
+        }
+        else {
+            const withinWeek = isDateInNext( date, null, null, 7, null, null, true, false );
+            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+            result = date.toLocaleString( "en-US", options );
+        }
+    }
+
+    return result;
+}
+
+
+/*** RESULTS ***/
+
+
+
+function viewResults( mode, entries, currentVotes, additionalInfo ) {
+    let voteDisplay = getVoteDisplay( mode, entries, currentVotes );
+    voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
+    showMessage( "Current Votes", voteDisplay );
+    //todo 6 - give dynamic graphic - https://www.youtube.com/watch?v=0CIt9mwtNws
+}
+
+function getVoteDisplay( mode, entries, currentVotes ) {
+    let result = "";
+    if ( mode === "round" ) {
+        for ( let i = 0; i < currentVotes.length; i++) {
+            result += currentVotes[i].entries.map( entry => { return entries[entry.seed] + ": " + entry.count } ).join( "<br/>" );
+            result += "<br/>";
+        }
+    }
+    else {
+        result = currentVotes[0].entries.map( entry => { return entries[entry.seed] + ": " + entry.count } ).join( "<br/>" );
+    }
+    return result;
+}
+
 
 /**********ID GENERATION**********/
 
@@ -192,7 +236,7 @@ function getActiveId( bracket, mode )
         result = "r" + bracket.getCurrentRound();
         break;
     default:
-        result = "o";
+        result = "";
     }
     return result;
 }

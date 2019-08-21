@@ -78,24 +78,6 @@ function displayRoundTimer() {
     }
 }
 
-function getDisplayTime( date ) {
-    let result = "";
-
-    if ( date ) {
-        const now = new Date();
-        if ( isDateEqual( date, now ) ) {
-            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
-        }
-        else {
-            const withinWeek = isDateInNext( date, null, null, 7, null, null, true, false );
-            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-            result = date.toLocaleString( "en-US", options );
-        }
-    }
-
-    return result;
-}
-
 
 /*** SUBMIT ***/
 
@@ -124,7 +106,7 @@ function saveVote( votes ) {
             response = JSON.parse( response );
             if ( response.isSuccess ) {
                 showToaster( "Votes submitted." );
-                //todo 6 - viewResults();
+                updateVotes();
             }
             else {
                 showToaster( response.message );
@@ -137,11 +119,23 @@ function saveVote( votes ) {
 /*** RESULTS ***/
 
 
-function viewResults() {
-    let voteDisplay = bracket.isBracket ? getBracketVoteDisplay( currentVotes ) : getPollVoteDisplay( currentVotes );
-    showMessage( "Current Votes", voteDisplay );
-    //todo 6 - give dynamic graphic
-    //todo 6 - there needs to be a way to see this even when inactive
+function updateVotes() {
+    $.post(
+        "php/database.php",
+        {
+            action: "getCurrentVotes",
+            id:     bracketId
+        },
+        function ( response ) {
+            currentVotes = JSON.parse( response );
+            review();
+        }
+    );
+}
+
+function review() {
+    let additionalInfo = ""; //todo 11 - allow users to subscribe
+    viewResults( mode, bracket.getEntries(), currentVotes, additionalInfo );
 }
 
 

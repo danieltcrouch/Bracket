@@ -1,4 +1,5 @@
 let state = null;
+let activeId = null;
 let winners = "";
 let currentVotes = "";
 
@@ -31,6 +32,7 @@ function initializeEditCallback( bracketId, bracketInfo ) {
 
     //Fill-out page
     state = bracketInfo.state;
+    activeId = bracketInfo.timing.activeId;
     winners = bracketInfo.winners;
     currentVotes = bracketInfo.currentVotes;
     id('titleInput').value = bracketInfo.title;
@@ -338,7 +340,11 @@ function constructEditLinks( brackets ) {
 }
 
 function review() {
-    //todo 6 - Display current state (what round, last close/start time, results)
+    let closeTime = getDisplayTime( new Date( id( 'scheduledClose' ).value ) );
+    let additionalInfo = "<br/> <emphasis>State:</emphasis> " + state +
+        "<br/> <emphasis>Active ID:</emphasis> " + activeId +
+        "<br/> <emphasis>Round Ends:</emphasis> " + closeTime;
+    viewResults( getMode(), getEntries(), currentVotes, additionalInfo );
 }
 
 function pause() {
@@ -446,7 +452,7 @@ function getLogoData() {
 
 function getBracketData() {
     const logoData = getLogoData();
-    let mode = getSelectedRadioButtonId('bracketType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
+    let mode = getMode();
 
     return {
         title:     logoData.title,
@@ -459,6 +465,10 @@ function getBracketData() {
         winners:   "",
         timing:   getTiming()
     };
+}
+
+function getMode() {
+    return getSelectedRadioButtonId('bracketType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
 }
 
 function getTiming() {

@@ -199,12 +199,20 @@ class Bracket {
         };
     }
 
+    getFinalMatch() {
+        return this.bracket[this.getMaxRounds() - 1][0];
+    }
+
     getMatches( ignoreByes ) {
         return this.bracket.reduce( (result, r) => { return result.concat( r ); }, [] ).filter( m => !(m.bye && ignoreByes) );
     }
 
+    getEntries() {
+        return this.entries;
+    }
+
     getWinner() {
-        return this.bracket[this.getMaxRounds() - 1][0].winner;
+        return this.getFinalMatch().winner;
     }
 
     toString() {

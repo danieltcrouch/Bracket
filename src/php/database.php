@@ -4,7 +4,7 @@ function getBracket( $bracketId )
 {
     $query = "SELECT
                   m.id, m.state, m.title, m.image, m.help, m.mode,
-                  t.frequency, t.frequency_point, t.scheduled_close,
+                  t.frequency, t.frequency_point, t.scheduled_close, t.active_id,
                   r.index_wins,
                   current_votes,
                   e_names,
@@ -15,7 +15,7 @@ function getBracket( $bracketId )
                   LEFT OUTER JOIN (
                       SELECT
                           v.bracket_id,
-                          GROUP_CONCAT((v.match_id + ',' + v.entry_seed)) as \"current_votes\"
+                          GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed)) as \"current_votes\"
                       FROM voting v
                           JOIN timing t ON v.bracket_id = t.bracket_id
                       WHERE active_id = '' OR match_id LIKE (active_id + '%')
@@ -46,19 +46,14 @@ function getBracket( $bracketId )
         'timing'  => [
             'frequency'      => $result['frequency'],
             'frequencyPoint' => $result['frequency_point'],
-            'scheduledClose' => $result['scheduled_close']
+            'scheduledClose' => $result['scheduled_close'],
+            'activeId'       => $result['active_id']
         ],
         'currentVotes' => [],
         'entries'      => []
     ];
-    $entryNames  = explode( '|', $result['e_names'] );
-    $entryImages = explode( '|', $result['e_images'] );
-    $voteIndexes = explode( ',', $result['current_votes'] );
-    $votesByIndex = array_count_values( $voteIndexes );
-    foreach( $entryNames as $index => $name ) {
-        array_push( $bracketInfo['entries'],      ['name' => $name, 'image' => $entryImages[$index]] );
-        array_push( $bracketInfo['currentVotes'], ['name' => $name, 'voteCount' => $votesByIndex[$index] ?? 0] );
-    }
+    parseEntries( $bracketInfo['entries'], $result );
+    parseVotes( $bracketInfo['currentVotes'], $result );
 
     $connection = null;
     return $bracketInfo;
@@ -80,7 +75,7 @@ function createBracket( $bracket )
         $activeId = "r0";
         break;
     default:
-        $activeId = "o";
+        $activeId = "";
     }
 
     $entryValues = "";
@@ -239,22 +234,23 @@ function getBracketId( $title )
 
 function getCurrentVotes( $bracketId )
 {
-//    $query = "SELECT
-//                  GROUP_CONCAT((v.match_id + ',' + v.entry_seed)) as \"current_votes\"
-//              FROM voting v
-//                  JOIN timing t ON v.bracket_id = t.bracket_id
-//              WHERE (active_id = '' OR match_id LIKE (active_id + '%'))
-//                  AND v.bracket_id = :bracketId ";
-//    $connection = getConnection();
-//    $statement = $connection->prepare( $query );
-//    $statement->bindParam(':bracketId', $bracketId);
-//    $statement->execute();
-//
-//    $result = $statement->fetch();
-//    $currentVotes = [];
-//
-//    $connection = null;
-//    return $result;
+    $query = "SELECT
+                  GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed)) as \"current_votes\"
+              FROM voting v
+                  JOIN timing t ON v.bracket_id = t.bracket_id
+              WHERE (active_id = '' OR match_id LIKE (active_id + '%'))
+                  AND v.bracket_id = :bracketId ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':bracketId', $bracketId);
+    $statement->execute();
+
+    $result = $statement->fetch();
+    $currentVotes = [];
+    parseVotes( $currentVotes, $result );
+
+    $connection = null;
+    return $currentVotes;
 }
 
 function getWinners( $bracketId )
@@ -271,17 +267,82 @@ function getWinners( $bracketId )
 //    return $winners;
 }
 
+//todo 10 - create a DB Service class that has the voting logic and the data parsing
+function parseEntries( &$target, $data )
+{
+    $entryNames  = explode( '|', $data['e_names'] );
+    $entryImages = explode( '|', $data['e_images'] );
+    foreach( $entryNames as $index => $name ) {
+        array_push( $target, ['name' => $name, 'image' => $entryImages[$index]] );
+    }
+}
+
+function parseVotes( &$target, $data )
+{
+    $result = [];
+    $matchIds = [];
+    $votes = explode( ',', $data['current_votes'] );
+    foreach( $votes as $value )
+    {
+        $values = explode( '|', $value );
+        $index = array_search( $values[0], $matchIds );
+        if ( $index >= 0 )
+        {
+            array_push( $result[$index]['entries'], $values[1] );
+        }
+        else
+        {
+            array_push( $matchIds, $values[0] );
+            array_push( $result, [ "id" => $values[0], "entries" => [], "allVotes" => [ $values[1] ] ] );
+        }
+    }
+    foreach( $result as $match => $index )
+    {
+        $votesByEntry = array_count_values( $match['allVotes'] );
+        foreach( $votesByEntry as $seed => $count )
+        {
+            array_push( $result[$index]['entries'], ['seed' => $seed, 'count' => $count] );
+        }
+        unset( $result[$index]['allVotes'] );
+    }
+    $target = $result;
+}
+
+function checkVote( $votingConditions, $votes )
+{
+    $result = null;
+
+    if ( !$votingConditions['active'] )
+    {
+        $result = "This bracket is not currently active.";
+    }
+    elseif ( $votingConditions['active_id'] )
+    {
+        for ( $i = 0; $i < count( $votes ); $i++ )
+        {
+            if ( strpos( $votes[$i]['id'], $votingConditions['active_id'] ) === false )
+            {
+                $result = "The voting window for these matches has closed.";
+                break;
+            }
+        }
+    }
+
+    return $result;
+}
+
 function vote( $bracketId, $votes )
 {
     $result['isSuccess'] = false;
-    $result['message'] = checkVote( $bracketId, $votes );
+    $votingConditions = getVoteConditions( $bracketId );
+    $result['message'] = checkVote( $votingConditions, $votes );
     if ( !$result['message'] ) {
         $result['isSuccess'] = saveVote( $bracketId, $votes );
     }
     return $result;
 }
 
-function checkVote( $bracketId, $votes )
+function getVoteConditions( $bracketId )
 {
     $query = "SELECT
                 IF(m.state = 'active', '1', '') AS \"active\",
@@ -294,25 +355,7 @@ function checkVote( $bracketId, $votes )
     $statement->bindParam(':bracketId', $bracketId);
     $statement->execute();
 
-    $votingConditions = $statement->fetch();
-
-    $result = null;
-    if ( !$votingConditions['active'] )
-    {
-        $result = "This bracket is not currently active.";
-    }
-    elseif ( $votingConditions['active_id'] )
-    {
-        for ( $i = 0; $i < count( $votes ); $i++ )
-        {
-            if ( strpos( $votes[$i], $votingConditions['active_id'] ) === false )
-            {
-                $result = "The voting window for these matches has closed.";
-                break;
-            }
-        }
-    }
-
+    $result = $statement->fetch();
     $connection = null;
     return $result;
 }

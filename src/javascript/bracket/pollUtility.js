@@ -58,18 +58,10 @@ function registerPollChoice( index ) {
 function getPollVotes() {
     let votes = null;
     if ( pollObject.getWinner() ) {
-        votes = [{ id: "", vote: pollObject.getWinnerIndex() }];
+        votes = [{ id: "poll", vote: pollObject.getWinnerIndex() }];
     }
     else {
         showToaster( "Must choose one entry..." );
     }
     return votes;
-}
-
-
-/*** RESULTS ***/
-
-
-function getPollVoteDisplay( currentVotes ) {
-    return currentVotes.map( v => { return v.name + ": " + v.voteCount } ).join( "<br/>" );
 }
