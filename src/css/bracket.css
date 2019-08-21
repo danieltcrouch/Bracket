@@ -29,3 +29,14 @@
     line-height: 1;
     vertical-align: middle;
 }
+
+.progressBar {
+    font-weight: bold;
+    text-align: left;
+
+    color: white;
+    background-color: red;
+
+    padding: .3em .5em;
+    margin-top: .5em;
+}

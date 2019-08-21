@@ -61,7 +61,8 @@ function updateBracketTiming( bracketId, bracketInfo, callback ) {
         const closeTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
         if ( closeTime && isDateBefore( closeTime, new Date(), true ) ) {
             bracketUpdated = true;
-            const isLastRound = bracketInfo.winners.length === bracketInfo.entries.length - 2;
+            const isLastRound = bracketInfo.winners.length &&
+                bracketInfo.winners.length === bracketInfo.entries.length - 2;
             if ( isLastRound ) {
                 bracketInfo.timing.scheduledClose = null;
                 bracketInfo.state = "complete";
@@ -198,21 +199,34 @@ function viewResults( mode, entries, currentVotes, additionalInfo ) {
     let voteDisplay = getVoteDisplay( mode, entries, currentVotes );
     voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
     showMessage( "Current Votes", voteDisplay );
-    //todo 6 - give dynamic graphic - https://www.youtube.com/watch?v=0CIt9mwtNws
+    animateEntries()
 }
 
 function getVoteDisplay( mode, entries, currentVotes ) {
     let result = "";
-    if ( mode === "round" ) {
-        for ( let i = 0; i < currentVotes.length; i++) {
-            result += currentVotes[i].entries.map( entry => { return entries[entry.seed] + ": " + entry.count } ).join( "<br/>" );
-            result += "<br/>";
-        }
-    }
-    else {
-        result = currentVotes[0].entries.map( entry => { return entries[entry.seed] + ": " + entry.count } ).join( "<br/>" );
+    for ( let i = 0; i < currentVotes.length; i++) {
+        result += currentVotes[i].entries.map( entry => {
+            return "<div class='progressBar' style='width: 0%'>" +
+                "<span style='white-space: nowrap;'>" + entries[entry.seed].name + "</span>" +
+                "<span style='display: none; float: right;'>" +  entry.count + "</span>" +
+                "</div>"
+        } ).join( "\n" );
+        result += "<br/>";
     }
     return result;
+}
+
+function animateEntries() {
+    let elements = Array.from( cl('progressBar') );
+    let counts = elements.map( e => e.getElementsByTagName( "SPAN" )[1].innerText );
+    let maxCount = Math.max( ...counts );
+    for ( let i = 0; i < elements.length; i++) {
+        const count = counts[i];
+        const width = "+=" + (count / maxCount * 100) + "%";
+        $( elements[i] ).animate({
+            width: width
+        });
+    }
 }
 
 

@@ -15,17 +15,17 @@ function getBracket( $bracketId )
                   LEFT OUTER JOIN (
                       SELECT
                           v.bracket_id,
-                          GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed)) as \"current_votes\"
+                          GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed) ORDER BY v.entry_seed) as \"current_votes\"
                       FROM voting v
                           JOIN timing t ON v.bracket_id = t.bracket_id
-                      WHERE active_id = '' OR match_id LIKE (active_id + '%')
+                      WHERE active_id = '' OR match_id LIKE CONCAT(active_id, '%')
                       GROUP BY v.bracket_id
                   ) vot ON m.id = vot.bracket_id
                   LEFT OUTER JOIN (
                       SELECT
                           e.bracket_id,
-                          GROUP_CONCAT(e.name ORDER BY e.seed ASC SEPARATOR '|') as \"e_names\",
-                          GROUP_CONCAT(e.image ORDER BY e.seed ASC SEPARATOR '|') as \"e_images\"
+                          GROUP_CONCAT(e.name ORDER BY e.seed) as \"e_names\",
+                          GROUP_CONCAT(e.image ORDER BY e.seed) as \"e_images\"
                       FROM entries e
                       GROUP BY e.bracket_id
                   ) ent ON m.id = ent.bracket_id
@@ -235,10 +235,10 @@ function getBracketId( $title )
 function getCurrentVotes( $bracketId )
 {
     $query = "SELECT
-                  GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed)) as \"current_votes\"
+                  GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed) ORDER BY v.entry_seed) as \"current_votes\"
               FROM voting v
                   JOIN timing t ON v.bracket_id = t.bracket_id
-              WHERE (active_id = '' OR match_id LIKE (active_id + '%'))
+              WHERE (active_id = '' OR match_id LIKE CONCAT(active_id, '%'))
                   AND v.bracket_id = :bracketId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
@@ -270,8 +270,8 @@ function getWinners( $bracketId )
 //todo 10 - create a DB Service class that has the voting logic and the data parsing
 function parseEntries( &$target, $data )
 {
-    $entryNames  = explode( '|', $data['e_names'] );
-    $entryImages = explode( '|', $data['e_images'] );
+    $entryNames  = explode( ',', $data['e_names'] );
+    $entryImages = explode( ',', $data['e_images'] );
     foreach( $entryNames as $index => $name ) {
         array_push( $target, ['name' => $name, 'image' => $entryImages[$index]] );
     }
@@ -286,17 +286,17 @@ function parseVotes( &$target, $data )
     {
         $values = explode( '|', $value );
         $index = array_search( $values[0], $matchIds );
-        if ( $index >= 0 )
-        {
-            array_push( $result[$index]['entries'], $values[1] );
-        }
-        else
+        if ( $index === false )
         {
             array_push( $matchIds, $values[0] );
             array_push( $result, [ "id" => $values[0], "entries" => [], "allVotes" => [ $values[1] ] ] );
         }
+        else
+        {
+            array_push( $result[$index]['allVotes'], $values[1] );
+        }
     }
-    foreach( $result as $match => $index )
+    foreach( $result as $index => $match )
     {
         $votesByEntry = array_count_values( $match['allVotes'] );
         foreach( $votesByEntry as $seed => $count )
@@ -381,7 +381,7 @@ function saveVote( $bracketId, $votes )
     {
         $vote = $votes[$i];
         $statement->bindParam(':matchId',   $vote['id']);
-        $statement->bindParam(':entrySeed', $vote['entrySeed']);
+        $statement->bindParam(':entrySeed', $vote['vote']);
         $statement->execute();
     }
 

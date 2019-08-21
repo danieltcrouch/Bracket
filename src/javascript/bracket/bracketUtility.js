@@ -330,7 +330,7 @@ function getBracketVotes() {
     let votes = null;
     let relevantMatches = null;
     if ( mode === "open" ) {
-        relevantMatches = [ bracketObject.getFinalMatch() ];
+        relevantMatches = bracketObject.getFinalMatch();
         if ( areMatchesComplete( relevantMatches ) ) {
             votes = parseVotes( relevantMatches );
         }
@@ -348,7 +348,7 @@ function getBracketVotes() {
         }
     }
     else if ( mode === "match" ) {
-        relevantMatches = [ bracketObject.getMatchFromId( bracketObject.getCurrentMatchId() ) ];
+        relevantMatches = bracketObject.getMatchFromId( bracketObject.getCurrentMatchId() );
         if ( areMatchesComplete( relevantMatches ) ) {
             votes = parseVotes( relevantMatches );
         }
@@ -374,7 +374,7 @@ function areMatchesComplete( matches ) {
 
 function parseVotes( relevantMatches ) {
     relevantMatches = Array.isArray( relevantMatches ) ? relevantMatches : [ relevantMatches ];
-    return relevantMatches.map( m => function() { return { id: getMatchId( m ), vote: m.winner.seed }; } );
+    return relevantMatches.map( m => { return { id: getMatchId( m ), vote: m.winner.seed - 1 } } );
 }
 
 
