@@ -1,11 +1,12 @@
 //todo 9 - Clean Common repo and custom css files in projects
 //todo 9 - set standards for this and future projects
 
-let bracket;
+let survey;
 let round;
 let state;
 let mode;
 let endTime;
+let display;
 let currentVotes;
 
 
@@ -19,44 +20,36 @@ const BUTTON_B_MARGIN    = ".75rem";
 const MATCH_B_MARGIN     = "1.5rem";
 const TOTAL_MATCH_HEIGHT = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 2
 
-function getBracketInfo( bracketId ) {
+function getSurveyInfo( surveyId ) {
     $.post(
         "php/database.php",
         {
-            action: "getBracket",
-            id:     bracketId
+            action: "getSurvey",
+            id:     surveyId
         },
         function ( response ) {
-            let bracketInfo = JSON.parse( response );
-            updateBracketTiming( bracketId, bracketInfo, loadPage );
+            let surveyInfo = JSON.parse( response );
+            updateSurveyTiming( surveyId, surveyInfo, loadPage );
         }
     );
 }
 
-function loadPage( bracketId, bracketInfo ) {
-    if ( bracketId && bracketInfo && isBracketAvailable( bracketInfo.state ) ) {
-        bracketInfo.helpImage = helpImage;
-        createTitleLogo( bracketInfo, cl('title')[0], bracketInfo.state === "active", true );
+function loadPage( surveyId, surveyInfo ) {
+    if ( surveyId && surveyInfo && isVisible( surveyInfo.state ) ) {
+        surveyInfo.helpImage = helpImage;
+        createTitleLogo( surveyInfo, cl('title')[0], surveyInfo.state === "active", true );
 
-        state = bracketInfo.state;
-        mode = bracketInfo.mode;
-        if ( mode === "poll" ) {
-            bracket = new Poll( bracketInfo.entries, bracketInfo.winners );
-            bracket.isPoll = true;
-            displayPoll( bracket );
-        }
-        else {
-            bracket = new Bracket( bracketInfo.entries, bracketInfo.winners );
-            bracket.isBracket = true;
-            displayBracket( bracket );
-        }
+        survey = getBracketOrPoll( surveyInfo.type, surveyInfo.entries, surveyInfo.winners );
+        state = surveyInfo.state;
+        mode = surveyInfo.mode;
+        isSurveyBracket() ? displayBracket() : displayPoll();
 
-        endTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
+        endTime = newDateFromUTC( surveyInfo.timing.scheduledClose );
         displayRoundTimer();
-        currentVotes = bracketInfo.currentVotes;
+        currentVotes = surveyInfo.currentVotes;
     }
     else {
-        window.location = "https://bracket.religionandstory.com/index.php?error=InvalidBracketId";
+        window.location = "https://bracket.religionandstory.com/index.php?error=InvalidSurveyId";
     }
 }
 
@@ -67,8 +60,8 @@ function loadPage( bracketId, bracketInfo ) {
 function displayRoundTimer() {
     let timerSpan = id('roundTimer');
     if ( state !== "active" ) {
-        timerSpan.innerText = "(" + state.charAt(0).toUpperCase() + state.slice(1) + ")";
-        id( 'bracketDisplay' ).style.display = "none";
+        timerSpan.innerText = "(" + capitalize( state ) + ")";
+        id( 'surveyDisplay' ).style.display = "none";
         id( 'submit' ).style.display = "none";
     }
     else if ( endTime ) {
@@ -84,7 +77,7 @@ function displayRoundTimer() {
 
 function submit() {
     if ( !endTime || isDateBeforeOrEqual( new Date(), endTime, true ) ) {
-        let votes = bracket.isBracket ? getBracketVotes() : getPollVotes();
+        let votes = isSurveyBracket() ? getBracketVotes() : getPollVotes();
         if ( votes ) {
             saveVote( votes );
         }
@@ -99,7 +92,7 @@ function saveVote( votes ) {
         "php/database.php",
         {
             action: "vote",
-            id:     bracketId,
+            id:     surveyId,
             votes:  votes
         },
         function ( response ) {
@@ -124,7 +117,7 @@ function updateVotes() {
         "php/database.php",
         {
             action: "getCurrentVotes",
-            id:     bracketId
+            id:     surveyId
         },
         function ( response ) {
             currentVotes = JSON.parse( response );
@@ -135,15 +128,15 @@ function updateVotes() {
 
 function review() {
     let additionalInfo = ""; //todo 11 - allow users to subscribe
-    viewResults( mode, bracket.getEntries(), currentVotes, additionalInfo );
+    viewResults( mode, survey.getAllChoices(), currentVotes, additionalInfo );
 }
 
 
 /*** UTILITY ***/
 
 
-function isBracketAvailable( state ) {
-    return state && state !== "hidden" && state !== "ready";
+function isSurveyBracket() {
+    return ( survey instanceof Bracket );
 }
 
 function hideMobileDisplay() {
@@ -171,13 +164,13 @@ function getButton() {
     return button;
 }
 
-function setClickable( matchId ) {
-    unfreezeRadioButtons( matchId );
-    nm( matchId ).forEach( function( button ) { button.classList.add( "blinkBorder" ); } );
+function setClickable( buttonGroupId ) {
+    unfreezeRadioButtons( buttonGroupId );
+    nm( buttonGroupId ).forEach( function( button ) { button.classList.add( "blinkBorder" ); } );
 }
 
-function adjustFontSize( roundDiv ) {
-    let buttons = roundDiv.getElementsByTagName( "BUTTON" );
+function adjustFontSize( verticalDiv ) {
+    let buttons = verticalDiv.getElementsByTagName( "BUTTON" );
 
     const defaultStyle = getComputedStyle( buttons[0] );
     const defaultWidth = parseFloat( defaultStyle.width );

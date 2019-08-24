@@ -4,8 +4,7 @@
 <head>
     <?php includeHeadInfo(); ?>
     <script src="javascript/edit.js"></script>
-    <script src="javascript/utility.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://religionandstory.com/bracket/css/bracket.css"/>
+    <?php include_once("php/includes.php"); ?>
 </head>
 
 <body>
@@ -14,7 +13,7 @@
     <?php includeHeader(); ?>
     <div class="col-10 header">
         <div class="title center"><span class="clickable">
-            Edit Bracket
+            Edit Survey
             <img id="helpIcon" style="width: .5em; padding-bottom: .25em" src="<?php getHelpImage() ?>" alt="help">
         </span></div>
         <div id="helpText" style="display: none">
@@ -25,7 +24,7 @@
     <!--Main-->
     <div class="col-10 main">
         <div class="col-5" style="padding-bottom: 1em">
-            <input id="titleInput" type="text" class="input" maxlength="20" placeholder="Bracket Title">
+            <input id="titleInput" type="text" class="input" maxlength="20" placeholder="Survey Title">
             <input id="imageInput" type="text" class="input" placeholder="Image Address">
             <textarea id="helpInput" class="input" placeholder="Instructions"></textarea>
             <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="previewLogo()">Preview</button>
@@ -36,12 +35,12 @@
 
         <div class="col-10 main">
             <div class="center" style="margin-bottom: 1em">
-                <button id="bracket" name="bracketType" class="button inverseButton" style="width: 8em; margin: .25em;">Bracket</button>
-                <button id="poll"    name="bracketType" class="button inverseButton" style="width: 8em; margin: .25em;">Poll</button>
+                <button id="bracket" name="surveyType" class="button inverseButton" style="width: 8em; margin: .25em;">Bracket</button>
+                <button id="poll"    name="surveyType" class="button inverseButton" style="width: 8em; margin: .25em;">Poll</button>
             </div>
 
-            <div id="entryDiv" class="center" style="display: none; margin-bottom: 1em">
-                <input id="entryCount" type="number" class="input" placeholder="Number of Entries" onkeyup="submitEntryCount( event )">
+            <div id="choiceDiv" class="center" style="display: none; margin-bottom: 1em">
+                <input id="choiceCount" type="number" class="input" placeholder="Number of Choices" onkeyup="submitChoiceCount( event )">
             </div>
 
             <div id="bracketSettings" class="center" style="display: none; margin-bottom: 1em">
@@ -74,7 +73,7 @@
             </div>
 
             <div class="center" style="display: none; margin-bottom: 1em">
-                <button id="previewBracket" class="button" style="width: 8em; margin: .25em;" onclick="previewBracket()">Preview</button>
+                <button id="previewSurvey" class="button" style="width: 8em; margin: .25em;" onclick="previewSurvey()">Preview</button>
             </div>
             <div class="center" style="display: none; margin-bottom: 1em">
                 <button id="review" class="button" style="width: 8em; margin: .25em;" onclick="review()">Review</button>
@@ -97,25 +96,25 @@
         </div>
     </div>
 
-    <form id="previewForm" method="POST" target="_blank" action="/bracket.php?id=PREVIEW">
-        <input name="bracket" id="bracketData" type="hidden">
+    <form id="previewForm" method="POST" target="_blank" action="/survey.php?id=PREVIEW">
+        <input name="survey" id="surveyInfo" type="hidden">
     </form>
 
 </body>
 
 <script>
-    const bracketId = "<?php echo $_GET['id'] ?>";
+    const surveyId = "<?php echo $_GET['id'] ?>";
     const helpImage = "<?php getHelpImage() ?>";
 
-    if ( bracketId ) {
-        initializeEdit( bracketId );
+    if ( surveyId ) {
+        initializeEdit( surveyId );
     }
     else {
         initializeCreate();
     }
 
-    setRadioCallback( "bracketType", function( bracketType ) {
-        setBracketType( bracketType );
+    setRadioCallback( "surveyType", function( surveyType ) {
+        setSurveyType( surveyType );
     });
     setRadioCallback( "votingType", function( votingType ) {
         setVotingType( votingType );

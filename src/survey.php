@@ -4,19 +4,14 @@
 <head>
     <?php
     include_once("php/database.php");
-    $meta = getBracketMeta( $_GET['id'] );
+    $meta = getSurveyMeta( $_GET['id'] );
     $pageTitle   = $meta ? $meta['title'] : $pageTitle;
     $image       = $meta ? $meta['image'] : $image;
     $description = $meta ? $meta['help']  : $description;
     includeHeadInfo();
     ?>
-    <script src="javascript/bracket/bracketClass.js"></script>
-    <script src="javascript/bracket/bracketUtility.js"></script>
-    <script src="javascript/bracket/pollClass.js"></script>
-    <script src="javascript/bracket/pollUtility.js"></script>
-    <script src="javascript/bracket.js"></script>
-    <script src="javascript/utility.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://religionandstory.com/bracket/css/bracket.css"/>
+    <script src="javascript/survey.js"></script>
+    <?php include_once("php/includes.php"); ?>
 </head>
 
 <body>
@@ -38,7 +33,7 @@
             <img id="arrowNext" class="clickable" style="width: 1.5em" src="images/right.png" alt="right" onclick="changeRound( 'next' )">
         </div>
         <div id="roundTimer" class="center" style="display: none; font-size: 1.25em; margin-bottom: 1em"></div>
-        <div id="bracketDisplay" class="center"></div>
+        <div id="surveyDisplay" class="center"></div>
         <div class="center" style="margin-bottom: 1em"><button id="submit" class="button" style="width: 8em" onclick="submit()">Submit</button></div>
         <div class="center" style="margin-bottom: 1em"><button id="result" class="button" style="width: 8em" onclick="review()">Review</button></div>
     </div>
@@ -46,21 +41,20 @@
     <!--
     todo 7:
         Update rounds and close time
-        Anything that might be related to a daemon
         Delete unused DB columns
     -->
 
 </body>
 
 <script>
-    const bracketId = "<?php echo $_GET['id'] ?>";
+    const surveyId = "<?php echo $_GET['id'] ?>";
     const helpImage = "<?php getHelpImage() ?>";
 
-    if ( bracketId !== "PREVIEW" ) {
-        getBracketInfo( bracketId );
+    if ( surveyId === "PREVIEW" ) {
+        loadPage( surveyId, <?php echo $_POST['survey']; ?> );
     }
     else {
-        loadPage( bracketId, <?php echo $_POST['bracket']; ?> );
+        getSurveyInfo( surveyId );
     }
 </script>
 <?php includeModals(); ?>

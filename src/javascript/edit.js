@@ -13,46 +13,43 @@ function initializeCreate() {
     createTitleLogo( logoInfo, id('exampleLogo'), true, true );
 }
 
-function initializeEdit( bracketId ) {
+function initializeEdit( surveyId ) {
     $.post(
         "php/database.php",
         {
-            action: "getBracket",
-            id:     bracketId
+            action: "getSurvey",
+            id:     surveyId
         },
         function ( response ) {
-            let bracketInfo = JSON.parse( response );
-            bracketInfo.helpImage = helpImage;
-            updateBracketTiming( bracketId, bracketInfo, initializeEditCallback );
+            let surveyInfo = JSON.parse( response );
+            surveyInfo.helpImage = helpImage;
+            updateSurveyTiming( surveyId, surveyInfo, initializeEditCallback );
         }
     );
 }
 
-function initializeEditCallback( bracketId, bracketInfo ) {
-
+function initializeEditCallback( surveyId, surveyInfo ) {
     //Fill-out page
-    state = bracketInfo.state;
-    activeId = bracketInfo.timing.activeId;
-    winners = bracketInfo.winners;
-    currentVotes = bracketInfo.currentVotes;
-    id('titleInput').value = bracketInfo.title;
-    id('imageInput').value = bracketInfo.image;
-    id('helpInput').value = bracketInfo.help;
-    id(bracketInfo.mode).click();
-    if ( bracketInfo.mode !== "poll" ) {
-        id('bracket').click();
-    }
-    id('frequency').value = bracketInfo.timing.frequency;
+    state = surveyInfo.state;
+    activeId = surveyInfo.timing.activeId;
+    winners = surveyInfo.winners;
+    currentVotes = surveyInfo.currentVotes;
+    id('titleInput').value = surveyInfo.title;
+    id('imageInput').value = surveyInfo.image;
+    id('helpInput').value = surveyInfo.help;
+    id(surveyInfo.type).click();
+    id(surveyInfo.mode).click();
+    id('frequency').value = surveyInfo.timing.frequency;
     updateFrequencyPoints();
-    id('frequencyPoint').value = bracketInfo.timing.frequencyPoint;
-    if ( bracketInfo.timing.scheduledClose ) {
-        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( bracketInfo.timing.scheduledClose ) );
+    id('frequencyPoint').value = surveyInfo.timing.frequencyPoint;
+    if ( surveyInfo.timing.scheduledClose ) {
+        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) );
     }
-    id('entryCount').value = bracketInfo.entries.length;
-    createEntryInputs();
-    for ( let i = 0; i < bracketInfo.entries.length; i++ ) {
-        id( i + "NameInput" ).value = bracketInfo.entries[i].name;
-        id( i + "ImageInput" ).value = bracketInfo.entries[i].image;
+    id('choiceCount').value = surveyInfo.entries.length;
+    createChoiceInputs();
+    for ( let i = 0; i < surveyInfo.entries.length; i++ ) {
+        id( i + "NameInput" ).value = surveyInfo.entries[i].name;
+        id( i + "ImageInput" ).value = surveyInfo.entries[i].image;
     }
     previewLogo();
 
@@ -60,9 +57,9 @@ function initializeEditCallback( bracketId, bracketInfo ) {
     //todo 7 - what if bracket is complete?
     id('titleInput').disabled = true;
     id('imageInput').disabled = true;
-    freezeRadioButtons( "bracketType" );
+    freezeRadioButtons( "surveyType" );
     freezeRadioButtons( "votingType" );
-    id('entryCount').disabled = true;
+    id('choiceCount').disabled = true;
 
     id('save').style.display = "";
     id('create').style.display = "none";
@@ -78,27 +75,26 @@ function initializeEditCallback( bracketId, bracketInfo ) {
     }
 }
 
-function setBracketType( bracketType ) {
-    id('bracketSettings').style.display = ( bracketType === "bracket" ) ? "block" : "none";
-
-    if ( bracketType === "bracket" ) {
+function setSurveyType( surveyType ) {
+    if ( surveyType === "bracket" ) {
         setVotingType( getSelectedRadioButtonId( "votingType" ) );
+        id('bracketSettings').style.display = "block";
     }
     else {
         displayTimingSettings( false, true );
+        id('bracketSettings').style.display = "none";
     }
-
-    id('entryDiv').style.display = "block";
+    id('choiceDiv').style.display = "block";
 }
 
-function setVotingType( bracketRoundType ) {
-    if ( bracketRoundType === "match" ) {
+function setVotingType( votingType ) {
+    if ( votingType === "match" ) {
         displayTimingSettings( true, false );
     }
-    else if ( bracketRoundType === "round" ) {
+    else if ( votingType === "round" ) {
         displayTimingSettings( true, false );
     }
-    else if ( bracketRoundType === "open" ) {
+    else if ( votingType === "open" ) {
         displayTimingSettings( false, true );
     }
     else {
@@ -145,23 +141,23 @@ function updateFrequencyPoints() {
     }
 }
 
-function submitEntryCount( e ) {
+function submitChoiceCount( e ) {
     if ( e.which === 13 || e.keyCode === 13 ) {
-        createEntryInputs();
+        createChoiceInputs();
     }
 }
 
-function createEntryInputs() {
-    let div = id('entryDiv');
+function createChoiceInputs() {
+    let div = id('choiceDiv');
 
-    let entryCount = id('entryCount').value;
-    if ( entryCount <= 128 ) {
-        let currentCount = nm( 'entryNames' ).length;
-        entryCount -= currentCount;
+    let choiceCount = id('choiceCount').value;
+    if ( choiceCount <= 128 ) {
+        let currentCount = nm( 'choiceNames' ).length;
+        choiceCount -= currentCount;
 
-        if ( entryCount > 0 ) {
-            for ( let i = 0; i < entryCount; i++ ) {
-                let entryDiv = document.createElement( "DIV" );
+        if ( choiceCount > 0 ) {
+            for ( let i = 0; i < choiceCount; i++ ) {
+                let choiceDiv = document.createElement( "DIV" );
                 let nameInput = document.createElement( "INPUT" );
                 let imageInput = document.createElement( "INPUT" );
                 nameInput.id = i + "NameInput";
@@ -172,23 +168,23 @@ function createEntryInputs() {
                 imageInput.style.margin = ".5em";
                 nameInput.classList.add( "input" );
                 imageInput.classList.add( "input" );
-                nameInput.setAttribute( "name", "entryNames" );
-                imageInput.setAttribute( "name", "entryImages" );
-                nameInput.setAttribute( "placeholder", "Entry Name" );
+                nameInput.setAttribute( "name", "choiceNames" );
+                imageInput.setAttribute( "name", "choiceImages" );
+                nameInput.setAttribute( "placeholder", "Choice Name" );
                 imageInput.setAttribute( "placeholder", "Image URL" );
-                entryDiv.appendChild( nameInput );
-                entryDiv.appendChild( imageInput );
-                div.appendChild( entryDiv );
+                choiceDiv.appendChild( nameInput );
+                choiceDiv.appendChild( imageInput );
+                div.appendChild( choiceDiv );
             }
         }
-        else if ( entryCount < 0 ) {
-            for ( let i = 0; i < -entryCount; i++ ) {
+        else if ( choiceCount < 0 ) {
+            for ( let i = 0; i < -choiceCount; i++ ) {
                 div.removeChild( div.lastChild );
             }
         }
     }
     else {
-        showToaster( "Entry count must be below 128" );
+        showToaster( "Choice count must be below 128" );
     }
 }
 
@@ -200,22 +196,22 @@ function validate() {
     let error = validateLogo();
 
     if ( !error ) {
-        const isBracket = getSelectedRadioButtonId('bracketType') === "bracket";
-        const entryNamesFilled = nm( 'entryNames' ).map( e => e.value ).filter( n => !n ).length > 0;
-        const entryNamesLength = nm( 'entryNames' ).map( e => e.value ).filter( n => n.length > 20 ).length > 0;
-        const entryImagesLength = nm( 'entryImages' ).map( e => e.value ).filter( i => i.length > 256 ).length > 0;
+        const choiceNamesFilled  = nm( 'choiceNames'  ).map( e => e.value ).filter( n => !n ).length > 0;
+        const choiceNamesLength  = nm( 'choiceNames'  ).map( e => e.value ).filter( n => n.length > 20 ).length > 0;
+        const choiceImagesLength = nm( 'choiceImages' ).map( e => e.value ).filter( i => i.length > 256 ).length > 0;
 
+        const isBracket = getSelectedRadioButtonId('surveyType') === "bracket";
         if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
             error = "Voting type required: match, round, or open.";
         }
-        else if ( !entryNamesFilled ) {
-            error = "Entry names required.";
+        else if ( !choiceNamesFilled ) {
+            error = "Choice names required.";
         }
-        else if ( !entryNamesLength ) {
-            error = "Entry name length too long. (Max of 20 characters)";
+        else if ( !choiceNamesLength ) {
+            error = "Choice name length too long. (Max of 20 characters)";
         }
-        else if ( !entryImagesLength ) {
-            error = "Entry image length too long. (Max of 256 characters)";
+        else if ( !choiceImagesLength ) {
+            error = "Choice image length too long. (Max of 256 characters)";
         }
     }
 
@@ -255,13 +251,13 @@ function previewLogo() {
     }
 }
 
-function previewBracket() {
+function previewSurvey() {
     const error = validate();
     if ( !error ) {
-        let bracket = getBracketData();
-        bracket.active = true;
-        bracket.timing.scheduledClose = adjustToUTC( bracket.timing.scheduledClose );
-        id('bracketData').value = JSON.stringify( bracket );
+        let surveyInfo = getSurveyInfo();
+        surveyInfo.active = true;
+        surveyInfo.timing.scheduledClose = adjustToUTC( surveyInfo.timing.scheduledClose );
+        id('surveyInfo').value = JSON.stringify( surveyInfo );
         id('previewForm').submit();
     }
     else {
@@ -279,8 +275,8 @@ function create() {
         $.post(
             "php/database.php",
             {
-                action:  "createBracket",
-                bracket: JSON.stringify( getBracketData() )
+                action:  "createSurvey",
+                survey: JSON.stringify( getSurveyInfo() )
             },
             function ( response ) {
                 window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSON.parse( response );
@@ -295,13 +291,13 @@ function create() {
 function save() {
     const error = validate();
     if ( !error ) {
-        let bracketInfo = getBracketData();
-        bracketInfo.id = bracketId;
+        let surveyInfo = getSurveyInfo();
+        surveyInfo.id = surveyId;
         $.post(
             "php/database.php",
             {
-                action:  "updateBracket",
-                bracket: JSON.stringify( bracketInfo )
+                action:  "updateSurvey",
+                survey: JSON.stringify( surveyInfo )
             },
             function ( response ) {
                 showToaster( "Saved." );
@@ -317,25 +313,25 @@ function load() {
     $.post(
         "php/database.php",
         {
-            action: "getAllBracketMetas"
+            action: "getAllSurveyMetas"
         },
         function ( response ) {
-            const html = constructEditLinks( JSON.parse( response) );
-            showMessage( "Choose a Bracket", html );
+            const html = constructEditLinks( JSON.parse( response ) );
+            showMessage( "Choose a Survey", html );
         }
     );
 }
 
-function constructEditLinks( brackets ) {
+function constructEditLinks( surveyMetas ) {
     let result = "";
-    for ( let i = 0; i < brackets.length; i++ )
+    for ( let i = 0; i < surveyMetas.length; i++ )
     {
-        const bracket = brackets[i];
-        const isDuplicate = brackets.filter( b => b.title === bracket.title && b.date !== bracket.date ).length > 0;
-        const title = bracket.title + (isDuplicate ? "(" + new Date( bracket.date ) + ")" : "");
-        result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + bracket.id + "' class='link'>" + title + "</a><br/>";
+        const surveyMeta = surveyMetas[i];
+        const isDuplicate = surveyMetas.filter( b => b.title === surveyMeta.title && b.date !== surveyMeta.date ).length > 0;
+        const title = surveyMeta.title + (isDuplicate ? "(" + new Date( surveyMeta.date ) + ")" : "");
+        result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + surveyMeta.id + "' class='link'>" + title + "</a><br/>";
     }
-    result += "<a href='https://bracket.religionandstory.com/edit.php' class='link'>Create New Bracket</a><br/>";
+    result += "<a href='https://bracket.religionandstory.com/edit.php' class='link'>Create New Survey</a><br/>";
     return result;
 }
 
@@ -344,7 +340,7 @@ function review() {
     let additionalInfo = "<br/> <emphasis>State:</emphasis> " + state +
         "<br/> <emphasis>Active ID:</emphasis> " + activeId +
         "<br/> <emphasis>Round Ends:</emphasis> " + closeTime;
-    viewResults( getMode(), getEntries(), currentVotes, additionalInfo );
+    viewResults( getChoices(), currentVotes, additionalInfo );
 }
 
 function pause() {
@@ -369,8 +365,8 @@ function pauseVoting() {
     $.post(
         "php/database.php",
         {
-            action:     "setBracketState",
-            id:         bracketId,
+            action:     "setSurveyState",
+            id:         surveyId,
             state:      stateToBe
         },
         function ( response ) {
@@ -385,11 +381,11 @@ function pauseClosing() {
         "php/database.php",
         {
             action:     "setCloseTime",
-            id:         bracketId,
+            id:         surveyId,
             time:       null
         },
         function ( response ) {
-            showToaster( "Bracket will close when you tell it to..." );
+            showToaster( "Survey will close when you tell it to..." );
         }
     );
 }
@@ -398,37 +394,26 @@ function start() {
     $.post(
         "php/database.php",
         {
-            action:     "startBracket",
-            id:         bracketId,
-            time:       calculateNextTime( getTiming() )
+            action:     "startSurvey",
+            id:         surveyId,
+            time:       calculateStartTime( getTiming() )
         },
         function ( response ) {
-            showToaster( "Bracket started... " );
+            showToaster( "Survey started... " );
         }
     );
 }
 
 function close() {
     //todo 7
-    // $.post(
-    //     "php/database.php",
-    //     {
-    //         action:     "setBracketState",
-    //         id:         bracketId,
-    //         state:      "complete"
-    //     },
-    //     function ( response ) {
-    //         showToaster( "Bracket is now " + stateToBe );
-    //     }
-    // );
 }
 
 function hide() {
     $.post(
         "php/database.php",
         {
-            action:     "setBracketState",
-            id:         bracketId,
+            action:     "setSurveyState",
+            id:         surveyId,
             state:      "hidden"
         },
         function ( response ) {
@@ -450,25 +435,20 @@ function getLogoData() {
     };
 }
 
-function getBracketData() {
+function getSurveyInfo() {
     const logoData = getLogoData();
-    let mode = getMode();
-
     return {
         title:     logoData.title,
         image:     logoData.image,
         state:     state,
         help:      logoData.help,
         helpImage: logoData.helpImage,
-        mode:      mode,
-        entries:   getEntries(),
+        type:      getSelectedRadioButtonId('surveyType'),
+        mode:      getSelectedRadioButtonId('votingType'),
+        entries:   getChoices(),
         winners:   "",
         timing:   getTiming()
     };
-}
-
-function getMode() {
-    return getSelectedRadioButtonId('bracketType') === "bracket" ? getSelectedRadioButtonId('votingType') : getSelectedRadioButtonId('bracketType');
 }
 
 function getTiming() {
@@ -486,15 +466,14 @@ function getTiming() {
     };
 }
 
-function getEntries() {
-    let entries = [];
-    let entryInputs = nm('entryNames');
-    let imageInputs = nm('entryImages');
-    for ( let i = 0; i < entryInputs.length; i++ ) {
-        if ( entryInputs[i].value ) {
-            entries.push( {name: entryInputs[i].value, image: imageInputs[i].value, seed: i} );
+function getChoices() {
+    let choices = [];
+    let choiceInputs = nm('choiceNames');
+    let imageInputs  = nm('choiceImages');
+    for ( let i = 0; i < choiceInputs.length; i++ ) {
+        if ( choiceInputs[i].value ) {
+            choices.push( {name: choiceInputs[i].value, image: imageInputs[i].value, seed: i} );
         }
     }
-
-    return entries;
+    return choices;
 }

@@ -1,46 +1,47 @@
 <?php
 
-function getBracket( $bracketId )
+function getSurvey( $surveyId )
 {
     $query = "SELECT
-                  m.id, m.state, m.title, m.image, m.help, m.mode,
+                  m.id, m.state, m.title, m.image, m.help, m.type, m.mode,
                   t.frequency, t.frequency_point, t.scheduled_close, t.active_id,
-                  r.index_wins,
+                  r.winners,
                   current_votes,
                   e_names,
                   e_images
               FROM meta m
-                  JOIN timing t ON m.id = t.bracket_id
-                  LEFT OUTER JOIN results r ON m.id = r.bracket_id
+                  JOIN timing t ON m.id = t.meta_id
+                  LEFT OUTER JOIN results r ON m.id = r.meta_id
                   LEFT OUTER JOIN (
                       SELECT
-                          v.bracket_id,
-                          GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed) ORDER BY v.entry_seed) as \"current_votes\"
+                          v.meta_id,
+                          GROUP_CONCAT(CONCAT(v.choice_set_id, '|', v.choice_id) ORDER BY v.choice_id) as \"current_votes\"
                       FROM voting v
-                          JOIN timing t ON v.bracket_id = t.bracket_id
-                      WHERE active_id = '' OR match_id LIKE CONCAT(active_id, '%')
-                      GROUP BY v.bracket_id
-                  ) vot ON m.id = vot.bracket_id
+                          JOIN timing t ON v.meta_id = t.meta_id
+                      WHERE active_id = '' OR choice_set_id LIKE CONCAT(active_id, '%')
+                      GROUP BY v.meta_id
+                  ) vot ON m.id = vot.meta_id
                   LEFT OUTER JOIN (
                       SELECT
-                          e.bracket_id,
-                          GROUP_CONCAT(e.name ORDER BY e.seed) as \"e_names\",
-                          GROUP_CONCAT(e.image ORDER BY e.seed) as \"e_images\"
-                      FROM entries e
-                      GROUP BY e.bracket_id
-                  ) ent ON m.id = ent.bracket_id
-              WHERE m.id = :bracketId ";
+                          c.meta_id,
+                          GROUP_CONCAT(c.name ORDER BY c.seed) as \"e_names\",
+                          GROUP_CONCAT(c.image ORDER BY c.seed) as \"e_images\"
+                      FROM choices c
+                      GROUP BY c.meta_id
+                  ) ent ON m.id = ent.meta_id
+              WHERE m.id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
     $result = $statement->fetch();
-    $bracketInfo = [
+    $surveyInfo = [
         'state'   => $result['state'],
         'title'   => $result['title'],
         'image'   => $result['image'],
         'help'    => $result['help'],
+        'type'    => $result['type'],
         'mode'    => $result['mode'],
         'winners' => $result['winners'],
         'timing'  => [
@@ -50,23 +51,23 @@ function getBracket( $bracketId )
             'activeId'       => $result['active_id']
         ],
         'currentVotes' => [],
-        'entries'      => []
+        'choices'      => []
     ];
-    parseEntries( $bracketInfo['entries'], $result );
-    parseVotes( $bracketInfo['currentVotes'], $result );
+    parseChoices( $surveyInfo['choices'], $result );
+    parseVotes( $surveyInfo['currentVotes'], $result );
 
     $connection = null;
-    return $bracketInfo;
+    return $surveyInfo;
 }
 
-function createBracket( $bracket )
+function createSurvey( $survey )
 {
-    $bracketId = getGUID();
-    $bracket = json_decode( $bracket );
-    $entries = $bracket->entries;
+    $surveyId = getGUID();
+    $survey = json_decode( $survey );
+    $choices = $survey->choices;
     $state = "active";
     $activeId = null;
-    switch ( $bracket->mode )
+    switch ( $survey->mode )
     {
     case "match":
         $activeId = "m0";
@@ -74,114 +75,111 @@ function createBracket( $bracket )
     case "round":
         $activeId = "r0";
         break;
-    default:
-        $activeId = "";
     }
 
-    $entryValues = "";
-    for ( $i = 0; $i < count( $entries ); $i++ )
+    $choiceValues = "";
+    for ( $i = 0; $i < count( $choices ); $i++ )
     {
-        $entryValues .= ( $i != 0 ) ? ", " : "";
-        $entryValues .= "(:bracketId, :entryId, :entryName$i, :entryImage$i, :entrySeed$i)";
+        $choiceValues .= ( $i != 0 ) ? ", " : "";
+        $choiceValues .= "(:surveyId, :choiceId, :choiceName$i, :choiceImage$i, :choiceSeed$i)";
     }
-    $insertMeta = "INSERT INTO meta (id, state, title, image, help, mode) VALUES (:bracketId, :state, :title, :image, :help, :mode)";
-    $insertTiming = "INSERT INTO timing (bracket_id, frequency, frequency_point, scheduled_close, active_id) VALUES (:bracketId, :frequency, :frequencyPoint, :scheduledClose, :activeId)";
-    $insertEntries = "INSERT INTO entries (bracket_id, id, name, image, seed) VALUES $entryValues";
+    $insertMeta = "INSERT INTO meta (id, state, title, image, help, type, mode) VALUES (:surveyId, :state, :title, :image, :help, :type, :mode)";
+    $insertTiming = "INSERT INTO timing (meta_id, frequency, frequency_point, scheduled_close, active_id) VALUES (:surveyId, :frequency, :frequencyPoint, :scheduledClose, :activeId)";
+    $insertChoices = "INSERT INTO choices (meta_id, id, name, image, seed) VALUES $choiceValues";
 
     $query =
         "$insertMeta;\n
          $insertTiming;\n
-         $insertEntries";
+         $insertChoices";
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId',      $bracketId);
+    $statement->bindParam(':surveyId',       $surveyId);
     $statement->bindParam(':state',          $state);
-    $statement->bindParam(':title',          $bracket->title);
-    $statement->bindParam(':image',          $bracket->image);
-    $statement->bindParam(':help',           $bracket->help);
-    $statement->bindParam(':mode',           $bracket->mode);
-    $statement->bindParam(':frequency',      $bracket->frequency);
-    $statement->bindParam(':frequencyPoint', $bracket->frequencyPoint);
-    $statement->bindParam(':scheduledClose', $bracket->scheduledClose);
+    $statement->bindParam(':title',          $survey->title);
+    $statement->bindParam(':image',          $survey->image);
+    $statement->bindParam(':help',           $survey->help);
+    $statement->bindParam(':type',           $survey->type);
+    $statement->bindParam(':mode',           $survey->mode);
+    $statement->bindParam(':frequency',      $survey->frequency);
+    $statement->bindParam(':frequencyPoint', $survey->frequencyPoint);
+    $statement->bindParam(':scheduledClose', $survey->scheduledClose);
     $statement->bindParam(':activeId',       $activeId);
-    for ( $i = 0; $i < count( $entries ); $i++ )
+    for ( $i = 0; $i < count( $choices ); $i++ )
     {
-        $entry = $entries[$i];
-        $entryId = getGUID();
-        $statement->bindParam(":entryId$i",    $entryId);
-        $statement->bindParam(":entrySeed$i",  $entry->seed);
-        $statement->bindParam(":entryName$i",  $entry->name);
-        $statement->bindParam(":entryImage$i", $entry->image);
+        $choice = $choices[$i];
+        $choiceId = getGUID();
+        $statement->bindParam(":choiceId$i",    $choiceId);
+        $statement->bindParam(":choiceSeed$i",  $choice->seed);
+        $statement->bindParam(":choiceName$i",  $choice->name);
+        $statement->bindParam(":choiceImage$i", $choice->image);
     }
     $statement->execute();
 
     $connection = null;
 }
 
-function updateBracket( $bracket )
+function updateSurvey($survey )
 {
-    $bracket = json_decode( $bracket );
-    $bracketId = $bracket->id;
+    $survey = json_decode( $survey );
+    $surveyId = $survey->id;
 
     $query     = "UPDATE meta m, timing t
                   SET m.help = :help,
-                      m.mode = :mode,
                       t.frequency = :frequency,
                       t.frequency_point = :frequencyPoint,
                       t.scheduled_close = :scheduledClose 
-                  WHERE m.id = :bracketId
-                    AND t.bracket_id = :bracketId ";
+                  WHERE m.id = :surveyId
+                    AND t.meta_id = :surveyId ";
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId',      $bracketId);
-    $statement->bindParam(':help',           $bracket->help);
-    $statement->bindParam(':mode',           $bracket->mode);
-    $statement->bindParam(':frequency',      $bracket->frequency);
-    $statement->bindParam(':frequencyPoint', $bracket->frequencyPoint);
-    $statement->bindParam(':scheduledClose', $bracket->scheduledClose);
+    $statement->bindParam(':surveyId',       $surveyId);
+    $statement->bindParam(':help',           $survey->help);
+    $statement->bindParam(':frequency',      $survey->frequency);
+    $statement->bindParam(':frequencyPoint', $survey->frequencyPoint);
+    $statement->bindParam(':scheduledClose', $survey->scheduledClose);
     $statement->execute();
 
     $connection = null;
-    return updateEntries( $bracketId, $bracket->entries );
+    return updateChoices( $surveyId, $survey->choices );
 }
 
-function updateEntries( $bracketId, $entries )
+function updateChoices( $surveyId, $choices )
 {
     $queryNameCase  = "CASE ";
     $queryImageCase = "CASE ";
-    for ( $i = 0; $i < count( $entries ); $i++ )
+    for ( $i = 0; $i < count( $choices ); $i++ )
     {
-        $queryNameCase  .= "WHEN seed = :entrySeed$i THEN :entryName$i ";
-        $queryImageCase .= "WHEN seed = :entrySeed$i THEN :entryImage$i ";
+        $queryNameCase  .= "WHEN seed = :choiceSeed$i THEN :choiceName$i ";
+        $queryImageCase .= "WHEN seed = :choiceSeed$i THEN :choiceImage$i ";
     }
     $queryNameCase  .= "END";
     $queryImageCase .= "END";
-    $query     = "UPDATE entries
+    $query     = "UPDATE choices
                   SET name = ($queryNameCase),
                       image = ($queryImageCase)
-                  WHERE bracket_id = :bracketId ";
+                  WHERE meta_id = :surveyId ";
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
 
-    $statement->bindParam(':bracketId', $bracketId);
-    for ( $i = 0; $i < count( $entries ); $i++ )
+    $statement->bindParam(':surveyId', $surveyId);
+    for ( $i = 0; $i < count( $choices ); $i++ )
     {
-        $entry = $entries[$i];
-        $statement->bindParam(":entrySeed$i",  $entry->seed);
-        $statement->bindParam(":entryName$i",  $entry->name);
-        $statement->bindParam(":entryImage$i", $entry->image);
+        $choice = $choices[$i];
+        $statement->bindParam(":choiceSeed$i",  $choice->seed);
+        $statement->bindParam(":choiceName$i",  $choice->name);
+        $statement->bindParam(":choiceImage$i", $choice->image);
     }
 
     $statement->execute();
 
     $connection = null;
-    return $bracketId;
+    return $surveyId;
 }
 
-function getAllBracketMetas()
+function getAllSurveyMetas()
 {
     $query = "SELECT
                 id,
@@ -190,6 +188,7 @@ function getAllBracketMetas()
                 title,
                 image,
                 help,
+                type,
                 mode
               FROM meta
               WHERE state != 'hidden'
@@ -204,12 +203,12 @@ function getAllBracketMetas()
     return $metas;
 }
 
-function getBracketMeta( $bracketId )
+function getSurveyMeta( $surveyId )
 {
-    $query = "SELECT title, image, help FROM meta WHERE id = :bracketId ";
+    $query = "SELECT title, image, help FROM meta WHERE id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
     $meta = $statement->fetch();
@@ -218,7 +217,7 @@ function getBracketMeta( $bracketId )
     return $meta;
 }
 
-function getBracketId( $title )
+function getSurveyId( $title )
 {
     $query = "SELECT id FROM meta WHERE title = :title LIMIT 1 ";
     $connection = getConnection();
@@ -232,17 +231,17 @@ function getBracketId( $title )
     return $id;
 }
 
-function getCurrentVotes( $bracketId )
+function getCurrentVotes( $surveyId )
 {
     $query = "SELECT
-                  GROUP_CONCAT(CONCAT(v.match_id, '|', v.entry_seed) ORDER BY v.entry_seed) as \"current_votes\"
+                  GROUP_CONCAT(CONCAT(v.choice_set_id, '|', v.choice_id) ORDER BY v.choice_id) as \"current_votes\"
               FROM voting v
-                  JOIN timing t ON v.bracket_id = t.bracket_id
-              WHERE (active_id = '' OR match_id LIKE CONCAT(active_id, '%'))
-                  AND v.bracket_id = :bracketId ";
+                  JOIN timing t ON v.meta_id = t.meta_id
+              WHERE (active_id = '' OR choice_set_id LIKE CONCAT(active_id, '%'))
+                  AND v.meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
     $result = $statement->fetch();
@@ -253,27 +252,13 @@ function getCurrentVotes( $bracketId )
     return $currentVotes;
 }
 
-function getWinners( $bracketId )
-{
-//    $query = "SELECT index_wins FROM results WHERE bracket_id = :bracketId ";
-//    $connection = getConnection();
-//    $statement = $connection->prepare( $query );
-//    $statement->bindParam(':bracketId', $bracketId);
-//    $statement->execute();
-//
-//    $winners = $statement->fetch();
-//
-//    $connection = null;
-//    return $winners;
-}
-
 //todo 10 - create a DB Service class that has the voting logic and the data parsing
-function parseEntries( &$target, $data )
+function parseChoices(&$target, $data )
 {
-    $entryNames  = explode( ',', $data['e_names'] );
-    $entryImages = explode( ',', $data['e_images'] );
-    foreach( $entryNames as $index => $name ) {
-        array_push( $target, ['name' => $name, 'image' => $entryImages[$index]] );
+    $choiceNames  = explode( ',', $data['e_names'] );
+    $choiceImages = explode( ',', $data['e_images'] );
+    foreach( $choiceNames as $index => $name ) {
+        array_push( $target, ['name' => $name, 'image' => $choiceImages[$index]] );
     }
 }
 
@@ -289,7 +274,7 @@ function parseVotes( &$target, $data )
         if ( $index === false )
         {
             array_push( $matchIds, $values[0] );
-            array_push( $result, [ "id" => $values[0], "entries" => [], "allVotes" => [ $values[1] ] ] );
+            array_push( $result, [ "id" => $values[0], "choices" => [], "allVotes" => [ $values[1] ] ] );
         }
         else
         {
@@ -298,10 +283,10 @@ function parseVotes( &$target, $data )
     }
     foreach( $result as $index => $match )
     {
-        $votesByEntry = array_count_values( $match['allVotes'] );
-        foreach( $votesByEntry as $seed => $count )
+        $votesByChoice = array_count_values( $match['allVotes'] );
+        foreach( $votesByChoice as $seed => $count )
         {
-            array_push( $result[$index]['entries'], ['seed' => $seed, 'count' => $count] );
+            array_push( $result[$index]['choices'], ['seed' => $seed, 'count' => $count] );
         }
         unset( $result[$index]['allVotes'] );
     }
@@ -314,7 +299,7 @@ function checkVote( $votingConditions, $votes )
 
     if ( !$votingConditions['active'] )
     {
-        $result = "This bracket is not currently active.";
+        $result = "This survey is not currently active.";
     }
     elseif ( $votingConditions['active_id'] )
     {
@@ -331,28 +316,28 @@ function checkVote( $votingConditions, $votes )
     return $result;
 }
 
-function vote( $bracketId, $votes )
+function vote( $surveyId, $votes )
 {
     $result['isSuccess'] = false;
-    $votingConditions = getVoteConditions( $bracketId );
+    $votingConditions = getVoteConditions( $surveyId );
     $result['message'] = checkVote( $votingConditions, $votes );
     if ( !$result['message'] ) {
-        $result['isSuccess'] = saveVote( $bracketId, $votes );
+        $result['isSuccess'] = saveVote( $surveyId, $votes );
     }
     return $result;
 }
 
-function getVoteConditions( $bracketId )
+function getVoteConditions( $surveyId )
 {
     $query = "SELECT
                 IF(m.state = 'active', '1', '') AS \"active\",
                 t.active_id
               FROM meta m
-                JOIN timing t ON m.id = t.bracket_id
-              WHERE m.id = :bracketId ";
+                JOIN timing t ON m.id = t.meta_id
+              WHERE m.id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
     $result = $statement->fetch();
@@ -360,40 +345,40 @@ function getVoteConditions( $bracketId )
     return $result;
 }
 
-function saveVote( $bracketId, $votes )
+function saveVote( $surveyId, $votes )
 {
     $voteId = getGUID();
     $userIp = $_SERVER['REMOTE_ADDR'];
 
     $query = "INSERT INTO voting
-              (bracket_id, id, user, match_id, entry_seed)
-              VALUES ( :bracketId, :voteId, :userIp, :matchId, :entrySeed )
+              (meta_id, id, user, choice_set_id, choice_id)
+              VALUES ( :surveyId, :voteId, :userIp, :matchId, :choiceSeed )
               ON DUPLICATE KEY UPDATE
-              entry_seed = :entrySeed ";
+              choice_id = :choiceSeed ";
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
-    $statement->bindParam(':voteId',    $voteId);
-    $statement->bindParam(':userIp',    $userIp);
+    $statement->bindParam(':surveyId', $surveyId);
+    $statement->bindParam(':voteId',   $voteId);
+    $statement->bindParam(':userIp',   $userIp);
 
     for ( $i = 0; $i < count( $votes ); $i++ )
     {
         $vote = $votes[$i];
-        $statement->bindParam(':matchId',   $vote['id']);
-        $statement->bindParam(':entrySeed', $vote['vote']);
+        $statement->bindParam(':matchId',    $vote['id']);
+        $statement->bindParam(':choiceSeed', $vote['vote']);
         $statement->execute();
     }
 
     return true;
 }
 
-function setBracketState( $bracketId, $state )
+function setSurveyState( $surveyId, $state )
 {
-    $query = "UPDATE meta SET state = :state WHERE id = :bracketId ";
+    $query = "UPDATE meta SET state = :state WHERE id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->bindParam(':state', $state);
     $statement->execute();
 
@@ -401,14 +386,14 @@ function setBracketState( $bracketId, $state )
     return true;
 }
 
-function startBracket( $bracketId, $closeTime )
+function startSurvey( $surveyId, $closeTime )
 {
     $state = "active";
 
-    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime WHERE m.id = :bracketId AND t.bracket_id = :bracketId ";
+    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime WHERE m.id = :surveyId AND t.meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->bindParam(':state',     $state);
     $statement->bindParam(':closeTime', $closeTime);
     $statement->execute();
@@ -417,27 +402,31 @@ function startBracket( $bracketId, $closeTime )
     return true;
 }
 
-function setCloseTime( $bracketId, $closeTime )
+function setCloseTime( $surveyId, $closeTime )
 {
-    $query = "UPDATE timing SET scheduled_close = :closeTime WHERE bracket_id = :bracketId ";
+    $query = "UPDATE timing SET scheduled_close = :closeTime WHERE meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':closeTime', $closeTime);
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
     $connection = null;
     return true;
 }
 
-function updateVotingPeriod( $bracketId, $closeTime, $activeId )
+function updateVotingSession( $surveyId, $state, $closeTime, $activeId, $winners )
 {
-    $query = "UPDATE timing SET scheduled_close = :closeTime, active_id = :activeId WHERE bracket_id = :bracketId ";
+    $query = "UPDATE meta m, timing t, results r
+                SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId, r.winners = :winners 
+                WHERE m.id = :surveyId AND t.meta_id = :surveyId AND r.meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':bracketId', $bracketId);
+    $statement->bindParam(':surveyId', $surveyId);
+    $statement->bindParam(':state',     $state);
     $statement->bindParam(':closeTime', $closeTime);
     $statement->bindParam(':activeId',  $activeId);
+    $statement->bindParam(':winners',   $winners);
     $statement->execute();
 
     $connection = null;
@@ -467,8 +456,8 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
     $result = null;
 
     try {
-        if ( isset($_POST['id']) && isset($_POST['time']) && isset($_POST['activeId']) ) {
-            $result = $action( $_POST['id'], $_POST['state'], $_POST['activeId'] );
+        if ( isset($_POST['id']) && isset($_POST['state']) && isset($_POST['time']) && isset($_POST['activeId']) && isset($_POST['winners']) ) {
+            $result = $action( $_POST['id'], $_POST['state'], $_POST['time'], $_POST['activeId'], $_POST['winners'] );
         }
         elseif ( isset($_POST['id']) && isset($_POST['state']) ) {
             $result = $action( $_POST['id'], $_POST['state'] );
@@ -479,8 +468,8 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
         elseif ( isset($_POST['id']) && isset($_POST['votes']) ) {
             $result = $action( $_POST['id'], $_POST['votes'] );
         }
-        elseif ( isset($_POST['bracket']) ) {
-            $result = $action( $_POST['bracket'] );
+        elseif ( isset($_POST['survey']) ) {
+            $result = $action( $_POST['survey'] );
         }
         elseif ( isset($_POST['id']) ) {
             $result = $action( $_POST['id'] );

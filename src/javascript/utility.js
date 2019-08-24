@@ -27,7 +27,7 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
     if ( useSpecialHelp ) {
         const showExampleInstructions = function() {
             showMessage( "Instructions",
-                "Vote on entries to help find the winner for this bracket. Entries that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
+                "Vote on entries to help find the winner for this survey. Choices that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
         };
 
         helpDiv.id = "help";
@@ -51,125 +51,143 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
 }
 
 
+/**********FUNCTIONALITY**********/
+
+
+function getBracketOrPoll( type, choices, winners ) {
+    return ( type === "bracket" ) ? Bracket.createBracket( choices, winners ) : Poll.createPoll( choices, winners );
+}
+
+function getWinners( survey, votes ) {
+    let answers = votes.map( cs => { return {
+        choiceSetId: cs.id,
+        choiceId:    cs.entries.reduce( (a,b) => (a.y > b.y) ? a : b ).id
+    }; } );
+    survey.setAnswers( answers )
+    return ( survey instanceof Bracket ) ? survey.getSerializedWinners() : survey.getWinner().getIndex();
+}
+
+function getActiveId( survey, mode )
+{
+    let result = "";
+    switch ( mode )
+    {
+    case "match":
+        result = survey.getCurrentMatch().getId();
+        break;
+    case "round":
+        result = "r" + survey.getCurrentRoundIndex();
+        break;
+    }
+    return result;
+}
+
+
 /**********TIMING**********/
 
 
-function updateBracketTiming( bracketId, bracketInfo, callback ) {
-    let bracketUpdated = false;
-    if ( bracketInfo.state === "active" || bracketInfo.state === "paused" )
+function updateSurveyTiming( surveyId, surveyInfo, callback ) {
+    let isSessionOver = false;
+    if ( isInProgress( surveyInfo.state ) )
     {
-        const closeTime = newDateFromUTC( bracketInfo.timing.scheduledClose );
-        if ( closeTime && isDateBefore( closeTime, new Date(), true ) ) {
-            bracketUpdated = true;
-            const isLastRound = bracketInfo.winners.length &&
-                bracketInfo.winners.length === bracketInfo.entries.length - 2;
-            if ( isLastRound ) {
-                bracketInfo.timing.scheduledClose = null;
-                bracketInfo.state = "complete";
+        const closeTime = newDateFromUTC( surveyInfo.timing.scheduledClose );
+        isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
+        if ( isSessionOver ) {
+            let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.entries, surveyInfo.winners );
+            surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
+            surveyInfo.activeId = getActiveId( tempSurvey, surveyInfo.mode );
+            surveyInfo.winners = getWinners( tempSurvey, surveyInfo.currentVotes );
 
-                //todo 10 - consolidate multiple DB calls one after another (service.php ?)
-                // search throughout project
-                $.post(
-                    "php/database.php",
-                    {
-                        action: "setBracketState",
-                        id:     bracketId,
-                        state:  "complete"
-                    },
-                    function ( response ) {}
-                );
-            }
-            else {
-                bracketInfo.timing.scheduledClose = calculateNextTime( bracketInfo.timing, closeTime.toISOString() );
+            const isLastSession = surveyInfo.winners && surveyInfo.winners.length === surveyInfo.entries.length - 2;
+            if ( isLastSession ) {
+                surveyInfo.timing.scheduledClose = null;
+                surveyInfo.state = "complete";
             }
 
             $.post(
                 "php/database.php",
                 {
-                    action:     "updateVotingPeriod",
-                    id:         bracketId,
-                    time:       bracketInfo.timing.scheduledClose,
-                    activeId:   getActiveId( bracket, mode )
+                    action:     "updateVotingSession",
+                    id:         surveyId,
+                    time:       surveyInfo.timing.scheduledClose,
+                    state:      surveyInfo.state,
+                    activeId:   surveyInfo.activeId,
+                    winners:    surveyInfo.winners
                 },
-                function ( response ) {
-                    $.post(
-                        "php/database.php",
-                        {
-                            action: "getWinners",
-                            id:     bracketId
-                        },
-                        function ( response ) {
-                            bracketInfo.winners = JSON.parse( response );
-                            callback( bracketId, bracketInfo );
-                        }
-                    );
+                function () {
+                    callback( surveyId, surveyInfo );
                 }
             );
         }
     }
 
-    if ( !bracketUpdated ) {
-        callback( bracketId, bracketInfo );
+    if ( !isSessionOver ) {
+        callback( surveyId, surveyInfo );
     }
 }
 
-function calculateNextTime( timingInfo, lastCloseTime = null ) {
-    let result = null;
+function calculateStartTime( timingInfo ) {
+    return calculateNextTime( timingInfo );
+}
 
-    if ( timingInfo.scheduledClose ) {
-        result = newDateFromUTC( timingInfo.scheduledClose );
-    }
-    else if ( timingInfo.frequency ) {
-        const isFirstRound = !lastCloseTime;
-        const fromTime = newDateFromUTC( lastCloseTime ) || new Date();
+function calculateNextTime( timingInfo, lastCloseTime ) {
+    let result = null;
+    const isStartTime = !lastCloseTime;
+
+    if ( timingInfo.frequency ) {
+        const fromTime = isStartTime ? new Date() : lastCloseTime;
         const frequencyPointInt = timingInfo.frequencyPoint ? parseInt(   timingInfo.frequencyPoint ) : 0;
         const frequencyPointDec = timingInfo.frequencyPoint ? parseFloat( timingInfo.frequencyPoint ) : 0;
         const frequency = timingInfo.frequency;
 
         switch (frequency) {
+        case "hour":
+            result = adjustHours( fromTime, 1 );
+            result.setMinutes( frequencyPointInt );
+            result = zeroSecondsAndBelow( result );
+            break;
+        case "1day":
+        case "2days":
+        case "3days":
+        case "7days":
+            let dayAdjust = parseInt( frequency );
+            result = adjustDays( fromTime, dayAdjust );
+            let min = frequencyPointDec > frequencyPointInt ? 30 : 0;
+            result.setHours( frequencyPointInt, min );
+            result = zeroSecondsAndBelow( result );
+            break;
+        case "week":
+            result = adjustDayOfWeek( fromTime, frequencyPointInt );
+            result = setToAlmostMidnight( result );
+            break;
+        }
+
+        if ( isStartTime ) {
+            switch (frequency) {
             case "hour":
-                result = adjustHours( fromTime, 1 );
-                result.setMinutes( frequencyPointInt );
-                result = zeroSecondsAndBelow( result );
+                if ( isDateInNextHours( result, 1 ) ) {
+                    result = adjustHours( result, 1 );
+                }
                 break;
             case "1day":
             case "2days":
             case "3days":
             case "7days":
-                let dayAdjust = parseInt( frequency );
-                result = adjustDays( fromTime, dayAdjust );
-                let min = frequencyPointDec > frequencyPointInt ? 30 : 0;
-                result.setHours( frequencyPointInt, min );
-                result = zeroSecondsAndBelow( result );
-                break;
             case "week":
-                result = adjustDayOfWeek( fromTime, frequencyPointInt );
-                result = setToAlmostMidnight( result );
+                if ( isDateInNextHours( result, 24 ) ) {
+                    const dayAdjust = ( frequency === "week" ) ? 7 : 1;
+                    result = adjustDays( result, dayAdjust );
+                }
                 break;
-        }
-
-        if ( isFirstRound ) {
-            switch (frequency) {
-                case "hour":
-                    if ( isDateInNextHours( result, 1 ) ) {
-                        result = adjustHours( result, 1 );
-                    }
-                    break;
-                case "1day":
-                case "2days":
-                case "3days":
-                case "7days":
-                case "week":
-                    if ( isDateInNextHours( result, 24 ) ) {
-                        const dayAdjust = ( frequency === "week" ) ? 7 : 1;
-                        result = adjustDays( result, dayAdjust );
-                    }
-                    break;
             }
         }
     }
+    else if ( isStartTime && timingInfo.scheduledClose ) {
+        result = newDateFromUTC( timingInfo.scheduledClose );
+        result = isDateAfter( result, adjustMinutes( new Date(), 1 ), true ) ? result : null;
+    }
 
-    return result ? result.toISOString() : null;
+    return (result instanceof Date) ? result.toISOString() : null;
 }
 
 function getDisplayTime( date ) {
@@ -194,21 +212,20 @@ function getDisplayTime( date ) {
 /*** RESULTS ***/
 
 
-
-function viewResults( mode, entries, currentVotes, additionalInfo ) {
-    let voteDisplay = getVoteDisplay( mode, entries, currentVotes );
+function viewResults( choices, currentVotes, additionalInfo ) {
+    let voteDisplay = getVoteDisplay( choices, currentVotes );
     voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
     showMessage( "Current Votes", voteDisplay );
-    animateEntries()
+    animateChoices()
 }
 
-function getVoteDisplay( mode, entries, currentVotes ) {
+function getVoteDisplay( choices, currentVotes ) {
     let result = "";
     for ( let i = 0; i < currentVotes.length; i++) {
-        result += currentVotes[i].entries.map( entry => {
+        result += currentVotes[i].choices.map( choice => {
             return "<div class='progressBar' style='width: 0%'>" +
-                "<span style='white-space: nowrap;'>" + entries[entry.seed].name + "</span>" +
-                "<span style='display: none; float: right;'>" +  entry.count + "</span>" +
+                "<span style='white-space: nowrap;'>" + choices[choice.seed].name + "</span>" +
+                "<span style='display: none; float: right;'>" +  choice.count + "</span>" +
                 "</div>"
         } ).join( "\n" );
         result += "<br/>";
@@ -216,43 +233,31 @@ function getVoteDisplay( mode, entries, currentVotes ) {
     return result;
 }
 
-function animateEntries() {
+function animateChoices() {
     let elements = Array.from( cl('progressBar') );
     let counts = elements.map( e => e.getElementsByTagName( "SPAN" )[1].innerText );
     let maxCount = Math.max( ...counts );
     for ( let i = 0; i < elements.length; i++) {
         const count = counts[i];
         const width = "+=" + (count / maxCount * 100) + "%";
-        $( elements[i] ).animate({
-            width: width
-        });
+        $( elements[i] ).animate({ width: width }, 1000);
     }
 }
 
 
-/**********ID GENERATION**********/
+/**********STATE**********/
 
 
-function getMatchId( match )
-{
-    return "r" + match.round + "m" + match.match;
+function isEditable( state ) {
+    return state === "active";
 }
 
-function getActiveId( bracket, mode )
-{
-    let result;
-    switch ( mode )
-    {
-    case "match":
-        result = bracket.getCurrentMatchId();
-        break;
-    case "round":
-        result = "r" + bracket.getCurrentRound();
-        break;
-    default:
-        result = "";
-    }
-    return result;
+function isInProgress( state ) {
+    return state === "active" || state === "paused";
+}
+
+function isVisible( state ) {
+    return state === "active" || state === "paused" || state === "complete";
 }
 
 
@@ -264,11 +269,11 @@ function getErrorMessage( error ) {
 
     if ( error ) {
         switch ( error ) {
-        case "InvalidBracketId":
-            result = "Invalid Bracket ID in URL.";
+        case "InvalidSurveyId":
+            result = "Invalid Survey ID in URL.";
             break;
-        case "DisabledBracket":
-            result = "This Bracket is disabled.";
+        case "DisabledSurvey":
+            result = "This Survey is disabled.";
             break;
         default:
             result = "An error has occurred.";

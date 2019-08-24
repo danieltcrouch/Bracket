@@ -3,8 +3,7 @@
 <html lang="en">
 <head>
     <?php includeHeadInfo(); ?>
-    <script src="javascript/utility.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://religionandstory.com/bracket/css/bracket.css"/>
+    <?php include_once("php/includes.php"); ?>
 </head>
 
 <body>
@@ -36,7 +35,7 @@
     $.post(
         "php/database.php",
         {
-            action: "getAllBracketMetas"
+            action: "getAllSurveyMetas"
         },
         function ( response ) {
             displayLogos( JSON.parse( response ) );
@@ -59,7 +58,7 @@
                 logoDiv.classList.add( "center" );
                 logosDiv.appendChild( logoDiv );
                 const isActive = logoInfo.state === "active"
-                createTitleLogo( logoInfo, logoDiv, isActive, true, "https://bracket.religionandstory.com/bracket.php?id=" + logoInfo.id );
+                createTitleLogo( logoInfo, logoDiv, isActive, true, "https://bracket.religionandstory.com/survey.php?id=" + logoInfo.id );
             }
         }
     }
