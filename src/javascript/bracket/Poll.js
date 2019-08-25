@@ -6,7 +6,7 @@ class Option extends Choice {
     }
 
     static getOption( options, index ) {
-        return this.getChoice( options, index );
+        return Choice.getChoice( options, index );
     }
 
     getName() {
@@ -20,11 +20,19 @@ class Option extends Choice {
 
 class OptionSet extends ChoiceSet {
     constructor( options ) {
-        super( options );
+        super( OPTION_SET_ID, options );
     }
 
     getOptionFromIndex( index ) {
         return this.getChoiceFromId( index );
+    }
+
+    addOption( option ) {
+        this.addChoice( option );
+    }
+
+    removeOptionFromIndex( optionIndex ) {
+        this.removeChoiceFromId( optionIndex );
     }
 
     setWinnerId( index ) {
@@ -52,7 +60,7 @@ class Poll extends Survey {
     }
 
     static parsePoll( rawOptions ) {
-        let options = Bracket.parseOptions( rawOptions );
+        let options = Poll.parseOptions( rawOptions );
         return new Poll( [ new OptionSet( options ) ] );
     }
 
@@ -96,7 +104,7 @@ class Poll extends Survey {
 /******************************* DISPLAY *******************************/
 
  function displayPoll() {
-     let div = id( 'bracketDisplay' );
+     let div = id( 'surveyDisplay' );
      div.style.display = "flex";
      div.style.justifyContent = "center";
      div.innerHTML = "";

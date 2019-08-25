@@ -39,7 +39,7 @@ function loadPage( surveyId, surveyInfo ) {
         surveyInfo.helpImage = helpImage;
         createTitleLogo( surveyInfo, cl('title')[0], surveyInfo.state === "active", true );
 
-        survey = getBracketOrPoll( surveyInfo.type, surveyInfo.entries, surveyInfo.winners );
+        survey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
         state = surveyInfo.state;
         mode = surveyInfo.mode;
         isSurveyBracket() ? displayBracket() : displayPoll();

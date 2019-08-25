@@ -27,7 +27,7 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
     if ( useSpecialHelp ) {
         const showExampleInstructions = function() {
             showMessage( "Instructions",
-                "Vote on entries to help find the winner for this survey. Choices that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
+                "Vote on choices to help find the winner for this survey. Choices that are blinking are currently open for voting. Click &ldquo;Submit&rdquo; when finished." + "<br/><br/>" + logoInfo.help );
         };
 
         helpDiv.id = "help";
@@ -61,7 +61,7 @@ function getBracketOrPoll( type, choices, winners ) {
 function getWinners( survey, votes ) {
     let answers = votes.map( cs => { return {
         choiceSetId: cs.id,
-        choiceId:    cs.entries.reduce( (a,b) => (a.y > b.y) ? a : b ).id
+        choiceId:    cs.choices.reduce( (a,b) => (a.y > b.y) ? a : b ).id
     }; } );
     survey.setAnswers( answers )
     return ( survey instanceof Bracket ) ? survey.getSerializedWinners() : survey.getWinner().getIndex();
@@ -93,12 +93,12 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
         const closeTime = newDateFromUTC( surveyInfo.timing.scheduledClose );
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {
-            let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.entries, surveyInfo.winners );
+            let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
             surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
             surveyInfo.activeId = getActiveId( tempSurvey, surveyInfo.mode );
             surveyInfo.winners = getWinners( tempSurvey, surveyInfo.currentVotes );
 
-            const isLastSession = surveyInfo.winners && surveyInfo.winners.length === surveyInfo.entries.length - 2;
+            const isLastSession = surveyInfo.winners && surveyInfo.winners.length === surveyInfo.choices.length - 2;
             if ( isLastSession ) {
                 surveyInfo.timing.scheduledClose = null;
                 surveyInfo.state = "complete";

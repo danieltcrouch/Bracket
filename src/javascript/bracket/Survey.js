@@ -34,8 +34,8 @@ class Choice {
 
 class ChoiceSet {
     constructor( id, choices ) {
-        this.id = choices;
-        this.choices = choices;
+        this.id = id;
+        this.choices = choices.filter( Boolean );
     }
 
     static mapToIds( choiceSets ) {
@@ -66,6 +66,16 @@ class ChoiceSet {
         return this.getChoiceFromId( this.answerId );
     }
 
+    addChoice( choice ) {
+        if ( choice ) {
+            this.choices.push( choice );
+        }
+    }
+
+    removeChoiceFromId( choiceId ) {
+        this.choices = this.choices.filter( c => c.getId() !== choiceId );
+    }
+
     getAllChoices() {
         return this.choices;
     }
@@ -81,7 +91,7 @@ class ChoiceSet {
 
 class Survey {
     constructor( choiceSets ) {
-        this.choiceSets = choiceSets;
+        this.choiceSets = choiceSets.filter( Boolean );
     }
 
     setAnswers( answers ) {
@@ -129,7 +139,7 @@ class Survey {
         let result = [];
         for( let i = 0; i < this.getAllChoiceSets().length; i++ )
         {
-            result = result.concat( this.getAllChoiceSets()[1].getAllChoices() );
+            result = result.concat( this.getAllChoiceSets()[i].getAllChoices() );
         }
         return result;
     }
