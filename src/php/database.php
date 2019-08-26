@@ -7,8 +7,8 @@ function getSurvey( $surveyId )
                   t.frequency, t.frequency_point, t.scheduled_close, t.active_id,
                   r.winners,
                   current_votes,
-                  e_names,
-                  e_images
+                  c_names,
+                  c_images
               FROM meta m
                   JOIN timing t ON m.id = t.meta_id
                   LEFT OUTER JOIN results r ON m.id = r.meta_id
@@ -24,8 +24,8 @@ function getSurvey( $surveyId )
                   LEFT OUTER JOIN (
                       SELECT
                           c.meta_id,
-                          GROUP_CONCAT(c.name ORDER BY c.seed) as \"e_names\",
-                          GROUP_CONCAT(c.image ORDER BY c.seed) as \"e_images\"
+                          GROUP_CONCAT(c.name ORDER BY c.seed)  as \"c_names\",
+                          GROUP_CONCAT(c.image ORDER BY c.seed) as \"c_images\"
                       FROM choices c
                       GROUP BY c.meta_id
                   ) ent ON m.id = ent.meta_id
@@ -255,8 +255,8 @@ function getCurrentVotes( $surveyId )
 //todo 10 - create a DB Service class that has the voting logic and the data parsing
 function parseChoices(&$target, $data )
 {
-    $choiceNames  = explode( ',', $data['e_names'] );
-    $choiceImages = explode( ',', $data['e_images'] );
+    $choiceNames  = explode( ',', $data['c_names'] );
+    $choiceImages = explode( ',', $data['c_images'] );
     foreach( $choiceNames as $index => $name ) {
         array_push( $target, ['name' => $name, 'image' => $choiceImages[$index]] );
     }
@@ -284,9 +284,9 @@ function parseVotes( &$target, $data )
     foreach( $result as $index => $match )
     {
         $votesByChoice = array_count_values( $match['allVotes'] );
-        foreach( $votesByChoice as $seed => $count )
+        foreach( $votesByChoice as $id => $count )
         {
-            array_push( $result[$index]['choices'], ['seed' => $seed, 'count' => $count] );
+            array_push( $result[$index]['choices'], ['id' => $id, 'count' => $count] );
         }
         unset( $result[$index]['allVotes'] );
     }

@@ -23,19 +23,15 @@ class OptionSet extends ChoiceSet {
         super( OPTION_SET_ID, options );
     }
 
+    static getOptionSet( optionSets, id ) {
+        return ChoiceSet.getChoiceSet( optionSets, id );
+    }
+
     getOptionFromIndex( index ) {
         return this.getChoiceFromId( index );
     }
 
-    addOption( option ) {
-        this.addChoice( option );
-    }
-
-    removeOptionFromIndex( optionIndex ) {
-        this.removeChoiceFromId( optionIndex );
-    }
-
-    setWinnerId( index ) {
+    setWinnerIndex( index ) {
         this.setAnswerId( index );
     }
 
@@ -69,10 +65,14 @@ class Poll extends Survey {
         for ( let i = 0; i < rawOptions.length; i++ ) {
             let rawOption = rawOptions[i];
             rawOption = ( typeof rawOption === "string" ) ? { name: rawOption, image: null } : rawOption;
-            rawOption.image = rawOption.image || "images/profile.jpg";
+            rawOption.image = rawOption.image || DEFAULT_IMAGE;
             result.push( new Option( i, rawOption.name, rawOption.image ) );
         }
         return result;
+    }
+
+    getSerializedWinner() {
+        return this.getWinner() ? this.getWinner().getIndex() : null;
     }
 
     setWinner( winnerIndex ) {
@@ -80,8 +80,7 @@ class Poll extends Survey {
     }
 
     getWinner() {
-        let answer = this.getAnswers()[0];
-        return answer ? answer.choiceId : null;
+        return this.getOptionSet().getWinner();
     }
 
     getOptionFromId( index ) {

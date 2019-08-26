@@ -1,6 +1,9 @@
 //todo 9 - look for const variables (this and other new files)
 const ENTRIES_PER_MATCH = 2;
 
+const BLANK_IMAGE = "images/blank.jpg";
+const QUESTION_IMAGE = "images/question.jpg";
+
 class Entry extends Choice {
     constructor( seed, name, image ) {
         super( seed, name, image );
@@ -14,12 +17,24 @@ class Entry extends Choice {
         return this.mapToIds( entries );
     }
 
+    static getByeEntry() {
+        return new Entry( null, "Bye", BLANK_IMAGE );
+    }
+
+    static getUnknownEntry() {
+        return new Entry( null, "TBD", QUESTION_IMAGE );
+    }
+
     getDisplayName() {
-        return "" + this.getDisplaySeed() + ". " + this.getName();
+        let result = this.getName();
+        if ( this.getDisplaySeed() ) {
+            result = this.getDisplaySeed() + ". " + this.getName();
+        }
+        return result;
     }
 
     getDisplaySeed() {
-        return this.getSeed() + 1;
+        return this.getSeed() !== null ? "" + (this.getSeed() + 1) : "";
     }
 
     getName() {
@@ -35,10 +50,18 @@ class Match extends ChoiceSet {
     constructor( id, entries, isBye ) {
         super( id, entries );
         this.isBye = isBye;
-        if ( isBye ) {
-            const winnerSeed = this.getTopEntry() ? this.getTopEntry().getSeed() : null;
-            this.setWinnerSeed( winnerSeed )
+
+        while ( !this.hasLength( ENTRIES_PER_MATCH ) ) {
+            this.addChoice( Entry.getUnknownEntry() );
         }
+
+        if ( isBye ) {
+            this.setWinnerSeed( this.getTopEntry().getSeed() )
+        }
+    }
+
+    static getMatch( matches, matchId ) {
+        return ChoiceSet.getChoiceSet( matches, matchId );
     }
 
     static parseMatchId( matchId ) {
@@ -56,23 +79,15 @@ class Match extends ChoiceSet {
     }
 
     isReady() {
-        return this.getAllEntries().length === ENTRIES_PER_MATCH;
+        return this.hasLength( ENTRIES_PER_MATCH ) && this.getAllEntries().every( e => e.getSeed() );
     }
 
     isEntryTop( seed ) {
-        return this.getAllEntries().length > 0 && this.getTopEntry().getSeed() === seed;
+        return this.getTopEntry().getSeed() === seed;
     }
 
     getEntryFromSeed( seed ) {
         return this.getChoiceFromId( seed );
-    }
-
-    addEntry( entry ) {
-        this.addChoice( entry );
-    }
-
-    removeEntryFromSeed( entryIndex ) {
-        this.removeChoiceFromId( entryIndex );
     }
 
     getEntry( isTop ) {
@@ -84,31 +99,22 @@ class Match extends ChoiceSet {
     }
 
     getTopEntry() {
-        return this.hasContents() ? this.getAllEntries()[0] : null;
+        return this.getAllEntries()[0];
     }
 
     setTopEntry( entry ) {
-        let entries = this.getAllEntries();
-        if ( entries.length > 0 ) {
-            entries[0] = entry;
-        }
-        else {
-            entries.push( entry );
+        if ( entry ) {
+            this.getAllEntries()[0] = entry;
         }
     }
 
     getBottomEntry() {
-        return this.hasIndex( 1 ) ? this.getAllEntries()[1] : null;
+        return this.getAllEntries()[1];
     }
 
     setBottomEntry( entry ) {
-        let entries = this.getAllEntries();
-        if ( entries.length > 1 ) {
-            entries[1] = entry;
-        }
-        else {
-            entries.push( new Entry( null, null ) );
-            entries.push( entry );
+        if ( entry ) {
+            this.getAllEntries()[1] = entry;
         }
     }
 
@@ -117,7 +123,7 @@ class Match extends ChoiceSet {
     }
 
     getWinner() {
-        return this.getAnswer(); //todo 6 - this blows up when it tries to getId from null - should I be null safe or not put nulls as entries?
+        return this.getAnswer();
     }
 
     getAllEntries() {
@@ -143,7 +149,7 @@ class Bracket extends Survey {
 
     static createBracket( rawEntries, rawWinners ) {
         let result = Bracket.parseBracket( rawEntries );
-        result.setWinners( Bracket.parseWinners( rawWinners, result.getMaxSize() ) );
+        result.setWinners( Bracket.parseWinners( rawWinners, result.getMaxSize(), result.getAllMatches() ) );
         result.pushWinners();
         return result;
     }
@@ -166,11 +172,9 @@ class Bracket extends Survey {
                     let seed = roundSeeds[matchIndex * 2 + i];
                     isByeMatch = (roundIndex === 0) && seed >= entries.length;
                     let isBottomOfBye = isByeMatch && (i % 2 === 1);
-                    let rawEntry = entries[ seed ];
-                    let entry = isFirstRound && !isBottomOfBye ? new Entry( seed, rawEntry.name, rawEntry.image ) : null;
-                    if ( entry ) {
-                        matchEntries.push( entry );
-                    }
+                    let entry = isBottomOfBye ? Entry.getByeEntry() : entries[ seed ];
+                    entry = isFirstRound ? entry : Entry.getUnknownEntry();
+                    matchEntries.push( entry );
                 }
                 matches.push( new Match( Match.getMatchId( roundIndex, matchIndex ), matchEntries, isByeMatch ) );
             }
@@ -185,7 +189,7 @@ class Bracket extends Survey {
         for ( let i = 0; i < rawEntries.length; i++ ) {
             let rawEntry = rawEntries[i];
             rawEntry = ( typeof rawEntry === "string" ) ? { name: rawEntry, image: null } : rawEntry;
-            rawEntry.image = rawEntry.image || "images/profile.jpg";
+            rawEntry.image = rawEntry.image || DEFAULT_IMAGE;
             result.push( new Entry( i, rawEntry.name, rawEntry.image ) );
         }
         return result;
@@ -205,7 +209,7 @@ class Bracket extends Survey {
         return result.map( seed => seed - 1 ); //base zero
     }
 
-    static parseWinners( rawWinners, bracketSize ) {
+    static parseWinners( rawWinners, bracketSize, matches ) {
         let result = [];
 
         if ( rawWinners ) {
@@ -215,8 +219,11 @@ class Bracket extends Survey {
             let topWinners = rawWinners.split('');
             let winnerIndex = 0;
             for ( let roundIndex = 0; roundIndex < roundCount; roundIndex++ ) {
-                for ( let matchIndex = 0; matchIndex < matchCount; matchIndex++ ) {
-                    result.push( { matchId: Match.getMatchId( roundIndex, matchIndex ), seed: topWinners[winnerIndex] } );
+                for ( let matchIndex = 0; matchIndex < matchCount && winnerIndex < topWinners.length; matchIndex++ ) {
+                    let matchId = Match.getMatchId( roundIndex, matchIndex );
+                    let isTop = topWinners[winnerIndex] === "1";
+                    let seed = Match.getMatch( matches, matchId ).getEntry( isTop ).getSeed();
+                    result.push( { matchId: matchId, seed: seed } );
                     winnerIndex++;
                 }
                 matchCount /= 2;
@@ -227,15 +234,16 @@ class Bracket extends Survey {
     }
 
     getSerializedWinners() {
-        return this.getWinners().map( w => { return this.getMatchFromId( w.matchId ).isEntryTop( w.seed ) ? "1" : "0"; } ).join();
+        let winners = this.getWinners().map( w => { return this.getMatchFromId( w.matchId ).isEntryTop( w.seed ) ? "1" : "0"; } ).join("");
+        return winners || null;
     }
 
     setWinners( winners ) {
-        this.setAnswers( winners.map( w => { return {choiceSetId: w.matchId, choiceId: w.seed}; } ) );
+        this.setAnswers( winners ? winners.map( w => { return {choiceSetId: w.matchId, choiceId: w.seed}; } ) : null );
     }
 
     getWinners() {
-        this.getAnswers().map( a => { return {matchId: a.choiceSetId, seed: a.choiceId}; } );
+        return this.getAnswers().map( a => { return {matchId: a.choiceSetId, seed: a.choiceId}; } );
     }
 
     pushWinners() {
@@ -247,8 +255,8 @@ class Bracket extends Survey {
         let match = this.getMatchFromId( matchId );
         let winner = match.getWinner();
         let next = this.getNextMatchAndPosition( matchId );
-        let nextMatch = next.match;
-        if ( nextMatch ) {
+        if ( next && winner ) {
+            let nextMatch = next.match;
             nextMatch.setEntry( winner, next.isTop );
             if ( nextMatch.getWinner() &&
                 !nextMatch.getEntryFromSeed( nextMatch.getWinner().getSeed() ) ) {
@@ -259,15 +267,17 @@ class Bracket extends Survey {
 
     getPreviousMatches( matchId ) {
         let result = null;
-        let indexes = Match.parseMatchId( matchId );
-        if ( indexes.roundIndex === 0 ) {
-            let prevRound   = indexes.roundIndex - 1;
-            let topIndex    = indexes.matchIndex * 2;
-            let bottomIndex = indexes.matchIndex * 2 + 1;
-            result = {
-                top:    this.getMatchFromId( Match.getMatchId( prevRound, topIndex ) ),
-                bottom: this.getMatchFromId( Match.getMatchId( prevRound, bottomIndex ) )
-            };
+        if ( matchId ) {
+            let indexes = Match.parseMatchId( matchId );
+            if ( indexes.roundIndex === 0 ) {
+                let prevRound   = indexes.roundIndex - 1;
+                let topIndex    = indexes.matchIndex * 2;
+                let bottomIndex = indexes.matchIndex * 2 + 1;
+                result = {
+                    top:    this.getMatchFromId( Match.getMatchId( prevRound, topIndex ) ),
+                    bottom: this.getMatchFromId( Match.getMatchId( prevRound, bottomIndex ) )
+                };
+            }
         }
         return result;
     }
@@ -277,23 +287,24 @@ class Bracket extends Survey {
             match: this.getNextMatch( matchId ),
             isTop: this.isTopForNextMatch( matchId )
         };
-        const isValid = result.match === null;
+        const isValid = !!result.match;
         return isValid ? result : null;
     }
 
     getNextMatch( matchId ) {
         let result = null;
-        let indexes = Match.parseMatchId( matchId );
-        let nextRound = indexes.roundIndex + 1;
-        if ( nextRound !== this.getMaxRounds() ) {
-            result = this.getMatchFromId( Match.getMatchId( nextRound, Math.floor(indexes.matchIndex / 2) ) );
+        if ( matchId ) {
+            let indexes = Match.parseMatchId( matchId );
+            let nextRound = indexes.roundIndex + 1;
+            if ( nextRound !== this.getMaxRounds() ) {
+                result = this.getMatchFromId( Match.getMatchId( nextRound, Math.floor(indexes.matchIndex / 2) ) );
+            }
         }
         return result;
     }
 
     isTopForNextMatch( matchId ) {
-        const nextMatch = this.getNextMatch( matchId );
-        return nextMatch ? ( Match.parseMatchId( nextMatch.getId() ).matchIndex % 2 === 0 ) : null;
+        return Match.parseMatchId( matchId ).matchIndex % 2 === 0;
     }
 
     getEntryFromSeed( seed ) {
@@ -305,7 +316,7 @@ class Bracket extends Survey {
     }
 
     getCurrentRoundIndex() {
-        return this.getCurrentMatch().getRoundIndex();
+        return this.getCurrentMatch() ? this.getCurrentMatch().getRoundIndex() : -1;
     }
 
     getCurrentMatch() {
@@ -333,7 +344,7 @@ class Bracket extends Survey {
     }
 
     getMatchesFromRound( roundIndex ) {
-        return this.getAllMatches().filter( m => m.getRound() === roundIndex );
+        return this.getAllMatches().filter( m => m.getRoundIndex() === roundIndex );
     }
 
     getAllMatches() {
@@ -415,23 +426,18 @@ function getMatch( matchDiv, match ) {
 function getImageFromEntry( entry, matchId, isByeEntry, isTop ) {
     let image = getImage();
     image.id = getImageId( matchId, isTop );
-
-    let source = entry ? entry.getImage() : ( isByeEntry ? "images/blank.jpg" : "images/question.jpg" );
-    image.setAttribute( "src", source );
-
+    image.setAttribute( "src", entry.getImage() );
     return image;
 }
 
 function getButtonFromEntry( entry, matchId, isByeEntry, isTop ) {
     let button = getButton();
     button.id = getButtonId( matchId, isTop );
-
-    button.innerHTML = getEntryDisplayName( entry, isByeEntry );
+    button.innerHTML = entry.getDisplayName();
     button.name = matchId;
     button.onclick = function() {
         registerBracketChoice( matchId, entry.getSeed() );
     };
-
     return button;
 }
 
@@ -632,13 +638,14 @@ function registerBracketChoice( matchId, seed ) {
 }
 
 function updateSubsequentMatches( nextMatchAndPosition, newEntry ) {
-    if ( nextMatchAndPosition.match ) {
+    if ( nextMatchAndPosition ) {
+        newEntry = newEntry || Entry.getUnknownEntry();
         let match = nextMatchAndPosition.match;
         let isTop = nextMatchAndPosition.isTop;
         match.setWinnerSeed( null );
         match.setEntry( newEntry, isTop );
 
-        id( getButtonId( match.getId(), isTop ) ).innerHTML = getEntryDisplayName( newEntry );
+        id( getButtonId( match.getId(), isTop ) ).innerHTML = newEntry;
         let imageSource = newEntry ? newEntry.getImage() : "images/question.jpg";
         id( getImageId( match.getId(), isTop ) ).setAttribute( "src", imageSource );
         adjustFontSize( id( "round" + match.round ) );
@@ -694,10 +701,6 @@ function getButtonId( matchId, isTop )
 function getImageId( matchId, isTop )
 {
     return matchId + "Image" + (isTop?"T":"B");
-}
-
-function getEntryDisplayName( entry, isByeEntry ) {
-    return entry ? entry.getDisplayName() : (isByeEntry ? "Bye" : "TBD");
 }
 
 function getRelevantMatches( forSubmission = false ) {

@@ -61,10 +61,10 @@ function getBracketOrPoll( type, choices, winners ) {
 function getWinners( survey, votes ) {
     let answers = votes.map( cs => { return {
         choiceSetId: cs.id,
-        choiceId:    cs.choices.reduce( (a,b) => (a.y > b.y) ? a : b ).id
+        choiceId:    cs.choices.reduce( (maxChoice,choice) => (maxChoice.count > choice.count) ? maxChoice : choice ).id
     }; } );
-    survey.setAnswers( answers )
-    return ( survey instanceof Bracket ) ? survey.getSerializedWinners() : survey.getWinner().getIndex();
+    survey.setAnswers( answers );
+    return ( survey instanceof Bracket ) ? survey.getSerializedWinners() : survey.getSerializedWinner();
 }
 
 function getActiveId( survey, mode )
