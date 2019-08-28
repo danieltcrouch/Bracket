@@ -240,14 +240,16 @@ function viewResults( choiceNames, currentVotes, additionalInfo ) {
 
 function getVoteDisplay( choicesNames, currentVotes ) {
     let result = "";
-    for ( let i = 0; i < currentVotes.length; i++) {
-        result += currentVotes[i].choices.map( choice => {
-            return "<div class='progressBar' style='width: 0%'>" +
-                "<span style='white-space: nowrap;'>" + choicesNames[choice.id] + "</span>" +
-                "<span style='display: none; float: right;'>" +  choice.count + "</span>" +
-                "</div>"
-        } ).join( "\n" );
-        result += "<br/>";
+    if ( choicesNames && currentVotes && choicesNames.length === currentVotes.length ) {
+        for ( let i = 0; i < currentVotes.length; i++) {
+            result += currentVotes[i].choices.map( choice => {
+                return "<div class='progressBar' style='width: 0%'>" +
+                    "<span style='white-space: nowrap;'>" + choicesNames[choice.id] + "</span>" +
+                    "<span style='display: none; float: right;'>" +  choice.count + "</span>" +
+                    "</div>"
+            } ).join( "\n" );
+            result += "<br/>";
+        }
     }
     return result;
 }

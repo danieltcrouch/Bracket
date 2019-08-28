@@ -37,13 +37,13 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     id('titleInput').value = surveyInfo.title;
     id('imageInput').value = surveyInfo.image;
     id('helpInput').value = surveyInfo.help;
-    id(surveyInfo.type).click();
-    id(surveyInfo.mode).click();
+    surveyInfo.type ? id(surveyInfo.type).click() : null;
+    surveyInfo.mode ? id(surveyInfo.mode).click() : null;
     id('frequency').value = surveyInfo.timing.frequency; //todo 7 - fails on NULL
     updateFrequencyPoints();
     id('frequencyPoint').value = surveyInfo.timing.frequencyPoint;
     if ( surveyInfo.timing.scheduledClose ) {
-        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) );
+        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) ); //todo 8 - make sure that all uses of newDateFromUTC are correct
     }
     id('choiceCount').value = surveyInfo.choices.length;
     createChoiceInputs();
@@ -270,7 +270,7 @@ function previewSurvey() {
     if ( !error ) {
         let surveyInfo = getSurveyInfo();
         surveyInfo.state = "active";
-        surveyInfo.timing.scheduledClose = adjustToUTC( newDateFromUTC( surveyInfo.timing.scheduledClose ) );
+        surveyInfo.timing.scheduledClose = getDateOrNull( surveyInfo.timing.scheduledClose );
         id('surveyInfo').value = JSON.stringify( surveyInfo );
         id('previewForm').submit();
     }
@@ -350,7 +350,7 @@ function constructEditLinks( surveyMetas ) {
 }
 
 function review() {
-    let closeTime = getDisplayTime( newDateFromUTC( id( 'scheduledClose' ).value ) );
+    let closeTime = getDisplayTime( getDateOrNull( id( 'scheduledClose' ).value ) );
     let additionalInfo = "<br/> " +
         "<strong>State:</strong> " + state +
         "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
@@ -406,19 +406,19 @@ function pauseClosing() {
 }
 
 function start() {
+    let newActiveId = calculateStartActiveId( getSelectedRadioButtonId('surveyType'), getSelectedRadioButtonId('votingType'), getChoices().length );
     $.post(
         "php/database.php",
         {
             action:     "startSurvey",
             id:         surveyId,
-            activeId:   calculateStartActiveId(
-                getSelectedRadioButtonId('surveyType'),
-                getSelectedRadioButtonId('votingType'),
-                getChoices().length ),
+            activeId:   newActiveId,
             time:       calculateStartTime( getTiming() )
         },
         function ( response ) {
             showToaster( "Survey started... " );
+            state = "active";
+            activeId = newActiveId;
         }
     );
 }
