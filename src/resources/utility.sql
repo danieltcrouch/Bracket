@@ -1,11 +1,11 @@
 /*** DELETE ***/
-DELETE m, e, r, t, v
+DELETE m, c, r, t, v
 FROM meta m
-LEFT JOIN entries e ON e.bracket_id = m.id
-LEFT JOIN results r ON r.bracket_id = m.id
-LEFT JOIN timing t ON t.bracket_id = m.id
-LEFT JOIN voting v ON v.bracket_id = m.id
-WHERE m.id = '9A33671CD6AE079B512AF922F5BBF0D4';
+LEFT JOIN choices c ON c.meta_id = m.id
+LEFT JOIN results r ON r.meta_id = m.id
+LEFT JOIN timing t ON t.meta_id = m.id
+LEFT JOIN voting v ON v.meta_id = m.id
+WHERE m.id = '5AD50E76E16B8323E47F64D929E0BC1C';
 
 /*** VIEW ***/
 SELECT m.title, t.*

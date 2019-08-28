@@ -39,17 +39,17 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     id('helpInput').value = surveyInfo.help;
     id(surveyInfo.type).click();
     id(surveyInfo.mode).click();
-    id('frequency').value = surveyInfo.timing.frequency;
+    id('frequency').value = surveyInfo.timing.frequency; //todo 7 - fails on NULL
     updateFrequencyPoints();
     id('frequencyPoint').value = surveyInfo.timing.frequencyPoint;
     if ( surveyInfo.timing.scheduledClose ) {
         id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) );
     }
-    id('choiceCount').value = surveyInfo.entries.length;
+    id('choiceCount').value = surveyInfo.choices.length;
     createChoiceInputs();
-    for ( let i = 0; i < surveyInfo.entries.length; i++ ) {
-        id( i + "NameInput" ).value = surveyInfo.entries[i].name;
-        id( i + "ImageInput" ).value = surveyInfo.entries[i].image;
+    for ( let i = 0; i < surveyInfo.choices.length; i++ ) {
+        id( i + "NameInput" ).value = surveyInfo.choices[i].name;
+        id( i + "ImageInput" ).value = surveyInfo.choices[i].image;
     }
     previewLogo();
 
@@ -61,8 +61,7 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     freezeRadioButtons( "votingType" );
     id('choiceCount').disabled = true;
 
-    id('save').style.display = "";
-    id('create').style.display = "none";
+    updateDisplayedButtons( "edit" );
     if ( state === "ready" ) {
         id('start').style.display = "";
     }
@@ -72,6 +71,20 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     else {
         id('pause').style.display = "";
         id('close').style.display = "";
+    }
+}
+
+function updateDisplayedButtons( editMode ) {
+    if ( editMode === "edit" ) {
+        id('previewSurvey').style.display = "";
+        id('review').style.display = "";
+        id('save').style.display = "";
+        id('create').style.display = "none";
+    }
+    else {
+        id('previewSurvey').style.display = "none";
+        id('save').style.display = "none";
+        id('create').style.display = "";
     }
 }
 
@@ -144,6 +157,7 @@ function updateFrequencyPoints() {
 function submitChoiceCount( e ) {
     if ( e.which === 13 || e.keyCode === 13 ) {
         createChoiceInputs();
+        id('previewSurvey').style.display = "";
     }
 }
 
@@ -196,9 +210,9 @@ function validate() {
     let error = validateLogo();
 
     if ( !error ) {
-        const choiceNamesFilled  = nm( 'choiceNames'  ).map( e => e.value ).filter( n => !n ).length > 0;
-        const choiceNamesLength  = nm( 'choiceNames'  ).map( e => e.value ).filter( n => n.length > 20 ).length > 0;
-        const choiceImagesLength = nm( 'choiceImages' ).map( e => e.value ).filter( i => i.length > 256 ).length > 0;
+        const choiceNamesFilled  = Array.from( nm( 'choiceNames'  ) ).every( e => e.value );
+        const choiceNamesLength  = Array.from( nm( 'choiceNames'  ) ).every( e => e.value.length <= 20 );
+        const choiceImagesLength = Array.from( nm( 'choiceImages' ) ).every( e => e.value.length <= 256 );
 
         const isBracket = getSelectedRadioButtonId('surveyType') === "bracket";
         if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
@@ -255,8 +269,8 @@ function previewSurvey() {
     const error = validate();
     if ( !error ) {
         let surveyInfo = getSurveyInfo();
-        surveyInfo.active = true;
-        surveyInfo.timing.scheduledClose = adjustToUTC( surveyInfo.timing.scheduledClose );
+        surveyInfo.state = "active";
+        surveyInfo.timing.scheduledClose = adjustToUTC( newDateFromUTC( surveyInfo.timing.scheduledClose ) );
         id('surveyInfo').value = JSON.stringify( surveyInfo );
         id('previewForm').submit();
     }
@@ -336,11 +350,12 @@ function constructEditLinks( surveyMetas ) {
 }
 
 function review() {
-    let closeTime = getDisplayTime( new Date( id( 'scheduledClose' ).value ) );
-    let additionalInfo = "<br/> <emphasis>State:</emphasis> " + state +
-        "<br/> <emphasis>Active ID:</emphasis> " + activeId +
-        "<br/> <emphasis>Round Ends:</emphasis> " + closeTime;
-    viewResults( getChoices(), currentVotes, additionalInfo );
+    let closeTime = getDisplayTime( newDateFromUTC( id( 'scheduledClose' ).value ) );
+    let additionalInfo = "<br/> " +
+        "<strong>State:</strong> " + state +
+        "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
+        "<br/> <strong>Round Ends:</strong> " + (closeTime || "TBD");
+    viewResults( getChoices().map( c => c.name ), currentVotes, additionalInfo );
 }
 
 function pause() {
@@ -396,6 +411,10 @@ function start() {
         {
             action:     "startSurvey",
             id:         surveyId,
+            activeId:   calculateStartActiveId(
+                getSelectedRadioButtonId('surveyType'),
+                getSelectedRadioButtonId('votingType'),
+                getChoices().length ),
             time:       calculateStartTime( getTiming() )
         },
         function ( response ) {
@@ -445,7 +464,7 @@ function getSurveyInfo() {
         helpImage: logoData.helpImage,
         type:      getSelectedRadioButtonId('surveyType'),
         mode:      getSelectedRadioButtonId('votingType'),
-        entries:   getChoices(),
+        choices:   getChoices(),
         winners:   "",
         timing:   getTiming()
     };
@@ -472,7 +491,7 @@ function getChoices() {
     let imageInputs  = nm('choiceImages');
     for ( let i = 0; i < choiceInputs.length; i++ ) {
         if ( choiceInputs[i].value ) {
-            choices.push( {name: choiceInputs[i].value, image: imageInputs[i].value, seed: i} );
+            choices.push( {name: choiceInputs[i].value, image: imageInputs[i].value, id: i} );
         }
     }
     return choices;

@@ -5,6 +5,7 @@ let survey;
 let round;
 let state;
 let mode;
+let activeId;
 let endTime;
 let display;
 let currentVotes;
@@ -42,11 +43,12 @@ function loadPage( surveyId, surveyInfo ) {
         survey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
         state = surveyInfo.state;
         mode = surveyInfo.mode;
-        isSurveyBracket() ? displayBracket() : displayPoll();
-
-        endTime = newDateFromUTC( surveyInfo.timing.scheduledClose );
-        displayRoundTimer();
+        activeId = surveyInfo.timing.activeId;
+        endTime = getDateOrNull( surveyInfo.timing.scheduledClose ); //todo 7 - test this
         currentVotes = surveyInfo.currentVotes;
+
+        isSurveyBracket() ? displayBracket() : displayPoll();
+        displayRoundTimer();
     }
     else {
         window.location = "https://bracket.religionandstory.com/index.php?error=InvalidSurveyId";
@@ -59,7 +61,7 @@ function loadPage( surveyId, surveyInfo ) {
 
 function displayRoundTimer() {
     let timerSpan = id('roundTimer');
-    if ( state !== "active" ) {
+    if ( !isEditable( state ) ) {
         timerSpan.innerText = "(" + capitalize( state ) + ")";
         id( 'surveyDisplay' ).style.display = "none";
         id( 'submit' ).style.display = "none";
@@ -128,7 +130,7 @@ function updateVotes() {
 
 function review() {
     let additionalInfo = ""; //todo 11 - allow users to subscribe
-    viewResults( mode, survey.getAllChoices(), currentVotes, additionalInfo );
+    viewResults( survey.getAllChoices().map( c => c.getName() ), currentVotes, additionalInfo );
 }
 
 

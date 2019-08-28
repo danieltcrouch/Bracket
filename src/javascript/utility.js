@@ -95,26 +95,28 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
         if ( isSessionOver ) {
             let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
             surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
-            surveyInfo.activeId = getActiveId( tempSurvey, surveyInfo.mode );
             surveyInfo.winners = getWinners( tempSurvey, surveyInfo.currentVotes );
+            tempSurvey.setWinners( Bracket.parseWinners( surveyInfo.winners, tempSurvey.getMaxSize(), tempSurvey.getAllMatches() ) );
 
-            const isLastSession = surveyInfo.winners && surveyInfo.winners.length === surveyInfo.choices.length - 2;
+            const isLastSession = surveyInfo.winners && surveyInfo.winners.length === tempSurvey.getMaxSize() - 1;
             if ( isLastSession ) {
                 surveyInfo.timing.scheduledClose = null;
                 surveyInfo.state = "complete";
             }
+
+            surveyInfo.timing.activeId = isLastSession ? null : getActiveId( tempSurvey, surveyInfo.mode );
 
             $.post(
                 "php/database.php",
                 {
                     action:     "updateVotingSession",
                     id:         surveyId,
-                    time:       surveyInfo.timing.scheduledClose,
                     state:      surveyInfo.state,
-                    activeId:   surveyInfo.activeId,
+                    time:       surveyInfo.timing.scheduledClose,
+                    activeId:   surveyInfo.timing.activeId,
                     winners:    surveyInfo.winners
                 },
-                function () {
+                function ( response ) {
                     callback( surveyId, surveyInfo );
                 }
             );
@@ -208,23 +210,40 @@ function getDisplayTime( date ) {
     return result;
 }
 
+function calculateStartActiveId( type, mode, size )
+{
+    let result = "";
+    if ( type === "bracket" ) {
+        switch( mode ) {
+            case "match":
+                let maxSize = Bracket.getMagnitude( size );
+                result = size < maxSize ? "r0m1" : "r0m0";
+                break;
+            case "round":
+                result = "r0";
+                break;
+        }
+    }
+    return result;
+}
+
 
 /*** RESULTS ***/
 
 
-function viewResults( choices, currentVotes, additionalInfo ) {
-    let voteDisplay = getVoteDisplay( choices, currentVotes );
+function viewResults( choiceNames, currentVotes, additionalInfo ) {
+    let voteDisplay = getVoteDisplay( choiceNames, currentVotes );
     voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
-    showMessage( "Current Votes", voteDisplay );
+    showMessage( "Current Votes", voteDisplay ); //todo 7 - this needs to be adjusted relevant to when it is being displayed (edit, post vote, post completion, etc.)
     animateChoices()
 }
 
-function getVoteDisplay( choices, currentVotes ) {
+function getVoteDisplay( choicesNames, currentVotes ) {
     let result = "";
     for ( let i = 0; i < currentVotes.length; i++) {
         result += currentVotes[i].choices.map( choice => {
             return "<div class='progressBar' style='width: 0%'>" +
-                "<span style='white-space: nowrap;'>" + choices[choice.seed].name + "</span>" +
+                "<span style='white-space: nowrap;'>" + choicesNames[choice.id] + "</span>" +
                 "<span style='display: none; float: right;'>" +  choice.count + "</span>" +
                 "</div>"
         } ).join( "\n" );

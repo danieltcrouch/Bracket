@@ -79,7 +79,7 @@ class Match extends ChoiceSet {
     }
 
     isReady() {
-        return this.hasLength( ENTRIES_PER_MATCH ) && this.getAllEntries().every( e => e.getSeed() );
+        return this.hasLength( ENTRIES_PER_MATCH ) && this.getAllEntries().every( e => e.getSeed() !== null );
     }
 
     isEntryTop( seed ) {
@@ -143,7 +143,7 @@ class Bracket extends Survey {
     constructor( matches ) {
         super( matches );
 
-        this.magnitude = Math.pow( 2, Math.ceil( Math.log2( this.getSize() ) ) );
+        this.magnitude = Bracket.getMagnitude( this.getSize() );
         this.roundCount = Math.log2( this.magnitude );
     }
 
@@ -231,6 +231,10 @@ class Bracket extends Survey {
         }
 
         return result;
+    }
+
+    static getMagnitude( size ) {
+        return Math.pow( 2, Math.ceil( Math.log2( size ) ) );
     }
 
     getSerializedWinners() {
@@ -355,6 +359,11 @@ class Bracket extends Survey {
         return this.getAllChoices();
     }
 
+    getAllChoices() {
+        let choices = super.getAllChoices();
+        return choices.filter( c => c.getSeed() !== null );
+    }
+
     getMaxRounds() {
         return this.roundCount; //only includes rounds with matches
     }
@@ -412,7 +421,7 @@ function getMatch( matchDiv, match ) {
         const entry = entries[i];
         let entryDiv = document.createElement( "DIV" );
         entryDiv.style.display = "flex";
-        let isTop = match.isEntryTop( entry.getSeed() );
+        let isTop = i === 0;
         let isByeEntry = match.isByeMatch() && !isTop;
         let image = getImageFromEntry(   entry, match.getId(), isByeEntry, isTop );
         let button = getButtonFromEntry( entry, match.getId(), isByeEntry, isTop );
@@ -436,7 +445,7 @@ function getButtonFromEntry( entry, matchId, isByeEntry, isTop ) {
     button.innerHTML = entry.getDisplayName();
     button.name = matchId;
     button.onclick = function() {
-        registerBracketChoice( matchId, entry.getSeed() );
+        registerBracketChoice( matchId, isTop );
     };
     return button;
 }
@@ -615,11 +624,11 @@ function changeRound( direction ) {
 /*** INTERACTION ***/
 
 
-function registerBracketChoice( matchId, seed ) {
+function registerBracketChoice( matchId, isTop ) {
     let match = survey.getMatchFromId( matchId );
-    let winner = match.getEntryFromSeed( seed );
+    let winner = match.getEntry( isTop );
     const winnerChange = winner !== match.getWinner();
-    match.setWinner( winner.getSeed() );
+    match.setWinnerSeed( winner.getSeed() );
 
     if ( mode === "open" && winnerChange ) {
         let matchButtons = nm( matchId );
@@ -645,10 +654,10 @@ function updateSubsequentMatches( nextMatchAndPosition, newEntry ) {
         match.setWinnerSeed( null );
         match.setEntry( newEntry, isTop );
 
-        id( getButtonId( match.getId(), isTop ) ).innerHTML = newEntry;
+        id( getButtonId( match.getId(), isTop ) ).innerHTML = newEntry.getDisplayName();
         let imageSource = newEntry ? newEntry.getImage() : "images/question.jpg";
         id( getImageId( match.getId(), isTop ) ).setAttribute( "src", imageSource );
-        adjustFontSize( id( "round" + match.round ) );
+        adjustFontSize( id( "round" + match.getRoundIndex()) );
 
         let matchButtons = nm( match.getId() );
         const bothEntriesPresent = match.isReady();
@@ -705,21 +714,23 @@ function getImageId( matchId, isTop )
 
 function getRelevantMatches( forSubmission = false ) {
     let result = [];
-    switch ( mode ) {
-    case "match":
-        result = [survey.getCurrentMatch()];
-        break;
-    case "round":
-        result = survey.getMatchesFromRound( survey.getCurrentRoundIndex() );
-        result = Match.filterByes( result );
-        break;
-    case "open":
-        if ( forSubmission ) {
-            result = [survey.getFinalMatch()];
-        }
-        else {
-            result = survey.getAllMatches();
+    if ( isInProgress( state ) ) {
+        switch ( mode ) {
+        case "match":
+            result = [survey.getMatchFromId( activeId )];
+            break;
+        case "round":
+            result = survey.getMatchesFromRound( parseInt( activeId.substring( 1 ) ) );
             result = Match.filterByes( result );
+            break;
+        case "open":
+            if ( forSubmission ) {
+                result = [survey.getFinalMatch()];
+            }
+            else {
+                result = survey.getAllMatches();
+                result = Match.filterByes( result );
+            }
         }
     }
     return result;

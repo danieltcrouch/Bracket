@@ -24,8 +24,8 @@ function getSurvey( $surveyId )
                   LEFT OUTER JOIN (
                       SELECT
                           c.meta_id,
-                          GROUP_CONCAT(c.name ORDER BY c.seed)  as \"c_names\",
-                          GROUP_CONCAT(c.image ORDER BY c.seed) as \"c_images\"
+                          GROUP_CONCAT(c.name ORDER BY c.id)  as \"c_names\",
+                          GROUP_CONCAT(c.image ORDER BY c.id) as \"c_images\"
                       FROM choices c
                       GROUP BY c.meta_id
                   ) ent ON m.id = ent.meta_id
@@ -53,8 +53,8 @@ function getSurvey( $surveyId )
         'currentVotes' => [],
         'choices'      => []
     ];
-    parseChoices( $surveyInfo['choices'], $result );
-    parseVotes( $surveyInfo['currentVotes'], $result );
+    parseChoices( $surveyInfo['choices'], $result['c_names'], $result['c_images'] );
+    parseVotes( $surveyInfo['currentVotes'], $result['current_votes'] );
 
     $connection = null;
     return $surveyInfo;
@@ -65,27 +65,18 @@ function createSurvey( $survey )
     $surveyId = getGUID();
     $survey = json_decode( $survey );
     $choices = $survey->choices;
-    $state = "active";
-    $activeId = null;
-    switch ( $survey->mode )
-    {
-    case "match":
-        $activeId = "m0";
-        break;
-    case "round":
-        $activeId = "r0";
-        break;
-    }
+    $state = "ready";
+    $activeId = "";
 
     $choiceValues = "";
-    for ( $i = 0; $i < count( $choices ); $i++ )
+    for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
         $choiceValues .= ( $i != 0 ) ? ", " : "";
-        $choiceValues .= "(:surveyId, :choiceId, :choiceName$i, :choiceImage$i, :choiceSeed$i)";
+        $choiceValues .= "(:surveyId, :choiceId$i, :choiceName$i, :choiceImage$i)";
     }
     $insertMeta = "INSERT INTO meta (id, state, title, image, help, type, mode) VALUES (:surveyId, :state, :title, :image, :help, :type, :mode)";
     $insertTiming = "INSERT INTO timing (meta_id, frequency, frequency_point, scheduled_close, active_id) VALUES (:surveyId, :frequency, :frequencyPoint, :scheduledClose, :activeId)";
-    $insertChoices = "INSERT INTO choices (meta_id, id, name, image, seed) VALUES $choiceValues";
+    $insertChoices = "INSERT INTO choices (meta_id, id, name, image) VALUES $choiceValues";
 
     $query =
         "$insertMeta;\n
@@ -101,25 +92,24 @@ function createSurvey( $survey )
     $statement->bindParam(':help',           $survey->help);
     $statement->bindParam(':type',           $survey->type);
     $statement->bindParam(':mode',           $survey->mode);
-    $statement->bindParam(':frequency',      $survey->frequency);
-    $statement->bindParam(':frequencyPoint', $survey->frequencyPoint);
-    $statement->bindParam(':scheduledClose', $survey->scheduledClose);
+    $statement->bindParam(':frequency',      $survey->timing->frequency);
+    $statement->bindParam(':frequencyPoint', $survey->timing->frequencyPoint);
+    $statement->bindParam(':scheduledClose', $survey->timing->scheduledClose);
     $statement->bindParam(':activeId',       $activeId);
-    for ( $i = 0; $i < count( $choices ); $i++ )
+    for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
         $choice = $choices[$i];
-        $choiceId = getGUID();
-        $statement->bindParam(":choiceId$i",    $choiceId);
-        $statement->bindParam(":choiceSeed$i",  $choice->seed);
+        $statement->bindParam(":choiceId$i",    $choice->id);
         $statement->bindParam(":choiceName$i",  $choice->name);
         $statement->bindParam(":choiceImage$i", $choice->image);
     }
     $statement->execute();
 
     $connection = null;
+    return $surveyId;
 }
 
-function updateSurvey($survey )
+function updateSurvey( $survey )
 {
     $survey = json_decode( $survey );
     $surveyId = $survey->id;
@@ -149,10 +139,10 @@ function updateChoices( $surveyId, $choices )
 {
     $queryNameCase  = "CASE ";
     $queryImageCase = "CASE ";
-    for ( $i = 0; $i < count( $choices ); $i++ )
+    for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
-        $queryNameCase  .= "WHEN seed = :choiceSeed$i THEN :choiceName$i ";
-        $queryImageCase .= "WHEN seed = :choiceSeed$i THEN :choiceImage$i ";
+        $queryNameCase  .= "WHEN id = :choiceId$i THEN :choiceName$i ";
+        $queryImageCase .= "WHEN id = :choiceId$i THEN :choiceImage$i ";
     }
     $queryNameCase  .= "END";
     $queryImageCase .= "END";
@@ -165,10 +155,10 @@ function updateChoices( $surveyId, $choices )
     $statement = $connection->prepare( $query );
 
     $statement->bindParam(':surveyId', $surveyId);
-    for ( $i = 0; $i < count( $choices ); $i++ )
+    for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
         $choice = $choices[$i];
-        $statement->bindParam(":choiceSeed$i",  $choice->seed);
+        $statement->bindParam(":choiceId$i",    $choice->id);
         $statement->bindParam(":choiceName$i",  $choice->name);
         $statement->bindParam(":choiceImage$i", $choice->image);
     }
@@ -246,27 +236,27 @@ function getCurrentVotes( $surveyId )
 
     $result = $statement->fetch();
     $currentVotes = [];
-    parseVotes( $currentVotes, $result );
+    parseVotes( $currentVotes, $result['current_votes'] );
 
     $connection = null;
     return $currentVotes;
 }
 
-//todo 10 - create a DB Service class that has the voting logic and the data parsing
-function parseChoices(&$target, $data )
+//todo 10 - create a DB Service class that has the voting logic and the data parsing, also updateVotingSession
+function parseChoices(&$target, $rawNames, $rawImages )
 {
-    $choiceNames  = explode( ',', $data['c_names'] );
-    $choiceImages = explode( ',', $data['c_images'] );
+    $choiceNames  = explode( ',', $rawNames );
+    $choiceImages = explode( ',', $rawImages );
     foreach( $choiceNames as $index => $name ) {
         array_push( $target, ['name' => $name, 'image' => $choiceImages[$index]] );
     }
 }
 
-function parseVotes( &$target, $data )
+function parseVotes( &$target, $rawVotes )
 {
     $result = [];
     $matchIds = [];
-    $votes = explode( ',', $data['current_votes'] );
+    $votes = $rawVotes ? explode( ',', $rawVotes ) : [];
     foreach( $votes as $value )
     {
         $values = explode( '|', $value );
@@ -303,7 +293,7 @@ function checkVote( $votingConditions, $votes )
     }
     elseif ( $votingConditions['active_id'] )
     {
-        for ( $i = 0; $i < count( $votes ); $i++ )
+        for ( $i = 0; $i < sizeof( $votes ); $i++ )
         {
             if ( strpos( $votes[$i]['id'], $votingConditions['active_id'] ) === false )
             {
@@ -347,26 +337,24 @@ function getVoteConditions( $surveyId )
 
 function saveVote( $surveyId, $votes )
 {
-    $voteId = getGUID();
     $userIp = $_SERVER['REMOTE_ADDR'];
 
     $query = "INSERT INTO voting
-              (meta_id, id, user, choice_set_id, choice_id)
-              VALUES ( :surveyId, :voteId, :userIp, :matchId, :choiceSeed )
-              ON DUPLICATE KEY UPDATE
-              choice_id = :choiceSeed ";
+                (meta_id, user, choice_set_id, choice_id)
+                VALUES ( :surveyId, :userIp, :choiceSetId, :choiceId )
+              ON DUPLICATE KEY
+              UPDATE choice_id = :choiceId ";
 
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':surveyId', $surveyId);
-    $statement->bindParam(':voteId',   $voteId);
     $statement->bindParam(':userIp',   $userIp);
 
-    for ( $i = 0; $i < count( $votes ); $i++ )
+    for ( $i = 0; $i < sizeof( $votes ); $i++ )
     {
         $vote = $votes[$i];
-        $statement->bindParam(':matchId',    $vote['id']);
-        $statement->bindParam(':choiceSeed', $vote['vote']);
+        $statement->bindParam(':choiceSetId', $vote['id']);
+        $statement->bindParam(':choiceId',    $vote['vote']);
         $statement->execute();
     }
 
@@ -393,7 +381,7 @@ function startSurvey( $surveyId, $closeTime )
     $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime WHERE m.id = :surveyId AND t.meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':surveyId', $surveyId);
+    $statement->bindParam(':surveyId',  $surveyId);
     $statement->bindParam(':state',     $state);
     $statement->bindParam(':closeTime', $closeTime);
     $statement->execute();
@@ -417,16 +405,39 @@ function setCloseTime( $surveyId, $closeTime )
 
 function updateVotingSession( $surveyId, $state, $closeTime, $activeId, $winners )
 {
-    $query = "UPDATE meta m, timing t, results r
-                SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId, r.winners = :winners 
-                WHERE m.id = :surveyId AND t.meta_id = :surveyId AND r.meta_id = :surveyId ";
+    updateWinners( $surveyId, $winners );
+    return updateTiming( $surveyId, $state, $closeTime, $activeId );
+}
+
+function updateWinners( $surveyId, $winners )
+{
+    $query = "INSERT INTO results
+                (meta_id, winners)
+                VALUES ( :surveyId, :winners )
+              ON DUPLICATE KEY
+              UPDATE winners = :winners ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
-    $statement->bindParam(':surveyId', $surveyId);
+    $statement->bindParam(':surveyId',  $surveyId);
+    $statement->bindParam(':winners',   $winners);
+    $statement->execute();
+
+    $connection = null;
+    return true;
+}
+
+function updateTiming( $surveyId, $state, $closeTime, $activeId )
+{
+    $query = "UPDATE meta m
+                JOIN timing t ON m.id = t.meta_id
+              SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId
+              WHERE m.id = :surveyId ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':surveyId',  $surveyId);
     $statement->bindParam(':state',     $state);
     $statement->bindParam(':closeTime', $closeTime);
     $statement->bindParam(':activeId',  $activeId);
-    $statement->bindParam(':winners',   $winners);
     $statement->execute();
 
     $connection = null;
@@ -451,6 +462,7 @@ function getGUID()
 	return strtoupper(md5(uniqid(rand(), true)));
 }
 
+//todo 10 - add comments to each if condition to label what they're for
 if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
     $action = $_POST['action'];
     $result = null;
