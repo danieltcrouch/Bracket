@@ -58,26 +58,26 @@ function getBracketOrPoll( type, choices, winners ) {
     return ( type === "bracket" ) ? Bracket.createBracket( choices, winners ) : Poll.createPoll( choices, winners );
 }
 
-function getWinners( survey, votes ) {
-    let answers = votes.map( cs => { return {
+function getWinners( votes ) {
+    return votes.map( cs => { return {
         choiceSetId: cs.id,
         choiceId:    cs.choices.reduce( (maxChoice,choice) => (maxChoice.count > choice.count) ? maxChoice : choice ).id
     }; } );
-    survey.setAnswers( answers );
-    return ( survey instanceof Bracket ) ? survey.getSerializedWinners() : survey.getSerializedWinner();
 }
 
-function getActiveId( survey, mode )
+function getActiveId( survey, type, mode )
 {
     let result = "";
-    switch ( mode )
-    {
-    case "match":
-        result = survey.getCurrentMatch().getId();
-        break;
-    case "round":
-        result = "r" + survey.getCurrentRoundIndex();
-        break;
+    if ( type === "bracket" ) {
+        switch ( mode )
+        {
+        case "match":
+            result = survey.getCurrentMatch().getId();
+            break;
+        case "round":
+            result = "r" + survey.getCurrentRoundIndex();
+            break;
+        }
     }
     return result;
 }
@@ -94,17 +94,17 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {
             let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
-            surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
-            surveyInfo.winners = getWinners( tempSurvey, surveyInfo.currentVotes );
-            tempSurvey.setWinners( Bracket.parseWinners( surveyInfo.winners, tempSurvey.getMaxSize(), tempSurvey.getAllMatches() ) );
+            tempSurvey.setAnswers( getWinners( surveyInfo.currentVotes ) );
 
-            const isLastSession = surveyInfo.winners && surveyInfo.winners.length === tempSurvey.getMaxSize() - 1;
+            const isLastSession = !tempSurvey.getCurrentChoiceSet();
             if ( isLastSession ) {
                 surveyInfo.timing.scheduledClose = null;
                 surveyInfo.state = "complete";
             }
 
-            surveyInfo.timing.activeId = isLastSession ? null : getActiveId( tempSurvey, surveyInfo.mode );
+            surveyInfo.timing.activeId = isLastSession ? null : getActiveId( tempSurvey, surveyInfo.type, surveyInfo.mode );
+            surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
+            let serializedWinners = tempSurvey.getSerializedWinners();
 
             $.post(
                 "php/database.php",
@@ -114,7 +114,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
                     state:      surveyInfo.state,
                     time:       surveyInfo.timing.scheduledClose,
                     activeId:   surveyInfo.timing.activeId,
-                    winners:    surveyInfo.winners
+                    winners:    serializedWinners
                 },
                 function ( response ) {
                     callback( surveyId, surveyInfo );
@@ -240,7 +240,7 @@ function viewResults( choiceNames, currentVotes, additionalInfo ) {
 
 function getVoteDisplay( choicesNames, currentVotes ) {
     let result = "";
-    if ( choicesNames && currentVotes && choicesNames.length === currentVotes.length ) {
+    if ( choicesNames && currentVotes ) {
         for ( let i = 0; i < currentVotes.length; i++) {
             result += currentVotes[i].choices.map( choice => {
                 return "<div class='progressBar' style='width: 0%'>" +

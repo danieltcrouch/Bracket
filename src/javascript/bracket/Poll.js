@@ -71,8 +71,16 @@ class Poll extends Survey {
         return result;
     }
 
+    getSerializedWinners() {
+        return this.getSerializedWinner();
+    }
+
     getSerializedWinner() {
         return this.getWinner() ? this.getWinner().getIndex() : null;
+    }
+
+    setWinners( winnerIndex ) {
+        this.setWinner( winnerIndex );
     }
 
     setWinner( winnerIndex ) {
