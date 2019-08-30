@@ -251,6 +251,9 @@ function getVoteDisplay( choicesNames, currentVotes ) {
             result += "<br/>";
         }
     }
+    else {
+        result = "No current votes...";
+    }
     return result;
 }
 

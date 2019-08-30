@@ -126,9 +126,9 @@ function updateSurvey( $survey )
     $statement = $connection->prepare( $query );
     $statement->bindParam(':surveyId',       $surveyId);
     $statement->bindParam(':help',           $survey->help);
-    $statement->bindParam(':frequency',      $survey->frequency);
-    $statement->bindParam(':frequencyPoint', $survey->frequencyPoint);
-    $statement->bindParam(':scheduledClose', $survey->scheduledClose);
+    $statement->bindParam(':frequency',      $survey->timing->frequency);
+    $statement->bindParam(':frequencyPoint', $survey->timing->frequencyPoint);
+    $statement->bindParam(':scheduledClose', $survey->timing->scheduledClose);
     $statement->execute();
 
     $connection = null;
@@ -374,16 +374,19 @@ function setSurveyState( $surveyId, $state )
     return true;
 }
 
-function startSurvey( $surveyId, $closeTime )
+function startSurvey( $surveyId, $activeId, $closeTime )
 {
+    $activeId = $activeId ?? "";
+    $closeTime = $closeTime ?? null; //todo 7 - this needs to be null, but won't let me set it to NULL if absent
     $state = "active";
 
-    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime WHERE m.id = :surveyId AND t.meta_id = :surveyId ";
+    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId WHERE m.id = :surveyId AND t.meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':surveyId',  $surveyId);
     $statement->bindParam(':state',     $state);
     $statement->bindParam(':closeTime', $closeTime);
+    $statement->bindParam(':activeId',  $activeId);
     $statement->execute();
 
     $connection = null;
@@ -473,6 +476,9 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
         }
         elseif ( isset($_POST['id']) && isset($_POST['state']) ) {
             $result = $action( $_POST['id'], $_POST['state'] );
+        }
+        elseif ( isset($_POST['id']) && isset($_POST['activeId']) && isset($_POST['time']) ) {
+            $result = $action( $_POST['id'], $_POST['activeId'], $_POST['time'] );
         }
         elseif ( isset($_POST['id']) && isset($_POST['time']) ) {
             $result = $action( $_POST['id'], $_POST['time'] );

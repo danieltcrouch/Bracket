@@ -44,7 +44,7 @@ function loadPage( surveyId, surveyInfo ) {
         state = surveyInfo.state;
         mode = surveyInfo.mode;
         activeId = surveyInfo.timing.activeId;
-        endTime = getDateOrNull( surveyInfo.timing.scheduledClose ); //todo 7 - test this
+        endTime = getDateOrNull( surveyInfo.timing.scheduledClose );
         currentVotes = surveyInfo.currentVotes;
 
         isSurveyBracket() ? displayBracket() : displayPoll();
@@ -78,14 +78,19 @@ function displayRoundTimer() {
 
 
 function submit() {
-    if ( !endTime || isDateBeforeOrEqual( new Date(), endTime, true ) ) {
-        let votes = isSurveyBracket() ? getBracketVotes() : getPollVotes();
-        if ( votes ) {
-            saveVote( votes );
+    if ( surveyId !== "PREVIEW" ) {
+        if ( !endTime || isDateBeforeOrEqual( new Date(), endTime, true ) ) {
+            let votes = isSurveyBracket() ? getBracketVotes() : getPollVotes();
+            if ( votes ) {
+                saveVote( votes );
+            }
+        }
+        else {
+            showToaster( "This round has closed." );
         }
     }
     else {
-        showToaster( "This round has closed." );
+        showToaster( "Cannot submit votes from preview." );
     }
 }
 

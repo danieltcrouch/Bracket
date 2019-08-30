@@ -72,7 +72,7 @@
                 <!-- todo 8: eventually, build your own date-time picker -->
             </div>
 
-            <!-- reduce buttons displayed on edit page (max of four) -->
+            <!-- reduce buttons displayed on edit page (max of four) - start should go away if already started -->
             <div class="center" style="margin-bottom: 1em">
                 <button id="previewSurvey" class="button" style="display: none; width: 8em; margin: .25em;" onclick="previewSurvey()">Preview</button>
             </div>

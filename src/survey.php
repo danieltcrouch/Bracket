@@ -38,12 +38,6 @@
         <div class="center" style="margin-bottom: 1em"><button id="result" class="button" style="width: 8em" onclick="review()">Review</button></div>
     </div>
 
-    <!--
-    todo 7:
-        Update rounds and close time
-        Delete unused DB columns
-    -->
-
 </body>
 
 <script>

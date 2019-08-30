@@ -360,7 +360,7 @@ class Bracket extends Survey {
     }
 
     getAllChoices() {
-        let choices = super.getAllChoices();
+        let choices = this.getMatchesFromRound( 0 );
         return choices.filter( c => c.getSeed() !== null );
     }
 

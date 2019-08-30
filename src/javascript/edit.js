@@ -43,7 +43,7 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     updateFrequencyPoints();
     id('frequencyPoint').value = surveyInfo.timing.frequencyPoint;
     if ( surveyInfo.timing.scheduledClose ) {
-        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) ); //todo 8 - make sure that all uses of newDateFromUTC are correct
+        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) ); //todo 8 - check all uses of newDateFromUTC / getDateOrNull
     }
     id('choiceCount').value = surveyInfo.choices.length;
     createChoiceInputs();
@@ -203,13 +203,14 @@ function createChoiceInputs() {
 }
 
 
-/**********PREVIEW**********/
+/**********VALIDATE**********/
 
 
 function validate() {
     let error = validateLogo();
 
     if ( !error ) {
+        const choiceCount = id('choiceCount').value;
         const choiceNamesFilled  = Array.from( nm( 'choiceNames'  ) ).every( e => e.value );
         const choiceNamesLength  = Array.from( nm( 'choiceNames'  ) ).every( e => e.value.length <= 20 );
         const choiceImagesLength = Array.from( nm( 'choiceImages' ) ).every( e => e.value.length <= 256 );
@@ -217,6 +218,9 @@ function validate() {
         const isBracket = getSelectedRadioButtonId('surveyType') === "bracket";
         if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
             error = "Voting type required: match, round, or open.";
+        }
+        else if ( !choiceCount || choiceCount <= 0 ) {
+            error = "Choice count must be greater than zero.";
         }
         else if ( !choiceNamesFilled ) {
             error = "Choice names required.";
@@ -250,6 +254,9 @@ function validateLogo() {
 
     return error;
 }
+
+
+/**********PREVIEW**********/
 
 function previewLogo() {
     const error = validateLogo();
