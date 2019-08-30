@@ -66,6 +66,10 @@ class ChoiceSet {
         this.answerId = id;
     }
 
+    getAnswerId() {
+        return this.answerId;
+    }
+
     getAnswer() {
         return this.getChoiceFromId( this.answerId );
     }
@@ -137,6 +141,10 @@ class Survey {
 
     getChoiceSetsFromIds( ids ) {
         return this.choiceSets.filter( cs => ids ? ids.includes( cs.getId() ) : false );
+    }
+
+    isFinished() {
+        return !this.getCurrentChoiceSet();
     }
 
     getSize() {

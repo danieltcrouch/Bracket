@@ -35,6 +35,10 @@ class OptionSet extends ChoiceSet {
         this.setAnswerId( index );
     }
 
+    getWinnerIndex() {
+        return this.getAnswerId();
+    }
+
     getWinner() {
         return this.getAnswer();
     }
@@ -79,16 +83,23 @@ class Poll extends Survey {
         return this.getWinner() ? this.getWinner().getIndex() : null;
     }
 
-    setWinners( winnerIndex ) {
-        this.setWinner( winnerIndex );
+    setWinners( winners ) {
+        this.setWinner( winners );
     }
 
-    setWinner( winnerIndex ) {
-        this.setAnswers( [ {choiceSetId: OPTION_SET_ID, choiceId: winnerIndex } ] );
+    setWinner( winner ) {
+        winner = ( typeof winner === "string" ) ?
+            [ {choiceSetId: OPTION_SET_ID, choiceId: winner } ] :
+            winner.map( w => { return {choiceSetId: w.optionSetId || w.choiceSetId, choiceId: w.optionId || w.choiceId}; } );
+        this.setAnswers( winner );
     }
 
     getWinner() {
         return this.getOptionSet().getWinner();
+    }
+
+    isFinished() {
+        return !!this.getWinner();
     }
 
     getOptionFromId( index ) {

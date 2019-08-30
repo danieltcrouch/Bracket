@@ -67,19 +67,7 @@ function getWinners( votes ) {
 
 function getActiveId( survey, type, mode )
 {
-    let result = "";
-    if ( type === "bracket" ) {
-        switch ( mode )
-        {
-        case "match":
-            result = survey.getCurrentMatch().getId();
-            break;
-        case "round":
-            result = "r" + survey.getCurrentRoundIndex();
-            break;
-        }
-    }
-    return result;
+    return ( type === "bracket" ) ? Bracket.getActiveId( survey, mode ) : "";
 }
 
 
@@ -94,9 +82,9 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {
             let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
-            tempSurvey.setAnswers( getWinners( surveyInfo.currentVotes ) );
+            tempSurvey.setWinners( getWinners( surveyInfo.currentVotes ) );
 
-            const isLastSession = !tempSurvey.getCurrentChoiceSet();
+            const isLastSession = tempSurvey.isFinished();
             if ( isLastSession ) {
                 surveyInfo.timing.scheduledClose = null;
                 surveyInfo.state = "complete";

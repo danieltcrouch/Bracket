@@ -66,7 +66,8 @@ function createSurvey( $survey )
     $survey = json_decode( $survey );
     $choices = $survey->choices;
     $state = "ready";
-    $activeId = "";
+    $activeId = null;
+    $closeTime = getNullValue($survey->timing->scheduledClose);
 
     $choiceValues = "";
     for ( $i = 0; $i < sizeof( $choices ); $i++ )
@@ -94,7 +95,7 @@ function createSurvey( $survey )
     $statement->bindParam(':mode',           $survey->mode);
     $statement->bindParam(':frequency',      $survey->timing->frequency);
     $statement->bindParam(':frequencyPoint', $survey->timing->frequencyPoint);
-    $statement->bindParam(':scheduledClose', $survey->timing->scheduledClose);
+    $statement->bindParam(':scheduledClose', $closeTime);
     $statement->bindParam(':activeId',       $activeId);
     for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
@@ -113,6 +114,7 @@ function updateSurvey( $survey )
 {
     $survey = json_decode( $survey );
     $surveyId = $survey->id;
+    $closeTime = getNullValue($survey->timing->scheduledClose);
 
     $query     = "UPDATE meta m, timing t
                   SET m.help = :help,
@@ -128,7 +130,7 @@ function updateSurvey( $survey )
     $statement->bindParam(':help',           $survey->help);
     $statement->bindParam(':frequency',      $survey->timing->frequency);
     $statement->bindParam(':frequencyPoint', $survey->timing->frequencyPoint);
-    $statement->bindParam(':scheduledClose', $survey->timing->scheduledClose);
+    $statement->bindParam(':scheduledClose', $closeTime);
     $statement->execute();
 
     $connection = null;
@@ -376,16 +378,15 @@ function setSurveyState( $surveyId, $state )
 
 function startSurvey( $surveyId, $activeId, $closeTime )
 {
-    $activeId = $activeId ?? "";
-    $closeTime = $closeTime ?? null; //todo 7 - this needs to be null, but won't let me set it to NULL if absent
     $state = "active";
+    $closeTime = getNullValue($closeTime);
 
     $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId WHERE m.id = :surveyId AND t.meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':surveyId',  $surveyId);
     $statement->bindParam(':state',     $state);
-    $statement->bindParam(':closeTime', $closeTime);
+    $statement->bindParam(':closeTime',  $closeTime );
     $statement->bindParam(':activeId',  $activeId);
     $statement->execute();
 
@@ -395,11 +396,13 @@ function startSurvey( $surveyId, $activeId, $closeTime )
 
 function setCloseTime( $surveyId, $closeTime )
 {
+    $closeTime = getNullValue($closeTime);
+
     $query = "UPDATE timing SET scheduled_close = :closeTime WHERE meta_id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
     $statement->bindParam(':closeTime', $closeTime);
-    $statement->bindParam(':surveyId', $surveyId);
+    $statement->bindParam(':surveyId',  $surveyId);
     $statement->execute();
 
     $connection = null;
@@ -431,6 +434,8 @@ function updateWinners( $surveyId, $winners )
 
 function updateTiming( $surveyId, $state, $closeTime, $activeId )
 {
+    $closeTime = getNullValue($closeTime);
+
     $query = "UPDATE meta m
                 JOIN timing t ON m.id = t.meta_id
               SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId
@@ -463,6 +468,11 @@ function getGUID()
 {
 	mt_srand((double)microtime()*10000);
 	return strtoupper(md5(uniqid(rand(), true)));
+}
+
+function getNullValue( $value )
+{
+	return $value ? $value : null;
 }
 
 //todo 10 - add comments to each if condition to label what they're for
