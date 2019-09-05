@@ -250,13 +250,7 @@ function validateLogo() {
 
 function preview() {
     if ( id('choiceCount').value ) {
-        showBinaryChoice(
-            "Preview",
-            "Preview the Logo or the entire Survey?", "Logo", "Survey",
-            function( answer ) {
-                ( answer ) ? previewLogo() : previewSurvey();
-            }
-        );
+        previewSurvey();
     }
     else {
         previewLogo();
@@ -282,6 +276,7 @@ function previewSurvey() {
     if ( !error ) {
         let surveyInfo = getSurveyInfo();
         surveyInfo.state = "active";
+        surveyInfo.timing.activeId = calculateStartActiveId( surveyInfo.type, surveyInfo.mode, surveyInfo.choices.length );
         surveyInfo.timing.scheduledClose = getDateOrNull( surveyInfo.timing.scheduledClose );
         id('surveyInfo').value = JSON.stringify( surveyInfo );
         id('previewForm').submit();
@@ -301,7 +296,7 @@ function create() {
         $.post(
             "php/database.php",
             {
-                action:  "createSurvey",
+                action: "createSurvey",
                 survey: JSON.stringify( getSurveyInfo() )
             },
             function ( response ) {

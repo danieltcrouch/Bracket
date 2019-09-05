@@ -769,7 +769,7 @@ function getImageId( matchId, isTop )
     return matchId + "Image" + (isTop?"T":"B");
 }
 
-function getRelevantMatches( forSubmission = false ) {
+function getRelevantMatches( forSubmission ) {
     let result = [];
     if ( isInProgress( state ) ) {
         switch ( mode ) {
