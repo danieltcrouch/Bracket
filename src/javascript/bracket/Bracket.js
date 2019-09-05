@@ -9,6 +9,10 @@ class Entry extends Choice {
         super( seed, name, image );
     }
 
+    static isValidSeed( seed ) {
+        return Number.isFinite( seed );
+    }
+
     static getEntry( entries, seed ) {
         return Choice.getChoice( entries, seed );
     }
@@ -18,7 +22,7 @@ class Entry extends Choice {
     }
 
     static isEmpty( entry ) {
-        return entry.getId() === null;
+        return !entry || !Entry.isValidSeed( entry.getId() );
     }
 
     static getByeEntry() {
@@ -62,6 +66,10 @@ class Match extends ChoiceSet {
         if ( isBye ) {
             this.setWinnerSeed( this.getTopEntry().getSeed() )
         }
+    }
+
+    static isValidId( id ) {
+        return ChoiceSet.isValidId( id );
     }
 
     static getMatch( matches, matchId ) {
@@ -301,7 +309,7 @@ class Bracket extends Survey {
 
     getNextMatch( matchId ) {
         let result = null;
-        if ( matchId ) {
+        if ( Match.isValidId( matchId ) ) {
             let indexes = Match.parseMatchId( matchId );
             let nextRound = indexes.roundIndex + 1;
             if ( nextRound !== this.getMaxRounds() ) {
@@ -323,7 +331,7 @@ class Bracket extends Survey {
 
     retroWinner( matchId, winnerSeed ) {
         let result = null;
-        if ( winnerSeed !== null ) {
+        if ( Entry.isValidSeed( winnerSeed ) ) {
             let match = this.getMatchFromId( matchId );
             if ( !match.isReady() ) {
                 let prev = this.getPreviousMatches( matchId );
@@ -349,7 +357,7 @@ class Bracket extends Survey {
 
     getPreviousMatches( matchId ) {
         let result = null;
-        if ( matchId ) {
+        if ( Match.isValidId( matchId ) ) {
             let indexes = Match.parseMatchId( matchId );
             if ( indexes.roundIndex > 0 ) {
                 let prevRound   = indexes.roundIndex - 1;

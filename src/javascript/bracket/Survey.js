@@ -7,6 +7,10 @@ class Choice {
         this.image = image || DEFAULT_IMAGE;
     }
 
+    static isValidId( id ) {
+        return !!id || Number.isFinite( id );
+    }
+
     static getChoice( choices, id ) {
         return choices.find( c => c.getId() === id );
     }
@@ -36,6 +40,11 @@ class ChoiceSet {
     constructor( id, choices ) {
         this.id = id;
         this.choices = choices ? choices.filter( Boolean ) : [];
+        this.answerId = null;
+    }
+
+    static isValidId( id ) {
+        return !!id || Number.isFinite( id );
     }
 
     static getChoiceSet( choiceSets, id ) {
@@ -55,7 +64,7 @@ class ChoiceSet {
     }
 
     getChoiceFromId( id ) {
-        return this.choices.find( c => c.getId() === id );
+        return this.choices.filter( c => ChoiceSet.isValidId( c.getId() ) ).find( c => c.getId() === id );
     }
 
     getChoicesFromIds( ids ) {

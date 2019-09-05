@@ -11,6 +11,7 @@ function initializeCreate() {
         help:      "Additional instructions will appear here."
     };
     createTitleLogo( logoInfo, id('exampleLogo'), true, true );
+    updateDisplayedButtons( "create" );
 }
 
 function initializeEdit( surveyId ) {
@@ -24,6 +25,7 @@ function initializeEdit( surveyId ) {
             let surveyInfo = JSON.parse( response );
             surveyInfo.helpImage = helpImage;
             updateSurveyTiming( surveyId, surveyInfo, initializeEditCallback );
+            updateDisplayedButtons( "edit" );
         }
     );
 }
@@ -59,8 +61,6 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     freezeRadioButtons( "surveyType" );
     freezeRadioButtons( "votingType" );
     id('choiceCount').disabled = true;
-
-    updateDisplayedButtons( "edit" );
 }
 
 function updateDisplayedButtons( editMode ) {

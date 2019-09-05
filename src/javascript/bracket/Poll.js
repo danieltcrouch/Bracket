@@ -5,6 +5,10 @@ class Option extends Choice {
         super( index, name, image );
     }
 
+    static isValidIndex( index ) {
+        return Number.isFinite( index );
+    }
+
     static getOption( options, index ) {
         return Choice.getChoice( options, index );
     }
@@ -21,6 +25,10 @@ class Option extends Choice {
 class OptionSet extends ChoiceSet {
     constructor( options ) {
         super( OPTION_SET_ID, options );
+    }
+
+    static isValidId( id ) {
+        return ChoiceSet.isValidId( id );
     }
 
     static getOptionSet( optionSets, id ) {

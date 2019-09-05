@@ -112,5 +112,6 @@
         setVotingType( votingType );
     });
 </script>
+<?php include("html/state-modal.html"); ?>
 <?php includeModals(); ?>
 </html>
