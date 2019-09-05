@@ -249,11 +249,16 @@ function validateLogo() {
 
 
 function preview() {
-    if ( id('choiceCount').value ) {
-        previewSurvey();
+    if ( surveyId ) {
+        window.open( "https://bracket.religionandstory.com/survey.php?id=" + surveyId );
     }
     else {
-        previewLogo();
+        if ( id('choiceCount').value ) {
+            previewSurvey();
+        }
+        else {
+            previewLogo();
+        }
     }
 }
 

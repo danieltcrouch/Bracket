@@ -9,14 +9,14 @@
             </div>
             <div id="modalBody" class="modal-body center">Update the current survey:</div>
             <div id="modalSubmit" class="modal-submit center">
-                <div>
-                    <button id="startButton" class="button" style="width: 10em" onclick="start()">Start</button>
-                    <button id="closeButton" class="button" style="width: 10em" onclick="close()">Close</button>
-                    <button id="hideButton"  class="button" style="width: 10em" onclick="hide()" >Hide</button>
+                <div style="margin-bottom: 1em">
+                    <button id="startButton" class="button" style="display: none; width: 10em" onclick="start()">Start</button>
+                    <button id="closeButton" class="button" style="display: none; width: 10em" onclick="close()">Close</button>
+                    <button id="hideButton"  class="button" style="display: none; width: 10em" onclick="hide()" >Hide</button>
                 </div>
                 <div>
-                    <button id="pauseVButton" class="button" style="width: 10em" onclick="pauseVoting()">Pause Voting</button>
-                    <button id="pauseCButton" class="button" style="width: 10em" onclick="pauseClosing()">Pause Closing</button>
+                    <button id="pauseVButton" class="button" style="display: none; width: 10em" onclick="pauseVoting()">Pause Voting</button>
+                    <button id="pauseCButton" class="button" style="display: none; width: 10em" onclick="pauseClosing()">Pause Closing</button>
                 </div>
             </div>
         </div>
@@ -32,7 +32,7 @@
         stateModalValues = currentSurvey;
         stateModalCallback = callback;
 
-        id("stateModal").style.display = "";
+        id("stateModal").style.display = "block";
         setCloseHandlersJS( "stateModal" );
         blurBackground();
 
@@ -62,7 +62,7 @@
             },
             function ( response ) {
                 showToaster( "Survey started... " );
-                closeModal();
+                closeOutModal();
             }
         );
     }
@@ -79,7 +79,7 @@
             },
             function ( response ) {
                 showToaster( "Survey started... " );
-                closeModal();
+                closeOutModal();
             }
         );
     }
@@ -93,7 +93,7 @@
                 state:      "hidden"
             },
             function ( response ) {
-                closeModal();
+                closeOutModal();
                 window.location = "https://bracket.religionandstory.com/";
             }
         );
@@ -110,7 +110,7 @@
             },
             function ( response ) {
                 showToaster( "Bracket is now " + stateModalValues.state );
-                closeModal();
+                closeOutModal();
             }
         );
     }
@@ -125,15 +125,13 @@
             },
             function ( response ) {
                 showToaster( "Survey will close when you tell it to..." );
-                closeModal();
+                closeOutModal();
             }
         );
     }
 
-    function closeModal() {
+    function closeOutModal() {
         closeModalJS( "stateModal" );
-        stateModalCallback( {
-            stateModalValues
-        } );
+        stateModalCallback( stateModalValues );
     }
 </script>
