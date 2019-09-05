@@ -27,7 +27,7 @@
             <input id="titleInput" type="text" class="input" maxlength="20" placeholder="Survey Title">
             <input id="imageInput" type="text" class="input" placeholder="Image Address">
             <textarea id="helpInput" class="input" placeholder="Instructions"></textarea>
-            <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="preview()">Preview</button>
+            <button id="previewButton" class="button" style="width: 8em; margin: .25em;" onclick="preview()">Preview</button>
         </div>
         <div class="col-5 center" style="padding-bottom: 0">
             <div id="exampleLogo" class="exampleTitle center"></div>

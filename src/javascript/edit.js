@@ -147,7 +147,6 @@ function updateFrequencyPoints() {
 function submitChoiceCount( e ) {
     if ( e.which === 13 || e.keyCode === 13 ) {
         createChoiceInputs();
-        id('previewSurvey').style.display = "";
     }
 }
 
@@ -250,13 +249,18 @@ function validateLogo() {
 
 
 function preview() {
-    showBinaryChoice(
-        "Preview",
-        "Preview the Logo or the entire Survey?", "Logo", "Survey",
-        function( answer ) {
-            ( answer ) ? previewLogo() : previewSurvey();
-        }
-    );
+    if ( id('choiceCount').value ) {
+        showBinaryChoice(
+            "Preview",
+            "Preview the Logo or the entire Survey?", "Logo", "Survey",
+            function( answer ) {
+                ( answer ) ? previewLogo() : previewSurvey();
+            }
+        );
+    }
+    else {
+        previewLogo();
+    }
 }
 
 function previewLogo() {
