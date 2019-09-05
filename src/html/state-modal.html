@@ -1,0 +1,139 @@
+<link rel="stylesheet" type="text/css" href="https://religionandstory.com/common/css/modal.css"/>
+
+<div id="stateModal" class="modal-wrapper">
+    <div class="modal-foreground">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span id="modalHeader" class="subtitle">Change State</span>
+                <span id="close" class="close">&times;</span>
+            </div>
+            <div id="modalBody" class="modal-body center">Update the current survey:</div>
+            <div id="modalSubmit" class="modal-submit center">
+                <div>
+                    <button id="startButton" class="button" style="width: 10em" onclick="start()">Start</button>
+                    <button id="closeButton" class="button" style="width: 10em" onclick="close()">Close</button>
+                    <button id="hideButton"  class="button" style="width: 10em" onclick="hide()" >Hide</button>
+                </div>
+                <div>
+                    <button id="pauseVButton" class="button" style="width: 10em" onclick="pauseVoting()">Pause Voting</button>
+                    <button id="pauseCButton" class="button" style="width: 10em" onclick="pauseClosing()">Pause Closing</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-background"></div>
+</div>
+
+<script>
+    let stateModalValues;
+    let stateModalCallback;
+
+    function openStateModal( currentSurvey, callback ) {
+        stateModalValues = currentSurvey;
+        stateModalCallback = callback;
+
+        id("stateModal").style.display = "";
+        setCloseHandlersJS( "stateModal" );
+        blurBackground();
+
+        if ( stateModalValues.state === "ready" ) {
+            id('startButton').style.display = "";
+        }
+        else if ( stateModalValues.state === "complete" ) {
+            id('hideButton').style.display = "";
+        }
+        else {
+            id('closeButton').style.display = "";
+            id('pauseVButton').style.display = "";
+            id('pauseCButton').style.display = "";
+        }
+    }
+
+    function start() {
+        stateModalValues.state = "active";
+        stateModalValues.activeId = calculateStartActiveId( stateModalValues.surveyType, stateModalValues.votingType, stateModalValues.choiceCount );
+        $.post(
+            "php/database.php",
+            {
+                action:     "startSurvey",
+                id:         stateModalValues.surveyId,
+                activeId:   stateModalValues.activeId,
+                time:       calculateStartTime( stateModalValues.timing )
+            },
+            function ( response ) {
+                showToaster( "Survey started... " );
+                closeModal();
+            }
+        );
+    }
+
+    function close() {
+        stateModalValues.state = "complete";
+        stateModalValues.activeId = null;
+        $.post(
+            "php/database.php",
+            {
+                action:     "setCloseTime",
+                id:         stateModalValues.surveyId,
+                time:       (new Date()).toISOString()
+            },
+            function ( response ) {
+                showToaster( "Survey started... " );
+                closeModal();
+            }
+        );
+    }
+
+    function hide() {
+        $.post(
+            "php/database.php",
+            {
+                action:     "setSurveyState",
+                id:         stateModalValues.surveyId,
+                state:      "hidden"
+            },
+            function ( response ) {
+                closeModal();
+                window.location = "https://bracket.religionandstory.com/";
+            }
+        );
+    }
+
+    function pauseVoting() {
+        stateModalValues.state = stateModalValues.state === "active" ? "paused" : "active";
+        $.post(
+            "php/database.php",
+            {
+                action:     "setSurveyState",
+                id:         stateModalValues.surveyId,
+                state:      stateModalValues.state
+            },
+            function ( response ) {
+                showToaster( "Bracket is now " + stateModalValues.state );
+                closeModal();
+            }
+        );
+    }
+
+    function pauseClosing() {
+        $.post(
+            "php/database.php",
+            {
+                action:     "setCloseTime",
+                id:         stateModalValues.surveyId,
+                time:       null
+            },
+            function ( response ) {
+                showToaster( "Survey will close when you tell it to..." );
+                closeModal();
+            }
+        );
+    }
+
+    function closeModal() {
+        closeModalJS( "stateModal" );
+        stateModalCallback( {
+            stateModalValues
+        } );
+    }
+</script>

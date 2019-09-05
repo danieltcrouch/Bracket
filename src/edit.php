@@ -27,7 +27,7 @@
             <input id="titleInput" type="text" class="input" maxlength="20" placeholder="Survey Title">
             <input id="imageInput" type="text" class="input" placeholder="Image Address">
             <textarea id="helpInput" class="input" placeholder="Instructions"></textarea>
-            <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="previewLogo()">Preview</button>
+            <button id="previewLogo" class="button" style="width: 8em; margin: .25em;" onclick="preview()">Preview</button>
         </div>
         <div class="col-5 center" style="padding-bottom: 0">
             <div id="exampleLogo" class="exampleTitle center"></div>
@@ -72,24 +72,15 @@
                 <!-- todo 8: eventually, build your own date-time picker -->
             </div>
 
-            <!-- reduce buttons displayed on edit page (max of four) - start should go away if already started -->
             <div class="center" style="margin-bottom: 1em">
-                <button id="previewSurvey" class="button" style="display: none; width: 8em; margin: .25em;" onclick="previewSurvey()">Preview</button>
-            </div>
-            <div class="center" style="margin-bottom: 1em">
-                <button id="review" class="button" style="display: none; width: 8em; margin: .25em;" onclick="review()">Review</button>
-            </div>
-            <div class="center" style="margin-bottom: 1em">
-                <button id="create" class="button" style="width: 8em; margin: .25em;" onclick="create()">Create</button>
+                <button id="create" class="button" style="display: none; width: 8em; margin: .25em;" onclick="create()">Create</button>
                 <button id="save" class="button" style="display: none; width: 8em; margin: .25em;" onclick="save()">Save</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
-                <button id="pause" class="button" style="display: none; width: 8em; margin: .25em;" onclick="pause()">Pause</button>
+                <button id="change" class="button" style="display: none; width: 8em; margin: .25em;" onclick="change()">Change State</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
-                <button id="start" class="button" style="display: none; width: 8em; margin: .25em;" onclick="start()">Start</button>
-                <button id="close" class="button" style="display: none; width: 8em; margin: .25em;" onclick="close()">Close</button>
-                <button id="hide" class="button" style="display: none; width: 8em; margin: .25em;" onclick="hide()">Hide</button>
+                <button id="review" class="button" style="display: none; width: 8em; margin: .25em;" onclick="review()">Review</button>
             </div>
             <div class="center" style="margin-bottom: 1em">
                 <button id="load" class="button" style="width: 8em; margin: .25em;" onclick="load()">Load</button>

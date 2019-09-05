@@ -39,9 +39,9 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     id('helpInput').value = surveyInfo.help;
     surveyInfo.type ? id(surveyInfo.type).click() : null;
     surveyInfo.mode ? id(surveyInfo.mode).click() : null;
-    id('frequency').value = surveyInfo.timing.frequency; //todo 7 - fails on NULL
+    chooseSelectOptionValue( 'frequency', surveyInfo.timing.frequency );
     updateFrequencyPoints();
-    id('frequencyPoint').value = surveyInfo.timing.frequencyPoint;
+    chooseSelectOptionValue( 'frequencyPoint', surveyInfo.timing.frequencyPoint );
     if ( surveyInfo.timing.scheduledClose ) {
         id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) ); //todo 8 - check all uses of newDateFromUTC / getDateOrNull
     }
@@ -54,7 +54,6 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     previewLogo();
 
     //Disable Create-only fields
-    //todo 7 - what if bracket is complete?
     id('titleInput').disabled = true;
     id('imageInput').disabled = true;
     freezeRadioButtons( "surveyType" );
@@ -62,29 +61,20 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     id('choiceCount').disabled = true;
 
     updateDisplayedButtons( "edit" );
-    if ( state === "ready" ) {
-        id('start').style.display = "";
-    }
-    else if ( state === "complete" ) {
-        id('hide').style.display = "";
-    }
-    else {
-        id('pause').style.display = "";
-        id('close').style.display = "";
-    }
 }
 
 function updateDisplayedButtons( editMode ) {
     if ( editMode === "edit" ) {
-        id('previewSurvey').style.display = "";
-        id('review').style.display = "";
         id('save').style.display = "";
         id('create').style.display = "none";
+        id('change').style.display = "";
+        id('review').style.display = "";
     }
     else {
-        id('previewSurvey').style.display = "none";
         id('save').style.display = "none";
         id('create').style.display = "";
+        id('change').style.display = "none";
+        id('review').style.display = "none";
     }
 }
 
@@ -258,6 +248,17 @@ function validateLogo() {
 
 /**********PREVIEW**********/
 
+
+function preview() {
+    showBinaryChoice(
+        "Preview",
+        "Preview the Logo or the entire Survey?", "Logo", "Survey",
+        function( answer ) {
+            ( answer ) ? previewLogo() : previewSurvey();
+        }
+    );
+}
+
 function previewLogo() {
     const error = validateLogo();
     if ( !error ) {
@@ -330,6 +331,31 @@ function save() {
     }
 }
 
+function change() {
+    openStateModal( {
+        surveyId:    surveyId,
+        state:       state,
+        activeId:    activeId,
+        timing:      getTiming(),
+        surveyType:  getSelectedRadioButtonId('surveyType'),
+        votingType:  getSelectedRadioButtonId('votingType'),
+        choiceCount: getChoices().length
+    },
+    function( response ) {
+        state = response.state;
+        activeId = response.activeId;
+    } );
+}
+
+function review() {
+    let closeTime = getDisplayTime( getDateOrNull( id( 'scheduledClose' ).value ) );
+    let additionalInfo = "<br/> " +
+        "<strong>State:</strong> " + state +
+        "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
+        "<br/> <strong>Round Ends:</strong> " + (closeTime || "TBD");
+    viewResults( getChoices().map( c => c.name ), currentVotes, additionalInfo );
+}
+
 function load() {
     $.post(
         "php/database.php",
@@ -354,98 +380,6 @@ function constructEditLinks( surveyMetas ) {
     }
     result += "<a href='https://bracket.religionandstory.com/edit.php' class='link'>Create New Survey</a><br/>";
     return result;
-}
-
-function review() {
-    let closeTime = getDisplayTime( getDateOrNull( id( 'scheduledClose' ).value ) );
-    let additionalInfo = "<br/> " +
-        "<strong>State:</strong> " + state +
-        "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
-        "<br/> <strong>Round Ends:</strong> " + (closeTime || "TBD");
-    viewResults( getChoices().map( c => c.name ), currentVotes, additionalInfo );
-}
-
-function pause() {
-    showBinaryChoice(
-        "Pause",
-        "Pause voting or pause automatic close?", "Voting", "Closing",
-        function( answer ) {
-            if ( answer )
-            {
-                pauseVoting();
-            }
-            else
-            {
-                pauseClosing();
-            }
-        }
-    );
-}
-
-function pauseVoting() {
-    const stateToBe = state === "active" ? "paused" : "active";
-    $.post(
-        "php/database.php",
-        {
-            action:     "setSurveyState",
-            id:         surveyId,
-            state:      stateToBe
-        },
-        function ( response ) {
-            showToaster( "Bracket is now " + stateToBe );
-            state = stateToBe;
-        }
-    );
-}
-
-function pauseClosing() {
-    $.post(
-        "php/database.php",
-        {
-            action:     "setCloseTime",
-            id:         surveyId,
-            time:       null
-        },
-        function ( response ) {
-            showToaster( "Survey will close when you tell it to..." );
-        }
-    );
-}
-
-function start() {
-    let newActiveId = calculateStartActiveId( getSelectedRadioButtonId('surveyType'), getSelectedRadioButtonId('votingType'), getChoices().length );
-    $.post(
-        "php/database.php",
-        {
-            action:     "startSurvey",
-            id:         surveyId,
-            activeId:   newActiveId,
-            time:       calculateStartTime( getTiming() )
-        },
-        function ( response ) {
-            showToaster( "Survey started... " );
-            state = "active";
-            activeId = newActiveId;
-        }
-    );
-}
-
-function close() {
-    //todo 7
-}
-
-function hide() {
-    $.post(
-        "php/database.php",
-        {
-            action:     "setSurveyState",
-            id:         surveyId,
-            state:      "hidden"
-        },
-        function ( response ) {
-            window.location = "https://bracket.religionandstory.com/";
-        }
-    );
 }
 
 

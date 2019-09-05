@@ -220,13 +220,21 @@ function calculateStartActiveId( type, mode, size )
 
 
 function viewResults( choiceNames, currentVotes, additionalInfo ) {
-    let voteDisplay = getVoteDisplay( choiceNames, currentVotes );
-    voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
-    showMessage( "Current Votes", voteDisplay ); //todo 7 - this needs to be adjusted relevant to when it is being displayed (edit, post vote, post completion, etc.)
-    animateChoices()
+    view( "Results", choiceNames, currentVotes, additionalInfo );
 }
 
-function getVoteDisplay( choicesNames, currentVotes ) {
+function viewCurrentVotes( choiceNames, currentVotes, additionalInfo ) {
+    view( "Current Votes", choiceNames, currentVotes, additionalInfo );
+}
+
+function view( title, choiceNames, currentVotes, additionalInfo ) {
+    let voteDisplay = getVoteDisplay( choiceNames, currentVotes );
+    voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
+    showMessage( title, voteDisplay );
+    animateChoices();
+}
+
+function getVoteDisplay( choicesNames, currentVotes ) { //todo 7 - better info display - different for Results?
     let result = "";
     if ( choicesNames && currentVotes ) {
         for ( let i = 0; i < currentVotes.length; i++) {
@@ -246,7 +254,7 @@ function getVoteDisplay( choicesNames, currentVotes ) {
 }
 
 function animateChoices() {
-    let elements = Array.from( cl('progressBar') );
+    let elements = Array.from( cl('progressBar') ); //todo 7 - Array.from to Common
     let counts = elements.map( e => e.getElementsByTagName( "SPAN" )[1].innerText );
     let maxCount = Math.max( ...counts );
     for ( let i = 0; i < elements.length; i++) {

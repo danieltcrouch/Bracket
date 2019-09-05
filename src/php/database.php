@@ -386,7 +386,7 @@ function startSurvey( $surveyId, $activeId, $closeTime )
     $statement = $connection->prepare( $query );
     $statement->bindParam(':surveyId',  $surveyId);
     $statement->bindParam(':state',     $state);
-    $statement->bindParam(':closeTime',  $closeTime );
+    $statement->bindParam(':closeTime', $closeTime );
     $statement->bindParam(':activeId',  $activeId);
     $statement->execute();
 
