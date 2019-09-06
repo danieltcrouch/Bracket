@@ -90,6 +90,10 @@ class Match extends ChoiceSet {
         return matches.filter( m => !m.isByeMatch() );
     }
 
+    getTitle() {
+        return this.getTopEntry().getName() + " vs. " + this.getBottomEntry().getName();
+    }
+
     isReady() {
         return this.hasLength( ENTRIES_PER_MATCH ) && ( this.isByeMatch() || this.getAllEntries().every( e => !Entry.isEmpty( e ) ) );
     }
@@ -276,7 +280,10 @@ class Bracket extends Survey {
     }
 
     setWinners( winners ) {
-        winners = winners ? winners.map( w => { return {choiceSetId: w.matchId || w.choiceSetId, choiceId: w.seed || w.choiceId}; } ) : null;
+        winners = winners ? winners.map( w => { return {
+            choiceSetId: Match.isValidId( w.matchId ) ? w.matchId : w.choiceSetId,
+            choiceId:    Entry.isValidSeed( w.seed  ) ? w.seed    : w.choiceId
+        }; } ) : null;
         this.setAnswers( winners );
         this.retroWinners();
         this.pushWinners();
@@ -370,6 +377,10 @@ class Bracket extends Survey {
             }
         }
         return result;
+    }
+
+    getAllMatchTitles() {
+        return this.getAllMatches().map( m => { return { id: m.getId(), title: m.getTitle() }; } );
     }
 
     getEntryFromSeed( seed ) {

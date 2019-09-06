@@ -1,7 +1,6 @@
-let state = null;
-let activeId = null;
-let winners = "";
-let currentVotes = "";
+let state;
+let activeId;
+let currentVotes;
 
 function initializeCreate() {
     let logoInfo = {
@@ -11,7 +10,7 @@ function initializeCreate() {
         help:      "Additional instructions will appear here."
     };
     createTitleLogo( logoInfo, id('exampleLogo'), true, true );
-    updateDisplayedButtons( "create" );
+    updateDisplayedButtons();
 }
 
 function initializeEdit( surveyId ) {
@@ -25,17 +24,16 @@ function initializeEdit( surveyId ) {
             let surveyInfo = JSON.parse( response );
             surveyInfo.helpImage = helpImage;
             updateSurveyTiming( surveyId, surveyInfo, initializeEditCallback );
-            updateDisplayedButtons( "edit" );
+            updateDisplayedButtons();
         }
     );
 }
 
 function initializeEditCallback( surveyId, surveyInfo ) {
-    //Fill-out page
     state = surveyInfo.state;
     activeId = surveyInfo.timing.activeId;
-    winners = surveyInfo.winners;
     currentVotes = surveyInfo.currentVotes;
+
     id('titleInput').value = surveyInfo.title;
     id('imageInput').value = surveyInfo.image;
     id('helpInput').value = surveyInfo.help;
@@ -44,18 +42,14 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     chooseSelectOptionValue( 'frequency', surveyInfo.timing.frequency );
     updateFrequencyPoints();
     chooseSelectOptionValue( 'frequencyPoint', surveyInfo.timing.frequencyPoint );
-    if ( surveyInfo.timing.scheduledClose ) {
+    if ( surveyInfo.timing.scheduledClose ) { //todo 8 - see if I can skip using an IF statement
         id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) ); //todo 8 - check all uses of newDateFromUTC / getDateOrNull
     }
     id('choiceCount').value = surveyInfo.choices.length;
     createChoiceInputs();
-    for ( let i = 0; i < surveyInfo.choices.length; i++ ) {
-        id( i + "NameInput" ).value = surveyInfo.choices[i].name;
-        id( i + "ImageInput" ).value = surveyInfo.choices[i].image;
-    }
+    fillChoiceInputs( surveyInfo.choices );
     previewLogo();
 
-    //Disable Create-only fields
     id('titleInput').disabled = true;
     id('imageInput').disabled = true;
     freezeRadioButtons( "surveyType" );
@@ -63,8 +57,8 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     id('choiceCount').disabled = true;
 }
 
-function updateDisplayedButtons( editMode ) {
-    if ( editMode === "edit" ) {
+function updateDisplayedButtons() {
+    if ( surveyId ) {
         id('save').style.display = "";
         id('create').style.display = "none";
         id('change').style.display = "";
@@ -191,6 +185,13 @@ function createChoiceInputs() {
     }
 }
 
+function fillChoiceInputs( choices ) {
+    for ( let i = 0; i < choices.length; i++ ) {
+        id( i + "NameInput" ).value  = choices[i].name;
+        id( i + "ImageInput" ).value = choices[i].image;
+    }
+}
+
 
 /**********VALIDATE**********/
 
@@ -200,9 +201,9 @@ function validate() {
 
     if ( !error ) {
         const choiceCount = id('choiceCount').value;
-        const choiceNamesFilled  = Array.from( nm( 'choiceNames'  ) ).every( e => e.value );
-        const choiceNamesLength  = Array.from( nm( 'choiceNames'  ) ).every( e => e.value.length <= 20 );
-        const choiceImagesLength = Array.from( nm( 'choiceImages' ) ).every( e => e.value.length <= 256 );
+        const choiceNamesFilled  = nm( 'choiceNames'  ).every( e => e.value );
+        const choiceNamesLength  = nm( 'choiceNames'  ).every( e => e.value.length <= 20 );
+        const choiceImagesLength = nm( 'choiceImages' ).every( e => e.value.length <= 256 );
 
         const isBracket = getSelectedRadioButtonId('surveyType') === "bracket";
         if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
@@ -357,7 +358,19 @@ function review() {
         "<strong>State:</strong> " + state +
         "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
         "<br/> <strong>Round Ends:</strong> " + (closeTime || "TBD");
-    viewResults( getChoices().map( c => c.name ), currentVotes, additionalInfo );
+    let matchTitles = getMatchTitles( getChoices(), isSurveyBracket() );
+    let choiceNames = getChoices().map( c => c.name );
+    reviewSurvey( state, matchTitles, choiceNames, currentVotes, additionalInfo );
+}
+
+function getMatchTitles( rawChoices, isBracket )
+{
+    let result = null;
+    if ( isBracket ) {
+        let tempSurvey = Bracket.parseBracket( rawChoices );
+        return tempSurvey.getAllMatchTitles();
+    }
+    return result;
 }
 
 function load() {
@@ -378,7 +391,7 @@ function constructEditLinks( surveyMetas ) {
     for ( let i = 0; i < surveyMetas.length; i++ )
     {
         const surveyMeta = surveyMetas[i];
-        const isDuplicate = surveyMetas.filter( b => b.title === surveyMeta.title && b.date !== surveyMeta.date ).length > 0;
+        const isDuplicate = surveyMetas.filter( m => m.title === surveyMeta.title && m.date !== surveyMeta.date ).length > 0;
         const title = surveyMeta.title + (isDuplicate ? "(" + new Date( surveyMeta.date ) + ")" : "");
         result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + surveyMeta.id + "' class='link'>" + title + "</a><br/>";
     }

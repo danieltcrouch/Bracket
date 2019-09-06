@@ -134,8 +134,10 @@ function updateVotes() {
 }
 
 function review() {
-    let additionalInfo = ""; //todo 11 - allow users to subscribe
-    viewResults( survey.getAllChoices().map( c => c.getName() ), currentVotes, additionalInfo );
+    let additionalInfo = "";
+    let matchTitles = isSurveyBracket() ? survey.getAllMatchTitles() : null;
+    let choiceNames = survey.getAllChoices().map( c => c.getName() );
+    reviewSurvey( state, matchTitles, choiceNames, currentVotes, additionalInfo );
 }
 
 

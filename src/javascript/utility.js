@@ -219,42 +219,66 @@ function calculateStartActiveId( type, mode, size )
 /*** RESULTS ***/
 
 
-function viewResults( choiceNames, currentVotes, additionalInfo ) {
-    view( "Results", choiceNames, currentVotes, additionalInfo );
-}
-
-function viewCurrentVotes( choiceNames, currentVotes, additionalInfo ) {
-    view( "Current Votes", choiceNames, currentVotes, additionalInfo );
-}
-
-function view( title, choiceNames, currentVotes, additionalInfo ) {
-    let voteDisplay = getVoteDisplay( choiceNames, currentVotes );
-    voteDisplay = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
-    showMessage( title, voteDisplay );
-    animateChoices();
-}
-
-function getVoteDisplay( choicesNames, currentVotes ) { //todo 7 - better info display - different for Results?
-    let result = "";
-    if ( choicesNames && currentVotes ) {
-        for ( let i = 0; i < currentVotes.length; i++) {
-            result += currentVotes[i].choices.map( choice => {
-                return "<div class='progressBar' style='width: 0%'>" +
-                    "<span style='white-space: nowrap;'>" + choicesNames[choice.id] + "</span>" +
-                    "<span style='display: none; float: right;'>" +  choice.count + "</span>" +
-                    "</div>"
-            } ).join( "\n" );
-            result += "<br/>";
-        }
+function reviewSurvey( state, matchTitles, choiceNames, votes, additionalInfo ) {
+    if ( isFinished( state ) ) {
+        reviewComplete( choiceNames, votes, additionalInfo );
     }
     else {
-        result = "No current votes...";
+        reviewCurrent( matchTitles, choiceNames, votes, additionalInfo );
+    }
+}
+
+function reviewComplete( choiceNames, finalVotes, additionalInfo ) {
+    let voteDisplay = getCompleteVoteDisplay( choiceNames, finalVotes );
+    let display = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
+    view( "Results", display );
+}
+
+function getCompleteVoteDisplay( choicesNames, finalVotes ) {
+    let result = "";
+    if ( choicesNames && finalVotes ) {
+        result = getChoiceSetVoteDisplay( "Finals", choicesNames, finalVotes[0] );
     }
     return result;
 }
 
+function reviewCurrent( matchTitles, choiceNames, currentVotes, additionalInfo ) {
+    let voteDisplay = getCurrentVoteDisplay( matchTitles, choiceNames, currentVotes );
+    let display = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
+    view( "Current Votes", display );
+}
+
+function getCurrentVoteDisplay( matchTitles, choicesNames, currentVotes ) {
+    let result = "No current votes...";
+    if ( choicesNames && currentVotes ) {
+        const isSingle = currentVotes.length === 1;
+        for ( let i = 0; i < currentVotes.length; i++) {
+            let currentVoteSet = currentVotes[i];
+            let title = isSingle ? "Current" : matchTitles.find( m => m.id === currentVoteSet.id ).title;
+            result += getChoiceSetVoteDisplay( title, choicesNames, currentVoteSet );
+            result += "<br/>";
+        }
+    }
+    return result;
+}
+
+function view( title, display ) {
+    showMessage( title, display );
+    animateChoices();
+}
+
+function getChoiceSetVoteDisplay( title, choicesNames, currentVoteSet ) {
+    return "<strong>" + title + ": </strong><br/>\n" +
+        currentVoteSet.choices.map( set => {
+            return "<div class='progressBar' style='width: 0%'>" +
+                "<span style='white-space: nowrap;'>" + choicesNames[set.id] + "</span>" +
+                "<span style='display: none; float: right;'>" +  set.count + "</span>" +
+                "</div>"
+        } ).join( "\n" );
+}
+
 function animateChoices() {
-    let elements = Array.from( cl('progressBar') ); //todo 7 - Array.from to Common
+    let elements = cl('progressBar');
     let counts = elements.map( e => e.getElementsByTagName( "SPAN" )[1].innerText );
     let maxCount = Math.max( ...counts );
     for ( let i = 0; i < elements.length; i++) {
@@ -278,6 +302,10 @@ function isInProgress( state ) {
 
 function isVisible( state ) {
     return state === "active" || state === "paused" || state === "complete";
+}
+
+function isFinished( state ) {
+    return state === "complete";
 }
 
 
