@@ -169,7 +169,7 @@ class Bracket extends Survey {
 
     static createBracket( rawEntries, rawWinners ) {
         let result = Bracket.parseBracket( rawEntries );
-        result.setWinners( Bracket.parseWinners( rawWinners, result.getMaxSize(), result.getAllMatches() ) );
+        result = Bracket.parseWinners( result, rawWinners );
         return result;
     }
 
@@ -228,28 +228,28 @@ class Bracket extends Survey {
         return result.map( seed => seed - 1 ); //base zero
     }
 
-    static parseWinners( rawWinners, bracketSize, matches ) {
-        let result = [];
-
+    static parseWinners( bracket, rawWinners ) {
+        bracket.pushWinners();
         if ( rawWinners ) {
-            let roundCount  = Math.log2( bracketSize );
-            let matchCount  = bracketSize / 2;
+            let roundCount  = bracket.getMaxRounds();
+            let matchCount  = bracket.getMaxSize() / 2;
 
             let topWinners = rawWinners.split('');
             let winnerIndex = 0;
             for ( let roundIndex = 0; roundIndex < roundCount; roundIndex++ ) {
                 for ( let matchIndex = 0; matchIndex < matchCount && winnerIndex < topWinners.length; matchIndex++ ) {
-                    let matchId = Match.getMatchId( roundIndex, matchIndex );
                     let isTop = topWinners[winnerIndex] === "1";
-                    let seed = Match.getMatch( matches, matchId ).getEntry( isTop ).getSeed();
-                    result.push( { matchId: matchId, seed: seed } );
+                    let matchId = Match.getMatchId( roundIndex, matchIndex );
+                    let match = bracket.getMatchFromId( matchId );
+                    match.setWinnerSeed( match.getEntry( isTop ).getSeed() );
+                    bracket.pushWinner( matchId );
                     winnerIndex++;
                 }
                 matchCount /= 2;
             }
         }
 
-        return result;
+        return bracket;
     }
 
     static getMagnitude( size ) {
@@ -279,14 +279,15 @@ class Bracket extends Survey {
         return this.getAnswers().map( a => { return {matchId: a.choiceSetId, seed: a.choiceId}; } );
     }
 
-    setWinners( winners ) {
+    addWinners( winners ) {
         winners = winners ? winners.map( w => { return {
             choiceSetId: Match.isValidId( w.matchId ) ? w.matchId : w.choiceSetId,
             choiceId:    Entry.isValidSeed( w.seed  ) ? w.seed    : w.choiceId
         }; } ) : null;
         this.setAnswers( winners );
-        this.retroWinners();
+
         this.pushWinners();
+        this.retroWinners();
     }
 
     pushWinners() {
@@ -299,9 +300,11 @@ class Bracket extends Survey {
         let match = this.getMatchFromId( matchId );
         let winner = match.getWinner();
         let next = this.getNextMatchAndPosition( matchId );
-        if ( next && winner ) {
+        if ( next ) {
             let nextMatch = next.match;
-            nextMatch.setEntry( winner, next.isTop );
+            nextMatch.setEntry( winner || Entry.getUnknownEntry(), next.isTop );
+            const matchContainsWinner = !!nextMatch.getEntryFromSeed( nextMatch.getWinnerSeed() );
+            nextMatch.setWinnerSeed( matchContainsWinner ? nextMatch.getWinnerSeed() : null );
         }
     }
 
@@ -701,19 +704,15 @@ function changeRound( direction ) {
 
 
 function registerBracketChoice( matchId, isTop ) {
-    let match = survey.getMatchFromId( matchId );
-    let winner = match.getEntry( isTop );
-    const winnerChange = winner !== match.getWinner();
-    match.setWinnerSeed( winner.getSeed() );
+    const match = survey.getMatchFromId( matchId );
+    const winnerChange = match.getEntry( isTop ) !== match.getWinner();
+    survey.addWinners( [{
+        matchId: matchId,
+        seed:    survey.getMatchFromId( matchId ).getEntry( isTop ).getSeed()
+    }] );
 
     if ( mode === "open" && winnerChange ) {
-        let matchButtons = nm( matchId );
-        for ( let i = 0; i < matchButtons.length; i++ ) {
-            matchButtons[i].classList.remove( "blinkBorder" );
-        }
-
-        let next = survey.getNextMatchAndPosition( matchId );
-        updateSubsequentMatches( next, match.getWinner() );
+        updateSubsequentMatches( survey.getNextMatchAndPosition( matchId ) );
 
         if ( ( display.isMobile && round < survey.getCurrentRoundIndex() ) ||
              ( display.isLarge  && round < survey.getCurrentRoundIndex() && round < ( survey.getMaxRounds() - 2 ) ) ) {
@@ -722,30 +721,28 @@ function registerBracketChoice( matchId, isTop ) {
     }
 }
 
-function updateSubsequentMatches( nextMatchAndPosition, newEntry ) {
+function updateSubsequentMatches( nextMatchAndPosition ) {
     if ( nextMatchAndPosition ) {
-        newEntry = newEntry || Entry.getUnknownEntry();
         let match = nextMatchAndPosition.match;
         let isTop = nextMatchAndPosition.isTop;
-        match.setWinnerSeed( null );
-        match.setEntry( newEntry, isTop );
 
-        id( getButtonId( match.getId(), isTop ) ).innerHTML = newEntry.getDisplayName();
-        let imageSource = newEntry ? newEntry.getImage() : "images/question.jpg";
-        id( getImageId( match.getId(), isTop ) ).setAttribute( "src", imageSource );
+        let button = id( getButtonId( match.getId(), isTop ) );
+        let image  = id( getImageId( match.getId(),  isTop ) );
+        const entryChange = button.innerHTML !== match.getEntry( isTop ).getDisplayName();
+        entryChange ? button.classList.remove( "selectedButton" ) : null;
+        button.innerHTML = match.getEntry( isTop ).getDisplayName();
+        image.setAttribute( "src", match.getEntry( isTop ).getImage() );
         adjustFontSize( id( "round" + match.getRoundIndex()) );
 
-        let matchButtons = nm( match.getId() );
-        const bothEntriesPresent = match.isReady();
-        for ( let i = 0; i < matchButtons.length; i++ ) {
-            let classList = matchButtons[i].classList;
-            classList.remove( "selectedButton" );
-            bothEntriesPresent ? classList.remove( "staticInverseButton" ) : classList.add( "staticInverseButton" );
-            bothEntriesPresent ? classList.add( "blinkBorder" )                   : classList.remove( "blinkBorder" );
-            bothEntriesPresent ? classList.add( "inverseButton" )                 : classList.remove( "inverseButton" );
+        if ( match.isReady() ) {
+            setClickable( match.getId() );
+        }
+        else {
+            freezeRadioButtons( match.getId() );
+            nm( match.getId() ).forEach( function( button ) { button.classList.remove( "blinkBorder" ); } );
         }
 
-        updateSubsequentMatches( survey.getNextMatchAndPosition( match.getId() ), null );
+        updateSubsequentMatches( survey.getNextMatchAndPosition( match.getId() ) );
     }
 }
 

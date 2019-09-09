@@ -82,7 +82,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {
             let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
-            tempSurvey.setWinners( getWinners( surveyInfo.currentVotes ) );
+            tempSurvey.addWinners( getWinners( surveyInfo.currentVotes ) );
 
             const isLastSession = tempSurvey.isFinished();
             if ( isLastSession ) {
@@ -90,9 +90,9 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
                 surveyInfo.state = "complete";
             }
 
+            surveyInfo.winners = tempSurvey.getSerializedWinners();
             surveyInfo.timing.activeId = isLastSession ? null : getActiveId( tempSurvey, surveyInfo.type, surveyInfo.mode );
             surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
-            let serializedWinners = tempSurvey.getSerializedWinners();
 
             $.post(
                 "php/database.php",
@@ -102,7 +102,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
                     state:      surveyInfo.state,
                     time:       surveyInfo.timing.scheduledClose,
                     activeId:   surveyInfo.timing.activeId,
-                    winners:    serializedWinners
+                    winners:    surveyInfo.winners
                 },
                 function ( response ) {
                     callback( surveyId, surveyInfo );
@@ -219,44 +219,44 @@ function calculateStartActiveId( type, mode, size )
 /*** RESULTS ***/
 
 
-function reviewSurvey( state, matchTitles, choiceNames, votes, additionalInfo ) {
+function reviewSurvey( state, matchTitles, choices, votes, additionalInfo ) {
     if ( isFinished( state ) ) {
-        reviewComplete( choiceNames, votes, additionalInfo );
+        reviewComplete( choices, votes, additionalInfo );
     }
     else {
-        reviewCurrent( matchTitles, choiceNames, votes, additionalInfo );
+        reviewCurrent( matchTitles, choices, votes, additionalInfo );
     }
 }
 
-function reviewComplete( choiceNames, finalVotes, additionalInfo ) {
-    let voteDisplay = getCompleteVoteDisplay( choiceNames, finalVotes );
+function reviewComplete( choices, finalVotes, additionalInfo ) {
+    let voteDisplay = getCompleteVoteDisplay( choices, finalVotes );
     let display = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
     view( "Results", display );
 }
 
-function getCompleteVoteDisplay( choicesNames, finalVotes ) {
+function getCompleteVoteDisplay( choices, finalVotes ) {
     let result = "";
-    if ( choicesNames && finalVotes ) {
-        result = getChoiceSetVoteDisplay( "Finals", choicesNames, finalVotes[0] );
+    if ( choices && finalVotes ) {
+        result = getChoiceSetVoteDisplay( "Finals", choices, finalVotes[0] );
     }
     return result;
 }
 
-function reviewCurrent( matchTitles, choiceNames, currentVotes, additionalInfo ) {
-    let voteDisplay = getCurrentVoteDisplay( matchTitles, choiceNames, currentVotes );
+function reviewCurrent( matchTitles, choices, currentVotes, additionalInfo ) {
+    let voteDisplay = getCurrentVoteDisplay( matchTitles, choices, currentVotes );
     let display = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
     view( "Current Votes", display );
 }
 
-function getCurrentVoteDisplay( matchTitles, choicesNames, currentVotes ) {
+function getCurrentVoteDisplay( matchTitles, choices, currentVotes ) {
     let result = "No current votes...";
-    if ( choicesNames && currentVotes ) {
+    if ( choices && currentVotes ) {
         result = "";
         const isSingle = currentVotes.length === 1;
         for ( let i = 0; i < currentVotes.length; i++) {
             let currentVoteSet = currentVotes[i];
             let title = isSingle ? "Current" : matchTitles.find( m => m.id === currentVoteSet.id ).title;
-            result += getChoiceSetVoteDisplay( title, choicesNames, currentVoteSet );
+            result += getChoiceSetVoteDisplay( title, choices, currentVoteSet );
             result += "<br/>";
         }
     }
@@ -268,11 +268,12 @@ function view( title, display ) {
     animateChoices();
 }
 
-function getChoiceSetVoteDisplay( title, choicesNames, currentVoteSet ) {
+function getChoiceSetVoteDisplay( title, choices, currentVoteSet ) {
     return "<strong>" + title + ": </strong><br/>\n" +
         currentVoteSet.choices.map( set => {
+            let choiceName = choices.find( c => c.id === set.id ).name;
             return "<div class='progressBar' style='width: 0%'>" +
-                "<span style='white-space: nowrap;'>" + choicesNames[set.id] + "</span>" +
+                "<span style='white-space: nowrap;'>" + choiceName + "</span>" +
                 "<span style='display: none; float: right;'>" +  set.count + "</span>" +
                 "</div>"
         } ).join( "\n" );

@@ -136,7 +136,7 @@ function updateVotes() {
 function review() {
     let additionalInfo = "";
     let matchTitles = isSurveyBracket() ? survey.getAllMatchTitles() : null;
-    let choiceNames = survey.getAllChoices().map( c => c.getName() );
+    let choiceNames = survey.getAllChoices().map( c => { return {id: c.getId(), name: c.getName()}; } );
     reviewSurvey( state, matchTitles, choiceNames, currentVotes, additionalInfo );
 }
 

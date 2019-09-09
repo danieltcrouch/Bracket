@@ -359,8 +359,7 @@ function review() {
         "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
         "<br/> <strong>Round Ends:</strong> " + (closeTime || "TBD");
     let matchTitles = getMatchTitles( getChoices(), isSurveyBracket() );
-    let choiceNames = getChoices().map( c => c.name );
-    reviewSurvey( state, matchTitles, choiceNames, currentVotes, additionalInfo );
+    reviewSurvey( state, matchTitles, getChoices(), currentVotes, additionalInfo );
 }
 
 function getMatchTitles( rawChoices, isBracket )

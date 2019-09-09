@@ -91,15 +91,13 @@ class Poll extends Survey {
         return this.getWinner() ? this.getWinner().getIndex() : null;
     }
 
-    setWinners( winners ) {
-        this.setWinner( winners );
+    addWinners( winners ) {
+        let winnerIndex = winners[0].getIndex() || winners[0].id;
+        this.setWinner( winnerIndex );
     }
 
     setWinner( winner ) {
-        winner = ( typeof winner === "string" ) ?
-            [ {choiceSetId: OPTION_SET_ID, choiceId: winner } ] :
-            winner.map( w => { return {choiceSetId: w.optionSetId || w.choiceSetId, choiceId: w.optionId || w.choiceId}; } );
-        this.setAnswers( winner );
+        this.setAnswers( [ {choiceSetId: OPTION_SET_ID, choiceId: winner } ] );
     }
 
     getWinner() {
