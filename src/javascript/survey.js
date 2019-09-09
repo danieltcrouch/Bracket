@@ -44,7 +44,7 @@ function loadPage( surveyId, surveyInfo ) {
         state = surveyInfo.state;
         mode = surveyInfo.mode;
         activeId = surveyInfo.timing.activeId;
-        endTime = getDateOrNull( surveyInfo.timing.scheduledClose );
+        endTime = newDate( surveyInfo.timing.scheduledClose );
         currentVotes = surveyInfo.currentVotes;
 
         isSurveyBracket() ? displayBracket() : displayPoll();

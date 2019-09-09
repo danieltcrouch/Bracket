@@ -250,7 +250,7 @@ function validateLogo() {
 
 
 function preview() {
-    if ( surveyId ) {
+    if ( surveyId && isVisible( state ) ) {
         window.open( "https://bracket.religionandstory.com/survey.php?id=" + surveyId );
     }
     else {
@@ -283,7 +283,7 @@ function previewSurvey() {
         let surveyInfo = getSurveyInfo();
         surveyInfo.state = "active";
         surveyInfo.timing.activeId = calculateStartActiveId( surveyInfo.type, surveyInfo.mode, surveyInfo.choices.length );
-        surveyInfo.timing.scheduledClose = getDateOrNull( surveyInfo.timing.scheduledClose );
+        surveyInfo.timing.scheduledClose = calculateStartTime( surveyInfo.timing );
         id('surveyInfo').value = JSON.stringify( surveyInfo );
         id('previewForm').submit();
     }
@@ -453,4 +453,12 @@ function getChoices() {
         }
     }
     return choices;
+}
+
+
+/*** UTILITY ***/
+
+
+function isSurveyBracket() {
+    return getSelectedRadioButtonId('surveyType') === "bracket";
 }
