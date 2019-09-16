@@ -78,7 +78,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
     let isSessionOver = false;
     if ( isInProgress( surveyInfo.state ) )
     {
-        const closeTime = newDateFromUTC( surveyInfo.timing.scheduledClose );
+        const closeTime = newDate( surveyInfo.timing.scheduledClose );
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {
             let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
@@ -171,31 +171,15 @@ function calculateNextTime( timingInfo, lastCloseTime ) {
                 break;
             }
         }
+
+        result = isDateAfter( result, adjustMinutes( new Date(), 5 ), true ) ? result : calculateNextTime( timingInfo, new Date() );
     }
     else if ( isStartTime && timingInfo.scheduledClose ) {
-        result = newDateFromUTC( timingInfo.scheduledClose );
-        result = isDateAfter( result, adjustMinutes( new Date(), 1 ), true ) ? result : null;
+        result = newDate( timingInfo.scheduledClose );
+        result = isDateAfter( result, adjustMinutes( new Date(), 5 ), true ) ? result : null;
     }
 
     return (result instanceof Date) ? result.toISOString() : null;
-}
-
-function getDisplayTime( date ) {
-    let result = "";
-
-    if ( date ) {
-        const now = new Date();
-        if ( isDateEqual( date, now ) ) {
-            result = "Today, " + date.toLocaleTimeString( "en-US", { hour: '2-digit', minute: '2-digit' } );
-        }
-        else {
-            const withinWeek = isDateInNext( date, null, null, 7, null, null, true, false );
-            const options = { weekday: withinWeek ? 'long' : undefined, month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-            result = date.toLocaleString( "en-US", options );
-        }
-    }
-
-    return result;
 }
 
 function calculateStartActiveId( type, mode, size )

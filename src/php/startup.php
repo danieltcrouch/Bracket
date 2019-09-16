@@ -45,11 +45,22 @@ function includeModals()
     include(getRootPath() . "common/html/modal-prompt.html");
     include(getRootPath() . "common/html/modal-prompt-big.html");
     include(getRootPath() . "common/html/toaster.html");
+    include(getRootPath() . "common/html/date-picker.html");
 }
 
 function getHelpImage()
 {
     echo "https://religionandstory.com/common/images/question-mark.png";
+}
+
+function getLeftArrowImage()
+{
+    echo "https://religionandstory.com/common/images/left.png";
+}
+
+function getRightArrowImage()
+{
+    echo "https://religionandstory.com/common/images/right.png";
 }
 
 function getConstructionImage()

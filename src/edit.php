@@ -68,8 +68,12 @@
             </div>
             <div id="scheduleSettings" class="center" style="display: none; margin-bottom: 1em">
                 <span style="font-weight: bold">Scheduled Close Time:</span>
-                <input id="scheduledClose" type="datetime-local" class="input">
-                <!-- todo 8: eventually, build your own date-time picker -- https://www.html5rocks.com/en/tutorials/webcomponents/customelements/ -->
+                <div style="margin: 1em">
+                    <date-picker id="scheduledClose"></date-picker>
+                </div>
+                <!-- input id="scheduledClose" type="datetime-local" class="input" -->
+                <!-- todo 8: eventually, build your own date-time picker -- https://developers.google.com/web/fundamentals/web-components/customelements
+                        https://developers.google.com/web/fundamentals/web-components/examples/howto-checkbox  -->
             </div>
 
             <div class="center" style="margin-bottom: 1em">

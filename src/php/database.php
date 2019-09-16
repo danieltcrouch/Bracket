@@ -476,6 +476,7 @@ function getNullValue( $value )
 }
 
 //todo 10 - add comments to each if condition to label what they're for
+//todo 10 - separate with a controller file?
 if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
     $action = $_POST['action'];
     $result = null;

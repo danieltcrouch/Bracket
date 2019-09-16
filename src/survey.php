@@ -28,9 +28,9 @@
     <!--Main-->
     <div class="col-10 main">
         <div id="roundPicker" class="center mobileDisplay" style="margin-bottom: 1em">
-            <img id="arrowPrev" class="clickable" style="width: 1.5em" src="images/left.png"  alt="left"  onclick="changeRound( 'prev' )">
+            <img id="arrowPrev" class="clickable" style="width: 1.5em" src="<?php getLeftArrowImage(); ?>"  alt="left"  onclick="changeRound( 'prev' )">
             <span id="roundSpan" class="subtitle center">Round 1</span>
-            <img id="arrowNext" class="clickable" style="width: 1.5em" src="images/right.png" alt="right" onclick="changeRound( 'next' )">
+            <img id="arrowNext" class="clickable" style="width: 1.5em" src="<?php getRightArrowImage(); ?>" alt="right" onclick="changeRound( 'next' )">
         </div>
         <div id="roundTimer" class="center" style="display: none; font-size: 1.25em; margin-bottom: 1em"></div>
         <div id="surveyDisplay" class="center"></div>

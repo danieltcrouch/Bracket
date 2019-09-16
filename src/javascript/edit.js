@@ -42,9 +42,7 @@ function initializeEditCallback( surveyId, surveyInfo ) {
     chooseSelectOptionValue( 'frequency', surveyInfo.timing.frequency );
     updateFrequencyPoints();
     chooseSelectOptionValue( 'frequencyPoint', surveyInfo.timing.frequencyPoint );
-    if ( surveyInfo.timing.scheduledClose ) { //todo 8 - see if I can skip using an IF statement
-        id('scheduledClose').valueAsNumber = getZonedTime( newDateFromUTC( surveyInfo.timing.scheduledClose ) ); //todo 8 - check all uses of newDateFromUTC / getDateOrNull
-    }
+    id('scheduledClose').setDateObject( newDate( surveyInfo.timing.scheduledClose ) );
     id('choiceCount').value = surveyInfo.choices.length;
     createChoiceInputs();
     fillChoiceInputs( surveyInfo.choices );
@@ -204,9 +202,10 @@ function validate() {
         const choiceNamesFilled  = nm( 'choiceNames'  ).every( e => e.value );
         const choiceNamesLength  = nm( 'choiceNames'  ).every( e => e.value.length <= 20 );
         const choiceImagesLength = nm( 'choiceImages' ).every( e => e.value.length <= 256 );
+        const closeTime          = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
+        const closeTimeInFuture  = isDateAfter( closeTime, adjustMinutes( new Date(), 5 ) );
 
-        const isBracket = getSelectedRadioButtonId('surveyType') === "bracket";
-        if ( isBracket && !getSelectedRadioButtonId('votingType') ) {
+        if ( isSurveyBracket() && !getSelectedRadioButtonId('votingType') ) {
             error = "Voting type required: match, round, or open.";
         }
         else if ( !choiceCount || choiceCount <= 0 ) {
@@ -220,6 +219,9 @@ function validate() {
         }
         else if ( !choiceImagesLength ) {
             error = "Choice image length too long. (Max of 256 characters)";
+        }
+        else if ( !closeTimeInFuture ) {
+            error = "Scheduled Close Time must be in the future.";
         }
     }
 
@@ -353,7 +355,7 @@ function change() {
 }
 
 function review() {
-    let closeTime = getDisplayTime( getDateOrNull( id( 'scheduledClose' ).value ) );
+    let closeTime = getDisplayTime( id( 'scheduledClose' ).getDateObject() );
     let additionalInfo = "<br/> " +
         "<strong>State:</strong> " + state +
         "<br/> <strong>Active ID:</strong> " + (activeId || "none") +
@@ -429,7 +431,6 @@ function getSurveyInfo() {
 
 function getTiming() {
     let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
-    scheduledClose = scheduledClose ? new Date( scheduledClose ).toISOString() : null;
     let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
     let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
     frequency      = frequency      === "X" ? null : frequency;
