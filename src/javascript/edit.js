@@ -285,7 +285,7 @@ function previewSurvey() {
         let surveyInfo = getSurveyInfo();
         surveyInfo.state = "active";
         surveyInfo.timing.activeId = calculateStartActiveId( surveyInfo.type, surveyInfo.mode, surveyInfo.choices.length );
-        surveyInfo.timing.scheduledClose = calculateStartTime( surveyInfo.timing );
+        surveyInfo.timing.scheduledClose = getISOString( calculateStartTime( surveyInfo.timing ) );
         id('surveyInfo').value = JSON.stringify( surveyInfo );
         id('previewForm').submit();
     }

@@ -92,7 +92,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
 
             surveyInfo.winners = tempSurvey.getSerializedWinners();
             surveyInfo.timing.activeId = isLastSession ? null : getActiveId( tempSurvey, surveyInfo.type, surveyInfo.mode );
-            surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
+            surveyInfo.timing.scheduledClose = getISOString( calculateNextTime( surveyInfo.timing, closeTime ) );
 
             $.post(
                 "php/controller.php",
@@ -179,7 +179,7 @@ function calculateNextTime( timingInfo, lastCloseTime ) {
         result = isDateAfter( result, adjustMinutes( new Date(), 5 ), true ) ? result : null;
     }
 
-    return (result instanceof Date) ? result.toISOString() : null;
+    return result;
 }
 
 function calculateStartActiveId( type, mode, size )

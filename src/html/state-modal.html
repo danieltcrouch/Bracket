@@ -58,7 +58,7 @@
                 action:     "startSurvey",
                 id:         stateModalValues.surveyId,
                 activeId:   stateModalValues.activeId,
-                time:       calculateStartTime( stateModalValues.timing )
+                time:       getISOString( calculateStartTime( stateModalValues.timing ) )
             },
             function ( response ) {
                 showToaster( "Survey started... " );
@@ -121,7 +121,7 @@
             {
                 action:     "setCloseTime",
                 id:         stateModalValues.surveyId,
-                time:       null
+                time:       null //todo - this is not reflected in the GUI
             },
             function ( response ) {
                 showToaster( "Survey will close when you tell it to..." );
