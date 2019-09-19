@@ -61,12 +61,13 @@ function displayRoundTimer() {
     let timerSpan = id('roundTimer');
     if ( endTime ) {
         const displayTime = getDisplayTime( endTime );
-        timerSpan.style.display = "block";
         timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + displayTime;
+        timerSpan.style.display = "block";
     }
 
     if ( !isEditable( state ) ) {
         timerSpan.innerText += " (" + capitalize( state ) + ")";
+        timerSpan.style.display = "block";
     }
 }
 

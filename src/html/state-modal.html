@@ -17,7 +17,7 @@
                 <div>
                     <button id="pauseVoting"  class="button" style="display: none; width: 10em" onclick="pauseVoting()" >Pause Voting</button>
                     <button id="closeVoting"  class="button" style="display: none; width: 10em" onclick="closeVoting()" >Close Voting</button>
-                    <button id="extendVoting" class="button" style="display: none; width: 10em" onclick="extendVoting()">Extend Closing</button>
+                    <button id="extendVoting" class="button" style="display: none; width: 10em" onclick="extendVoting()">Extend Voting</button>
                 </div>
             </div>
         </div>
@@ -45,8 +45,11 @@
         }
         else {
             id('closeButton').style.display = "";
-            id('pauseVButton').style.display = "";
-            id('pauseCButton').style.display = "";
+            id('pauseVoting').style.display = "";
+            id('closeVoting').style.display = "";
+            if ( stateModalValues.timing.scheduledClose ) {
+                id('extendVoting').style.display = "";
+            }
         }
     }
 
