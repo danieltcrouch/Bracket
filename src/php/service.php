@@ -1,5 +1,14 @@
 <?php
 
+function updateSurvey( $survey )
+{
+    $survey = json_decode( $survey );
+    $surveyId = $survey->id;
+
+    updateSurveyMeta( $surveyId, $survey );
+    return updateChoices( $surveyId, $survey->choices );
+}
+
 function vote( $surveyId, $votes )
 {
     $result['isSuccess'] = false;

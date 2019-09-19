@@ -11,12 +11,13 @@
             <div id="modalSubmit" class="modal-submit center">
                 <div style="margin-bottom: 1em">
                     <button id="startButton" class="button" style="display: none; width: 10em" onclick="start()">Start</button>
-                    <button id="closeButton" class="button" style="display: none; width: 10em" onclick="close()">Close</button>
+                    <button id="closeButton" class="button" style="display: none; width: 10em" onclick="end()"  >End</button>
                     <button id="hideButton"  class="button" style="display: none; width: 10em" onclick="hide()" >Hide</button>
                 </div>
                 <div>
-                    <button id="pauseVButton" class="button" style="display: none; width: 10em" onclick="pauseVoting()">Pause Voting</button>
-                    <button id="pauseCButton" class="button" style="display: none; width: 10em" onclick="pauseClosing()">Pause Closing</button>
+                    <button id="pauseVoting"  class="button" style="display: none; width: 10em" onclick="pauseVoting()" >Pause Voting</button>
+                    <button id="closeVoting"  class="button" style="display: none; width: 10em" onclick="closeVoting()" >Close Voting</button>
+                    <button id="extendVoting" class="button" style="display: none; width: 10em" onclick="extendVoting()">Extend Closing</button>
                 </div>
             </div>
         </div>
@@ -67,23 +68,32 @@
         );
     }
 
-    function close() {
-        //todo - Close Survey or close session?
-        //CLOSE SURVEY, CLOSE VOTING, PAUSE VOTING, EXTEND VOTING
-        // stateModalValues.state = "complete";
-        // stateModalValues.activeId = null;
-        // $.post(
-        //     "php/controller.php",
-        //     {
-        //         action:     "setCloseTime",
-        //         id:         stateModalValues.surveyId,
-        //         time:       (new Date()).toISOString()
-        //     },
-        //     function ( response ) {
-        //         showToaster( "Survey ... " );
-        //         closeOutModal();
-        //     }
-        // );
+    function end() {
+        stateModalValues.state = "complete";
+        stateModalValues.activeId = null;
+        stateModalValues.timing.scheduledClose = null;
+        $.post(
+            "php/controller.php",
+            {
+                action:     "setSurveyState",
+                id:         stateModalValues.surveyId,
+                state:      stateModalValues.state
+            },
+            function ( response ) {
+                $.post(
+                    "php/controller.php",
+                    {
+                        action:     "setCloseTime",
+                        id:         stateModalValues.surveyId,
+                        time:       stateModalValues.timing.scheduledClose
+                    },
+                    function ( response ) {
+                        showToaster( "Survey ended... " );
+                        closeOutModal();
+                    }
+                );
+            }
+        );
     }
 
     function hide() {
@@ -117,14 +127,30 @@
         );
     }
 
-    function pauseClosing() {
-        //todo - does this work for how calculateNextTime works? specifically, isStartTime
+    function closeVoting() {
+        stateModalValues.timing.scheduledClose = (new Date()).toISOString();
         $.post(
             "php/controller.php",
             {
                 action:     "setCloseTime",
                 id:         stateModalValues.surveyId,
-                time:       null //todo - this is not reflected in the GUI
+                time:       stateModalValues.timing.scheduledClose
+            },
+            function ( response ) {
+                showToaster( "Session closed... " );
+                closeOutModal();
+            }
+        );
+    }
+
+    function extendVoting() {
+        stateModalValues.timing.scheduledClose = null;
+        $.post(
+            "php/controller.php",
+            {
+                action:     "setCloseTime",
+                id:         stateModalValues.surveyId,
+                time:       stateModalValues.timing.scheduledClose
             },
             function ( response ) {
                 showToaster( "Survey will close when you tell it to..." );

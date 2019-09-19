@@ -351,6 +351,7 @@ function change() {
     function( response ) {
         state = response.state;
         activeId = response.activeId;
+        id('scheduledClose').setDateObject( newDate( response.timing.scheduledClose ) );
     } );
 }
 

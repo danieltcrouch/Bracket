@@ -110,10 +110,8 @@ function createSurvey( $survey )
     return $surveyId;
 }
 
-function updateSurvey( $survey )
+function updateSurveyMeta( $surveyId, $survey )
 {
-    $survey = json_decode( $survey );
-    $surveyId = $survey->id;
     $closeTime = getNullValue($survey->timing->scheduledClose);
 
     $query     = "UPDATE meta m, timing t
@@ -134,7 +132,7 @@ function updateSurvey( $survey )
     $statement->execute();
 
     $connection = null;
-    return updateChoices( $surveyId, $survey->choices );
+    return $surveyId;
 }
 
 function updateChoices( $surveyId, $choices )
