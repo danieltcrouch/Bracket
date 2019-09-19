@@ -209,19 +209,19 @@ function getSurveyMeta( $surveyId )
     return $meta;
 }
 
-function getSurveyId( $title )
-{
-    $query = "SELECT id FROM meta WHERE title = :title LIMIT 1 ";
-    $connection = getConnection();
-    $statement = $connection->prepare( $query );
-    $statement->bindParam(':title', $title);
-    $statement->execute();
-
-    $id = $statement->fetch();
-
-    $connection = null;
-    return $id;
-}
+//function getSurveyId( $title )
+//{
+//    $query = "SELECT id FROM meta WHERE title = :title LIMIT 1 ";
+//    $connection = getConnection();
+//    $statement = $connection->prepare( $query );
+//    $statement->bindParam(':title', $title);
+//    $statement->execute();
+//
+//    $id = $statement->fetch();
+//
+//    $connection = null;
+//    return $id;
+//}
 
 function getCurrentVotes( $surveyId )
 {
@@ -242,81 +242,6 @@ function getCurrentVotes( $surveyId )
 
     $connection = null;
     return $currentVotes;
-}
-
-//todo 10 - create a DB Service class that has the voting logic and the data parsing, also updateVotingSession
-function parseChoices(&$target, $rawNames, $rawImages )
-{
-    $choiceNames  = explode( ',', $rawNames );
-    $choiceImages = explode( ',', $rawImages );
-    foreach( $choiceNames as $index => $name ) {
-        array_push( $target, ['name' => $name, 'image' => $choiceImages[$index]] );
-    }
-}
-
-function parseVotes( &$target, $rawVotes )
-{
-    $result = [];
-    $matchIds = [];
-    $votes = $rawVotes ? explode( ',', $rawVotes ) : [];
-    foreach( $votes as $value )
-    {
-        $values = explode( '|', $value );
-        $index = array_search( $values[0], $matchIds );
-        if ( $index === false )
-        {
-            array_push( $matchIds, $values[0] );
-            array_push( $result, [ "id" => $values[0], "choices" => [], "allVotes" => [ $values[1] ] ] );
-        }
-        else
-        {
-            array_push( $result[$index]['allVotes'], $values[1] );
-        }
-    }
-    foreach( $result as $index => $match )
-    {
-        $votesByChoice = array_count_values( $match['allVotes'] );
-        foreach( $votesByChoice as $id => $count )
-        {
-            array_push( $result[$index]['choices'], ['id' => $id, 'count' => $count] );
-        }
-        unset( $result[$index]['allVotes'] );
-    }
-    $target = $result;
-}
-
-function checkVote( $votingConditions, $votes )
-{
-    $result = null;
-
-    if ( !$votingConditions['active'] )
-    {
-        $result = "This survey is not currently active.";
-    }
-    elseif ( $votingConditions['active_id'] )
-    {
-        for ( $i = 0; $i < sizeof( $votes ); $i++ )
-        {
-            if ( strpos( $votes[$i]['id'], $votingConditions['active_id'] ) === false )
-            {
-                $result = "The voting window for these matches has closed.";
-                break;
-            }
-        }
-    }
-
-    return $result;
-}
-
-function vote( $surveyId, $votes )
-{
-    $result['isSuccess'] = false;
-    $votingConditions = getVoteConditions( $surveyId );
-    $result['message'] = checkVote( $votingConditions, $votes );
-    if ( !$result['message'] ) {
-        $result['isSuccess'] = saveVote( $surveyId, $votes );
-    }
-    return $result;
 }
 
 function getVoteConditions( $surveyId )
@@ -376,24 +301,6 @@ function setSurveyState( $surveyId, $state )
     return true;
 }
 
-function startSurvey( $surveyId, $activeId, $closeTime )
-{
-    $state = "active";
-    $closeTime = getNullValue($closeTime);
-
-    $query = "UPDATE meta m, timing t SET m.state = :state, t.scheduled_close = :closeTime, t.active_id = :activeId WHERE m.id = :surveyId AND t.meta_id = :surveyId ";
-    $connection = getConnection();
-    $statement = $connection->prepare( $query );
-    $statement->bindParam(':surveyId',  $surveyId);
-    $statement->bindParam(':state',     $state);
-    $statement->bindParam(':closeTime', $closeTime );
-    $statement->bindParam(':activeId',  $activeId);
-    $statement->execute();
-
-    $connection = null;
-    return true;
-}
-
 function setCloseTime( $surveyId, $closeTime )
 {
     $closeTime = getNullValue($closeTime);
@@ -407,12 +314,6 @@ function setCloseTime( $surveyId, $closeTime )
 
     $connection = null;
     return true;
-}
-
-function updateVotingSession( $surveyId, $state, $closeTime, $activeId, $winners )
-{
-    updateWinners( $surveyId, $winners );
-    return updateTiming( $surveyId, $state, $closeTime, $activeId );
 }
 
 function updateWinners( $surveyId, $winners )
@@ -464,55 +365,4 @@ function getConnection()
     return $connection;
 }
 
-function getGUID()
-{
-	mt_srand((double)microtime()*10000);
-	return strtoupper(md5(uniqid(rand(), true)));
-}
-
-function getNullValue( $value )
-{
-	return $value ? $value : null;
-}
-
-//todo 10 - add comments to each if condition to label what they're for
-//todo 10 - separate with a controller file?
-if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
-    $action = $_POST['action'];
-    $result = null;
-
-    try {
-        if ( isset($_POST['id']) && isset($_POST['state']) && isset($_POST['time']) && isset($_POST['activeId']) && isset($_POST['winners']) ) {
-            $result = $action( $_POST['id'], $_POST['state'], $_POST['time'], $_POST['activeId'], $_POST['winners'] );
-        }
-        elseif ( isset($_POST['id']) && isset($_POST['state']) ) {
-            $result = $action( $_POST['id'], $_POST['state'] );
-        }
-        elseif ( isset($_POST['id']) && isset($_POST['activeId']) && isset($_POST['time']) ) {
-            $result = $action( $_POST['id'], $_POST['activeId'], $_POST['time'] );
-        }
-        elseif ( isset($_POST['id']) && isset($_POST['time']) ) {
-            $result = $action( $_POST['id'], $_POST['time'] );
-        }
-        elseif ( isset($_POST['id']) && isset($_POST['votes']) ) {
-            $result = $action( $_POST['id'], $_POST['votes'] );
-        }
-        elseif ( isset($_POST['survey']) ) {
-            $result = $action( $_POST['survey'] );
-        }
-        elseif ( isset($_POST['id']) ) {
-            $result = $action( $_POST['id'] );
-        }
-        elseif ( isset($_POST['title']) ) {
-            $result = $action( $_POST['title'] );
-        }
-        else {
-            $result = $action();
-        }
-
-        echo json_encode($result);
-    }
-    catch ( PDOException $e ) {
-        echo "Error: " . $e->getMessage();
-    }
-}
+?>

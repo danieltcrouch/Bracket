@@ -33,7 +33,7 @@
     const error = "<?php echo $_GET['error'] ?>";
 
     $.post(
-        "php/database.php",
+        "php/controller.php",
         {
             action: "getAllSurveyMetas"
         },

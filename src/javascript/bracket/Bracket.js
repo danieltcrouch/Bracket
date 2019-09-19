@@ -1,4 +1,3 @@
-//todo 9 - look for const variables (this and other new files)
 const ENTRIES_PER_MATCH = 2;
 
 const BLANK_IMAGE = "images/blank.jpg";

@@ -15,7 +15,7 @@ function initializeCreate() {
 
 function initializeEdit( surveyId ) {
     $.post(
-        "php/database.php",
+        "php/controller.php",
         {
             action: "getSurvey",
             id:     surveyId
@@ -302,7 +302,7 @@ function create() {
     const error = validate();
     if ( !error ) {
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action: "createSurvey",
                 survey: JSON.stringify( getSurveyInfo() )
@@ -323,7 +323,7 @@ function save() {
         let surveyInfo = getSurveyInfo();
         surveyInfo.id = surveyId;
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action:  "updateSurvey",
                 survey: JSON.stringify( surveyInfo )
@@ -376,7 +376,7 @@ function getMatchTitles( rawChoices, isBracket )
 
 function load() {
     $.post(
-        "php/database.php",
+        "php/controller.php",
         {
             action: "getAllSurveyMetas"
         },

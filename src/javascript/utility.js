@@ -95,7 +95,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
             surveyInfo.timing.scheduledClose = calculateNextTime( surveyInfo.timing, closeTime );
 
             $.post(
-                "php/database.php",
+                "php/controller.php",
                 {
                     action:     "updateVotingSession",
                     id:         surveyId,

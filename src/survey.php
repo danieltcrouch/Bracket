@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <?php
-    include_once("php/database.php");
+    include_once("php/controller.php");
     $meta = getSurveyMeta( $_GET['id'] );
     $pageTitle   = $meta ? $meta['title'] : $pageTitle;
     $image       = $meta ? $meta['image'] : $image;

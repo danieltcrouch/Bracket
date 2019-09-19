@@ -71,9 +71,6 @@
                 <div style="margin: 1em">
                     <date-picker id="scheduledClose"></date-picker>
                 </div>
-                <!-- input id="scheduledClose" type="datetime-local" class="input" -->
-                <!-- todo 8: eventually, build your own date-time picker -- https://developers.google.com/web/fundamentals/web-components/customelements
-                        https://developers.google.com/web/fundamentals/web-components/examples/howto-checkbox  -->
             </div>
 
             <div class="center" style="margin-bottom: 1em">

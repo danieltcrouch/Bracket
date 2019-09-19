@@ -1,6 +1,3 @@
-//todo 9 - Clean Common repo and custom css files in projects
-//todo 9 - set standards for this and future projects
-
 let survey;
 let round;
 let state;
@@ -23,7 +20,7 @@ const TOTAL_MATCH_HEIGHT = "7.5rem"; //(BUTTON_TEXT_HEIGHT + BUTTON_B_MARGIN) * 
 
 function getSurveyInfo( surveyId ) {
     $.post(
-        "php/database.php",
+        "php/controller.php",
         {
             action: "getSurvey",
             id:     surveyId
@@ -96,7 +93,7 @@ function submit() {
 
 function saveVote( votes ) {
     $.post(
-        "php/database.php",
+        "php/controller.php",
         {
             action: "vote",
             id:     surveyId,
@@ -121,7 +118,7 @@ function saveVote( votes ) {
 
 function updateVotes() {
     $.post(
-        "php/database.php",
+        "php/controller.php",
         {
             action: "getCurrentVotes",
             id:     surveyId
@@ -134,7 +131,7 @@ function updateVotes() {
 }
 
 function review() {
-    let additionalInfo = "";
+    let additionalInfo = ""; //todo - allow users to subscribe
     let matchTitles = isSurveyBracket() ? survey.getAllMatchTitles() : null;
     let choiceNames = survey.getAllChoices().map( c => { return {id: c.getId(), name: c.getName()}; } );
     reviewSurvey( state, matchTitles, choiceNames, currentVotes, additionalInfo );

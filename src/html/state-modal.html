@@ -53,7 +53,7 @@
         stateModalValues.state = "active";
         stateModalValues.activeId = calculateStartActiveId( stateModalValues.surveyType, stateModalValues.votingType, stateModalValues.choiceCount );
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action:     "startSurvey",
                 id:         stateModalValues.surveyId,
@@ -71,7 +71,7 @@
         stateModalValues.state = "complete";
         stateModalValues.activeId = null;
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action:     "setCloseTime",
                 id:         stateModalValues.surveyId,
@@ -86,7 +86,7 @@
 
     function hide() {
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action:     "setSurveyState",
                 id:         stateModalValues.surveyId,
@@ -102,7 +102,7 @@
     function pauseVoting() {
         stateModalValues.state = stateModalValues.state === "active" ? "paused" : "active";
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action:     "setSurveyState",
                 id:         stateModalValues.surveyId,
@@ -117,7 +117,7 @@
 
     function pauseClosing() {
         $.post(
-            "php/database.php",
+            "php/controller.php",
             {
                 action:     "setCloseTime",
                 id:         stateModalValues.surveyId,
