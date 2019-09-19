@@ -234,7 +234,7 @@ function reviewCurrent( matchTitles, choices, currentVotes, additionalInfo ) {
 
 function getCurrentVoteDisplay( matchTitles, choices, currentVotes ) {
     let result = "No current votes...";
-    if ( choices && currentVotes ) {
+    if ( choices && currentVotes && currentVotes.length ) {
         result = "";
         const isSingle = currentVotes.length === 1;
         for ( let i = 0; i < currentVotes.length; i++) {

@@ -220,7 +220,7 @@ function validate() {
         else if ( !choiceImagesLength ) {
             error = "Choice image length too long. (Max of 256 characters)";
         }
-        else if ( !closeTimeInFuture ) {
+        else if ( closeTime && !closeTimeInFuture ) {
             error = "Scheduled Close Time must be in the future.";
         }
     }
