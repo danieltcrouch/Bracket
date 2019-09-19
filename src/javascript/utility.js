@@ -84,15 +84,16 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
             let tempSurvey = getBracketOrPoll( surveyInfo.type, surveyInfo.choices, surveyInfo.winners );
             tempSurvey.addWinners( getWinners( surveyInfo.currentVotes ) );
 
+            surveyInfo.winners = tempSurvey.getSerializedWinners();
+            surveyInfo.timing.activeId = getActiveId( tempSurvey, surveyInfo.type, surveyInfo.mode );
+            surveyInfo.timing.scheduledClose = getISOString( calculateNextTime( surveyInfo.timing, closeTime ) );
+
             const isLastSession = tempSurvey.isFinished();
             if ( isLastSession ) {
                 surveyInfo.timing.scheduledClose = null;
+                surveyInfo.timing.activeId = null;
                 surveyInfo.state = "complete";
             }
-
-            surveyInfo.winners = tempSurvey.getSerializedWinners();
-            surveyInfo.timing.activeId = isLastSession ? null : getActiveId( tempSurvey, surveyInfo.type, surveyInfo.mode );
-            surveyInfo.timing.scheduledClose = getISOString( calculateNextTime( surveyInfo.timing, closeTime ) );
 
             $.post(
                 "php/controller.php",

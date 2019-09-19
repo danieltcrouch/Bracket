@@ -8,6 +8,19 @@ LEFT JOIN voting v ON v.meta_id = m.id
 LEFT JOIN subscriptions s ON s.meta_id = m.id
 WHERE m.id IN ('B18D94751389913DC3AEC343CE0253B9');
 
+/*** RESET ***/
+UPDATE meta m, timing t
+SET m.state = 'ready', t.scheduled_close = NULL, t.active_id = ''
+WHERE m.id = 'B18D94751389913DC3AEC343CE0253B9' AND t.meta_id = 'B18D94751389913DC3AEC343CE0253B9';
+/* UPDATE meta m, timing t SET m.state = 'ready', t.scheduled_close = NULL, t.active_id = '' WHERE m.id = :surveyId AND t.meta_id = :surveyId; */
+
+DELETE r, v
+FROM meta m
+LEFT JOIN results r ON r.meta_id = m.id
+LEFT JOIN timing t ON t.meta_id = m.id
+LEFT JOIN voting v ON v.meta_id = m.id
+WHERE m.id IN ('B18D94751389913DC3AEC343CE0253B9');
+
 /*** VIEW ***/
 SELECT m.title, t.*
 FROM timing t

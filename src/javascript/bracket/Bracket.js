@@ -554,10 +554,12 @@ function setClickableMatches() {
         }
     }
 
-    let relevantMatches = getRelevantMatches();
-    for ( let i = 0; i < relevantMatches.length; i++ ) {
-        if ( relevantMatches[i].isReady() ) {
-            setClickable( relevantMatches[i].getId() );
+    if ( isEditable( state ) ) {
+        let relevantMatches = getRelevantMatches();
+        for ( let i = 0; i < relevantMatches.length; i++ ) {
+            if ( relevantMatches[i].isReady() ) {
+                setClickable( relevantMatches[i].getId() );
+            }
         }
     }
 }
@@ -567,7 +569,7 @@ function setClickableMatches() {
 
 
 function setDisplayType() {
-    if ( isEditable( state ) ) {
+    if ( isVisible( state ) ) {
         window.onresize = updateMobile;
         round = Math.abs( survey.getCurrentRoundIndex() );
         display = {
@@ -703,19 +705,21 @@ function changeRound( direction ) {
 
 
 function registerBracketChoice( matchId, isTop ) {
-    const match = survey.getMatchFromId( matchId );
-    const winnerChange = match.getEntry( isTop ) !== match.getWinner();
-    survey.addWinners( [{
-        matchId: matchId,
-        seed:    survey.getMatchFromId( matchId ).getEntry( isTop ).getSeed()
-    }] );
+    if ( isEditable( state ) ) {
+        const match = survey.getMatchFromId( matchId );
+        const winnerChange = match.getEntry( isTop ) !== match.getWinner();
+        survey.addWinners( [{
+            matchId: matchId,
+            seed:    survey.getMatchFromId( matchId ).getEntry( isTop ).getSeed()
+        }] );
 
-    if ( mode === "open" && winnerChange ) {
-        updateSubsequentMatches( survey.getNextMatchAndPosition( matchId ) );
+        if ( mode === "open" && winnerChange ) {
+            updateSubsequentMatches( survey.getNextMatchAndPosition( matchId ) );
 
-        if ( ( display.isMobile && round < survey.getCurrentRoundIndex() ) ||
-             ( display.isLarge  && round < survey.getCurrentRoundIndex() && round < ( survey.getMaxRounds() - 2 ) ) ) {
-            changeRound( "next" );
+            if ( ( display.isMobile && round < survey.getCurrentRoundIndex() ) ||
+                 ( display.isLarge  && round < survey.getCurrentRoundIndex() && round < ( survey.getMaxRounds() - 2 ) ) ) {
+                changeRound( "next" );
+            }
         }
     }
 }
@@ -751,8 +755,8 @@ function updateSubsequentMatches( nextMatchAndPosition ) {
 
 function getBracketVotes() {
     let votes = null;
-    let relevantMatches = getRelevantMatches( true )
-    if ( areMatchesComplete( relevantMatches ) ) {
+    let relevantMatches = getRelevantMatches( true );
+    if ( isEditable( state ) && areMatchesComplete( relevantMatches ) ) {
         votes = parseVotes( relevantMatches );
     }
     else {

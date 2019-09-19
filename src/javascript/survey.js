@@ -33,6 +33,7 @@ function getSurveyInfo( surveyId ) {
 }
 
 function loadPage( surveyId, surveyInfo ) {
+    //todo - better display for completed brackets -- users want to be able to revisit it
     if ( surveyId && surveyInfo && isVisible( surveyInfo.state ) ) {
         surveyInfo.helpImage = helpImage;
         createTitleLogo( surveyInfo, cl('title')[0], surveyInfo.state === "active", true );
@@ -46,6 +47,10 @@ function loadPage( surveyId, surveyInfo ) {
 
         isSurveyBracket() ? displayBracket() : displayPoll();
         displayRoundTimer();
+
+
+        id( 'surveyDisplay' ).style.display = "none";
+        id( 'submit' ).style.display = "none";
     }
     else {
         window.location = "https://bracket.religionandstory.com/index.php?error=InvalidSurveyId";
@@ -58,15 +63,15 @@ function loadPage( surveyId, surveyInfo ) {
 
 function displayRoundTimer() {
     let timerSpan = id('roundTimer');
-    if ( !isEditable( state ) ) {
-        timerSpan.innerText = "(" + capitalize( state ) + ")";
-        id( 'surveyDisplay' ).style.display = "none";
-        id( 'submit' ).style.display = "none";
+    if ( isEditable( state ) ) {
+        if ( endTime ) {
+            const displayTime = getDisplayTime( endTime );
+            timerSpan.style.display = "block";
+            timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + displayTime;
+        }
     }
-    else if ( endTime ) {
-        const displayTime = getDisplayTime( endTime );
-        timerSpan.style.display = "block";
-        timerSpan.innerHTML = "<span style='font-weight: bold;'>Round Ends:</span> " + displayTime;
+    else {
+        timerSpan.innerText = "(" + capitalize( state ) + ")";
     }
 }
 

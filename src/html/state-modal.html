@@ -68,20 +68,22 @@
     }
 
     function close() {
-        stateModalValues.state = "complete";
-        stateModalValues.activeId = null;
-        $.post(
-            "php/controller.php",
-            {
-                action:     "setCloseTime",
-                id:         stateModalValues.surveyId,
-                time:       (new Date()).toISOString()
-            },
-            function ( response ) {
-                showToaster( "Survey started... " );
-                closeOutModal();
-            }
-        );
+        //todo - Close Survey or close session?
+        //CLOSE SURVEY, CLOSE VOTING, PAUSE VOTING, EXTEND VOTING
+        // stateModalValues.state = "complete";
+        // stateModalValues.activeId = null;
+        // $.post(
+        //     "php/controller.php",
+        //     {
+        //         action:     "setCloseTime",
+        //         id:         stateModalValues.surveyId,
+        //         time:       (new Date()).toISOString()
+        //     },
+        //     function ( response ) {
+        //         showToaster( "Survey ... " );
+        //         closeOutModal();
+        //     }
+        // );
     }
 
     function hide() {
@@ -116,6 +118,7 @@
     }
 
     function pauseClosing() {
+        //todo - does this work for how calculateNextTime works? specifically, isStartTime
         $.post(
             "php/controller.php",
             {
