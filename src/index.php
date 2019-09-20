@@ -30,6 +30,7 @@
 </body>
 
 <script>
+    //TODO - do general clean-up for this whole project
     const error = "<?php echo $_GET['error'] ?>";
 
     $.post(
