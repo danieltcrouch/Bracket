@@ -359,7 +359,7 @@ function getEmails( $surveyId )
     $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
-    $result = $statement->fetchAll();
+    $result = $statement->fetchAll( PDO::FETCH_COLUMN, 0 );
 
     $connection = null;
     return $result;

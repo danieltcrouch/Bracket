@@ -260,10 +260,12 @@ class Bracket extends Survey {
         switch ( mode )
         {
         case "match":
-            result = bracket.getCurrentMatch().getId();
+            const currentMatch = bracket.getCurrentMatch();
+            result = currentMatch ? currentMatch.getId() : "";
             break;
         case "round":
-            result = "r" + bracket.getCurrentRoundIndex();
+            const currentRound = bracket.getCurrentRoundIndex();
+            result = currentRound >= 0 ? "r" + bracket.getCurrentRoundIndex() : "";
             break;
         }
         return result;

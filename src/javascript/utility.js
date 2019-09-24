@@ -127,7 +127,9 @@ function emailSubscribers( surveyId ) {
             action:     "emailSubscribers",
             id:         surveyId
         },
-        function ( response ) {}
+        function ( response ) {
+            //showToaster( "Subscribers Notified" );
+        }
     );
 }
 
@@ -243,7 +245,7 @@ function getCompleteVoteDisplay( choices, finalVotes ) {
 
 function reviewCurrent( matchTitles, choices, currentVotes, additionalInfo ) {
     let voteDisplay = getCurrentVoteDisplay( matchTitles, choices, currentVotes );
-    let display = additionalInfo ? voteDisplay + "<br/>" + additionalInfo : voteDisplay;
+    let display = additionalInfo ? voteDisplay + "<br/><br/>" + additionalInfo : voteDisplay;
     view( "Current Votes", display );
 }
 

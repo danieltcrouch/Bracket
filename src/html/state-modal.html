@@ -163,6 +163,13 @@
     }
 
     function closeOutModal() {
+        id('startButton').style.display  = "none";
+        id('hideButton').style.display   = "none";
+        id('closeButton').style.display  = "none";
+        id('pauseVoting').style.display  = "none";
+        id('closeVoting').style.display  = "none";
+        id('extendVoting').style.display = "none";
+
         closeModalJS( "stateModal" );
         stateModalCallback( stateModalValues );
     }
