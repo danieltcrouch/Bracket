@@ -54,7 +54,26 @@ function updateVotingSession( $surveyId, $state, $closeTime, $activeId, $winners
     return updateTiming( $surveyId, $state, $closeTime, $activeId );
 }
 
-function parseChoices(&$target, $rawNames, $rawImages )
+function emailSubscribers( $surveyId )
+{
+    $surveyMeta = getSurveyMeta( $surveyId );
+    $emails = getEmails( $surveyId );
+
+    $addressList = json_decode($emails);
+
+    $to = implode( ',', $addressList );
+    $subject = "Bracket Update: $surveyMeta[title]";
+    $message = "<p>Hey, a bracket you subscribed to has finished voting! Check out the results <a href='https://bracket.religionandstory.com/survey?id=$surveyId'>here</a>!</p>";
+    $message = wordwrap($message, 70);
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+    $headers .= "From:  ReligionAndStory<noreply@religionandstory.com>" . "\r\n" .
+                "Bcc:   danieltcrouch@gmail.com";
+
+    mail($to, $subject, $message, $headers);
+}
+
+function parseChoices( &$target, $rawNames, $rawImages )
 {
     $choiceNames  = explode( ',', $rawNames );
     $choiceImages = explode( ',', $rawImages );

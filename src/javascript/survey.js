@@ -138,10 +138,29 @@ function updateVotes() {
 }
 
 function review() {
-    let additionalInfo = ""; //todo - allow users to subscribe
+    let additionalInfo = "<span class='link' onclick='subscribe()'>Subscribe</span>";
     let matchTitles = isSurveyBracket() ? survey.getAllMatchTitles() : null;
     let choiceNames = survey.getAllChoices().map( c => { return {id: c.getId(), name: c.getName()}; } );
     reviewSurvey( state, matchTitles, choiceNames, currentVotes, additionalInfo );
+}
+
+function subscribe() {
+    closeModalJS( "modal" );
+    showPrompt( "Subscribe", "Enter an email address to subscribe:", subscribeCallback, "email@domain.com", true );
+}
+
+function subscribeCallback( email ) {
+    $.post(
+        "php/controller.php",
+        {
+            action: "saveEmail",
+            id:     surveyId,
+            email:  email
+        },
+        function ( response ) {
+            showToaster( "Subscribed" );
+        }
+    );
 }
 
 

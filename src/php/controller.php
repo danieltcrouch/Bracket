@@ -27,11 +27,15 @@ if ( isset($_POST['action']) && function_exists( $_POST['action'] ) ) {
         elseif ( isset($_POST['id']) && isset($_POST['votes']) ) {
             $result = $action( $_POST['id'], $_POST['votes'] );
         }
+        //saveEmail
+        elseif ( isset($_POST['id']) && isset($_POST['email']) ) {
+            $result = $action( $_POST['id'], $_POST['email'] );
+        }
         //createSurvey, updateSurvey (SERVICE)
         elseif ( isset($_POST['survey']) ) {
             $result = $action( $_POST['survey'] );
         }
-        //getSurvey, getSurveyMeta, getCurrentVotes
+        //getSurvey, getSurveyMeta, getCurrentVotes, emailSubscribers (SERVICE)
         elseif ( isset($_POST['id']) ) {
             $result = $action( $_POST['id'] );
         }

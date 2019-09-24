@@ -70,7 +70,6 @@
                 <span style="font-weight: bold">Scheduled Close Time:</span>
                 <div style="margin: 1em">
                     <date-picker id="scheduledClose"></date-picker>
-                    <!-- todo - make clickable -->
                 </div>
             </div>
 

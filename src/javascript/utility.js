@@ -94,6 +94,9 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
                 surveyInfo.timing.activeId = null;
                 surveyInfo.state = "complete";
             }
+            else {
+                emailSubscribers( surveyId );
+            }
 
             $.post(
                 "php/controller.php",
@@ -115,6 +118,17 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
     if ( !isSessionOver ) {
         callback( surveyId, surveyInfo );
     }
+}
+
+function emailSubscribers( surveyId ) {
+    $.post(
+        "php/controller.php",
+        {
+            action:     "emailSubscribers",
+            id:         surveyId
+        },
+        function ( response ) {}
+    );
 }
 
 function calculateStartTime( timingInfo ) {

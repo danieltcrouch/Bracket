@@ -351,6 +351,34 @@ function updateTiming( $surveyId, $state, $closeTime, $activeId )
     return true;
 }
 
+function getEmails( $surveyId )
+{
+    $query = "SELECT email FROM subscriptions WHERE meta_id = :surveyId ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':surveyId', $surveyId);
+    $statement->execute();
+
+    $result = $statement->fetchAll();
+
+    $connection = null;
+    return $result;
+}
+
+function saveEmail( $surveyId, $email )
+{
+    $query = "INSERT INTO subscriptions (meta_id, email)
+              VALUES ( :surveyId, :email ) ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':surveyId', $surveyId);
+    $statement->bindParam(':email',    $email);
+    $statement->execute();
+
+    $connection = null;
+    return true;
+}
+
 function getConnection()
 {
     $servername = "localhost";
