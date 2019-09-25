@@ -7,8 +7,7 @@ function getSurvey( $surveyId )
                   t.frequency, t.frequency_point, t.scheduled_close, t.active_id,
                   r.winners,
                   current_votes,
-                  c_names,
-                  c_images
+                  c_names, c_images, c_links
               FROM meta m
                   JOIN timing t ON m.id = t.meta_id
                   LEFT OUTER JOIN results r ON m.id = r.meta_id
@@ -25,7 +24,8 @@ function getSurvey( $surveyId )
                       SELECT
                           c.meta_id,
                           GROUP_CONCAT(c.name ORDER BY c.id)  as \"c_names\",
-                          GROUP_CONCAT(c.image ORDER BY c.id) as \"c_images\"
+                          GROUP_CONCAT(c.image ORDER BY c.id) as \"c_images\",
+                          GROUP_CONCAT(c.link ORDER BY c.id) as \"c_links\"
                       FROM choices c
                       GROUP BY c.meta_id
                   ) ent ON m.id = ent.meta_id
@@ -53,7 +53,7 @@ function getSurvey( $surveyId )
         'currentVotes' => [],
         'choices'      => []
     ];
-    parseChoices( $surveyInfo['choices'], $result['c_names'], $result['c_images'] );
+    parseChoices( $surveyInfo['choices'], $result['c_names'], $result['c_images'], $result['c_links'] );
     parseVotes( $surveyInfo['currentVotes'], $result['current_votes'] );
 
     $connection = null;
@@ -73,11 +73,11 @@ function createSurvey( $survey )
     for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
         $choiceValues .= ( $i != 0 ) ? ", " : "";
-        $choiceValues .= "(:surveyId, :choiceId$i, :choiceName$i, :choiceImage$i)";
+        $choiceValues .= "(:surveyId, :choiceId$i, :choiceName$i, :choiceImage$i, :choiceLink$i)";
     }
     $insertMeta = "INSERT INTO meta (id, state, title, image, help, type, mode) VALUES (:surveyId, :state, :title, :image, :help, :type, :mode)";
     $insertTiming = "INSERT INTO timing (meta_id, frequency, frequency_point, scheduled_close, active_id) VALUES (:surveyId, :frequency, :frequencyPoint, :scheduledClose, :activeId)";
-    $insertChoices = "INSERT INTO choices (meta_id, id, name, image) VALUES $choiceValues";
+    $insertChoices = "INSERT INTO choices (meta_id, id, name, image, link) VALUES $choiceValues";
 
     $query =
         "$insertMeta;\n
@@ -103,6 +103,7 @@ function createSurvey( $survey )
         $statement->bindParam(":choiceId$i",    $choice->id);
         $statement->bindParam(":choiceName$i",  $choice->name);
         $statement->bindParam(":choiceImage$i", $choice->image);
+        $statement->bindParam(":choiceLink$i",  $choice->link);
     }
     $statement->execute();
 
@@ -139,16 +140,19 @@ function updateChoices( $surveyId, $choices )
 {
     $queryNameCase  = "CASE ";
     $queryImageCase = "CASE ";
+    $queryLinkCase = "CASE ";
     for ( $i = 0; $i < sizeof( $choices ); $i++ )
     {
         $queryNameCase  .= "WHEN id = :choiceId$i THEN :choiceName$i ";
         $queryImageCase .= "WHEN id = :choiceId$i THEN :choiceImage$i ";
+        $queryLinkCase  .= "WHEN id = :choiceId$i THEN :choiceLink$i ";
     }
     $queryNameCase  .= "END";
     $queryImageCase .= "END";
     $query     = "UPDATE choices
-                  SET name = ($queryNameCase),
-                      image = ($queryImageCase)
+                  SET name  = ($queryNameCase),
+                      image = ($queryImageCase),
+                      link  = ($queryLinkCase)
                   WHERE meta_id = :surveyId ";
 
     $connection = getConnection();
@@ -161,6 +165,7 @@ function updateChoices( $surveyId, $choices )
         $statement->bindParam(":choiceId$i",    $choice->id);
         $statement->bindParam(":choiceName$i",  $choice->name);
         $statement->bindParam(":choiceImage$i", $choice->image);
+        $statement->bindParam(":choiceLink$i",  $choice->link);
     }
 
     $statement->execute();

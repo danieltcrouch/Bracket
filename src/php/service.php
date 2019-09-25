@@ -71,12 +71,13 @@ function emailSubscribers( $surveyId )
     return mail($to, $subject, $message, $headers);
 }
 
-function parseChoices( &$target, $rawNames, $rawImages )
+function parseChoices( &$target, $rawNames, $rawImages, $rawLinks )
 {
     $choiceNames  = explode( ',', $rawNames );
     $choiceImages = explode( ',', $rawImages );
+    $choiceLinks  = explode( ',', $rawLinks );
     foreach( $choiceNames as $index => $name ) {
-        array_push( $target, ['name' => $name, 'image' => $choiceImages[$index]] );
+        array_push( $target, ['name' => $name, 'image' => $choiceImages[$index], 'link' => $choiceLinks[$index]] );
     }
 }
 

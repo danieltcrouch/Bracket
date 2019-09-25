@@ -155,20 +155,28 @@ function createChoiceInputs() {
                 let choiceDiv = document.createElement( "DIV" );
                 let nameInput = document.createElement( "INPUT" );
                 let imageInput = document.createElement( "INPUT" );
+                let linkInput = document.createElement( "INPUT" );
                 nameInput.id = i + "NameInput";
                 imageInput.id = i + "ImageInput";
+                linkInput.id = i + "LinkInput";
                 nameInput.style.width = "45%";
-                imageInput.style.width = "45%";
+                imageInput.style.width = "20%";
+                linkInput.style.width = "20%";
                 nameInput.style.margin = ".5em";
                 imageInput.style.margin = ".5em";
+                linkInput.style.margin = ".5em";
                 nameInput.classList.add( "input" );
                 imageInput.classList.add( "input" );
+                linkInput.classList.add( "input" );
                 nameInput.setAttribute( "name", "choiceNames" );
                 imageInput.setAttribute( "name", "choiceImages" );
+                linkInput.setAttribute( "name", "choiceLinks" );
                 nameInput.setAttribute( "placeholder", "Choice Name" );
                 imageInput.setAttribute( "placeholder", "Image URL" );
+                linkInput.setAttribute( "placeholder", "Link URL" );
                 choiceDiv.appendChild( nameInput );
                 choiceDiv.appendChild( imageInput );
+                choiceDiv.appendChild( linkInput );
                 div.appendChild( choiceDiv );
             }
         }
@@ -187,6 +195,7 @@ function fillChoiceInputs( choices ) {
     for ( let i = 0; i < choices.length; i++ ) {
         id( i + "NameInput" ).value  = choices[i].name;
         id( i + "ImageInput" ).value = choices[i].image;
+        id( i + "LinkInput" ).value  = choices[i].link;
     }
 }
 
@@ -202,6 +211,7 @@ function validate() {
         const choiceNamesFilled  = nm( 'choiceNames'  ).every( e => e.value );
         const choiceNamesLength  = nm( 'choiceNames'  ).every( e => e.value.length <= 20 );
         const choiceImagesLength = nm( 'choiceImages' ).every( e => e.value.length <= 256 );
+        const choiceLinksLength  = nm( 'choiceLinks'  ).every( e => e.value.length <= 256 );
         const closeTime          = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
         const closeTimeInFuture  = isDateAfter( closeTime, adjustMinutes( new Date(), 5 ) );
 
@@ -219,6 +229,9 @@ function validate() {
         }
         else if ( !choiceImagesLength ) {
             error = "Choice image length too long. (Max of 256 characters)";
+        }
+        else if ( !choiceLinksLength ) {
+            error = "Choice link length too long. (Max of 256 characters)";
         }
         else if ( closeTime && !closeTimeInFuture ) {
             error = "Scheduled Close Time must be in the future.";
@@ -448,9 +461,10 @@ function getChoices() {
     let choices = [];
     let choiceInputs = nm('choiceNames');
     let imageInputs  = nm('choiceImages');
+    let linkInputs   = nm('choiceLinks');
     for ( let i = 0; i < choiceInputs.length; i++ ) {
         if ( choiceInputs[i].value ) {
-            choices.push( {name: choiceInputs[i].value, image: imageInputs[i].value, id: i} );
+            choices.push( {name: choiceInputs[i].value, image: imageInputs[i].value, link: linkInputs[i].value, id: i} );
         }
     }
     return choices;
