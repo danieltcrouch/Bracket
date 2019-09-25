@@ -150,17 +150,19 @@ function subscribe() {
 }
 
 function subscribeCallback( email ) {
-    $.post(
-        "php/controller.php",
-        {
-            action: "saveEmail",
-            id:     surveyId,
-            email:  email
-        },
-        function ( response ) {
-            showToaster( "Subscribed" );
-        }
-    );
+    if ( surveyId !== "PREVIEW" && email ) {
+        $.post(
+            "php/controller.php",
+            {
+                action: "saveEmail",
+                id:     surveyId,
+                email:  email
+            },
+            function ( response ) {
+                showToaster( "Subscribed" );
+            }
+        );
+    }
 }
 
 
