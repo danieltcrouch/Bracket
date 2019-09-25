@@ -149,6 +149,7 @@ function updateChoices( $surveyId, $choices )
     }
     $queryNameCase  .= "END";
     $queryImageCase .= "END";
+    $queryLinkCase  .= "END";
     $query     = "UPDATE choices
                   SET name  = ($queryNameCase),
                       image = ($queryImageCase),
