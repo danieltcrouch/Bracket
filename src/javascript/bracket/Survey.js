@@ -1,10 +1,11 @@
 const DEFAULT_IMAGE = "images/profile.jpg";
 
 class Choice {
-    constructor( id, text, image ) {
+    constructor( id, text, image, link ) {
         this.id = id;
         this.text = text;
         this.image = image || DEFAULT_IMAGE;
+        this.link = link;
     }
 
     static isValidId( id ) {
@@ -17,6 +18,10 @@ class Choice {
 
     static mapToIds( choices ) {
         return choices.map( c => c.getId() );
+    }
+
+    getLink() {
+        return this.link;
     }
 
     getImage() {

@@ -4,8 +4,8 @@ const BLANK_IMAGE = "images/blank.jpg";
 const QUESTION_IMAGE = "images/question.jpg";
 
 class Entry extends Choice {
-    constructor( seed, name, image ) {
-        super( seed, name, image );
+    constructor( seed, name, image, link ) {
+        super( seed, name, image, link );
     }
 
     static isValidSeed( seed ) {
@@ -25,11 +25,11 @@ class Entry extends Choice {
     }
 
     static getByeEntry() {
-        return new Entry( null, "Bye", BLANK_IMAGE );
+        return new Entry( null, "Bye", BLANK_IMAGE, null );
     }
 
     static getUnknownEntry() {
-        return new Entry( null, "TBD", QUESTION_IMAGE );
+        return new Entry( null, "TBD", QUESTION_IMAGE, null );
     }
 
     getDisplayName() {
@@ -206,9 +206,10 @@ class Bracket extends Survey {
         let result = [];
         for ( let i = 0; i < rawEntries.length; i++ ) {
             let rawEntry = rawEntries[i];
-            rawEntry = ( typeof rawEntry === "string" ) ? { name: rawEntry, image: null } : rawEntry;
+            rawEntry = ( typeof rawEntry === "string" ) ? { name: rawEntry } : rawEntry;
             rawEntry.image = rawEntry.image || DEFAULT_IMAGE;
-            result.push( new Entry( i, rawEntry.name, rawEntry.image ) );
+            rawEntry.link  = rawEntry.link  || null;
+            result.push( new Entry( i, rawEntry.name, rawEntry.image, rawEntry.link ) );
         }
         return result;
     }
@@ -516,6 +517,8 @@ function getImageFromEntry( entry, matchId, isByeEntry, isTop ) {
     let image = getImage();
     image.id = getImageId( matchId, isTop );
     image.setAttribute( "src", entry.getImage() );
+    addLinkToImage( image, entry.getLink() );
+
     return image;
 }
 
@@ -733,10 +736,12 @@ function updateSubsequentMatches( nextMatchAndPosition ) {
 
         let button = id( getButtonId( match.getId(), isTop ) );
         let image  = id( getImageId( match.getId(),  isTop ) );
-        const entryChange = button.innerHTML !== match.getEntry( isTop ).getDisplayName();
+        const nextEntry = match.getEntry( isTop );
+        const entryChange = button.innerHTML !== nextEntry.getDisplayName();
         entryChange ? button.classList.remove( "selectedButton" ) : null;
-        button.innerHTML = match.getEntry( isTop ).getDisplayName();
-        image.setAttribute( "src", match.getEntry( isTop ).getImage() );
+        button.innerHTML = nextEntry.getDisplayName();
+        image.setAttribute( "src", nextEntry.getImage() );
+        addLinkToImage( image, nextEntry.getLink() );
         adjustFontSize( id( "round" + match.getRoundIndex()) );
 
         if ( match.isReady() ) {

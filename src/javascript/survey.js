@@ -198,6 +198,15 @@ function getButton() {
     return button;
 }
 
+function addLinkToImage( imageElement, url ) {
+    if ( url ) {
+        imageElement.style.cursor = "pointer";
+        imageElement.onclick = function() {
+            window.open( url );
+        };
+    }
+}
+
 function setClickable( buttonGroupId ) {
     unfreezeRadioButtons( buttonGroupId );
     nm( buttonGroupId ).forEach( function( button ) { button.classList.add( "blinkBorder" ); } );

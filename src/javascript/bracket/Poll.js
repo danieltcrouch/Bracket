@@ -1,8 +1,8 @@
 const OPTION_SET_ID = "poll";
 
 class Option extends Choice {
-    constructor( index, name, image ) {
-        super( index, name, image );
+    constructor( index, name, image, link ) {
+        super( index, name, image, link );
     }
 
     static isValidIndex( index ) {
@@ -76,9 +76,10 @@ class Poll extends Survey {
         let result = [];
         for ( let i = 0; i < rawOptions.length; i++ ) {
             let rawOption = rawOptions[i];
-            rawOption = ( typeof rawOption === "string" ) ? { name: rawOption, image: null } : rawOption;
+            rawOption = ( typeof rawOption === "string" ) ? { name: rawOption } : rawOption;
             rawOption.image = rawOption.image || DEFAULT_IMAGE;
-            result.push( new Option( i, rawOption.name, rawOption.image ) );
+            rawOption.link  = rawOption.link  || null;
+            result.push( new Option( i, rawOption.name, rawOption.image, rawOption.link ) );
         }
         return result;
     }
@@ -149,6 +150,8 @@ class Poll extends Survey {
          let image = getImage();
          image.setAttribute( "src", option.getImage() );
          image.id = OPTION_SET_ID + "Image" + i;
+         addLinkToImage( image, option.getLink() );
+
          let button = getButton();
          button.innerHTML = option.getName();
          button.id = OPTION_SET_ID + "Button" + i;
