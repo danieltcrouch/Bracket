@@ -39,7 +39,7 @@
             action: "getAllSurveyMetas"
         },
         function ( response ) {
-            displayLogos( JSON.parse( response ) );
+            displayLogos( JSONparse( response ) );
             if ( error ) {
                 showMessage( "Error", getErrorMessage( error ) );
             }
@@ -47,19 +47,21 @@
     );
 
     function displayLogos( logos ) {
-        let logosDiv = id('logos');
-        for ( let i = 0; i < logos.length; i++ ) {
-            let logoInfo = logos[i];
-            if ( logoInfo.state !== "ready" ) {
-                logoInfo.helpImage = "<?php getHelpImage() ?>";
-                let logoDiv = document.createElement( "DIV" );
-                logoDiv.id = "logo" + i;
-                logoDiv.style.margin = "0 3em 2em";
-                logoDiv.classList.add( "title" );
-                logoDiv.classList.add( "center" );
-                logosDiv.appendChild( logoDiv );
-                const isActive = logoInfo.state === "active"
-                createTitleLogo( logoInfo, logoDiv, isActive, true, "https://bracket.religionandstory.com/survey.php?id=" + logoInfo.id );
+        if ( logos ) {
+            let logosDiv = id('logos');
+            for ( let i = 0; i < logos.length; i++ ) {
+                let logoInfo = logos[i];
+                if ( logoInfo.state !== "ready" ) {
+                    logoInfo.helpImage = "<?php getHelpImage() ?>";
+                    let logoDiv = document.createElement( "DIV" );
+                    logoDiv.id = "logo" + i;
+                    logoDiv.style.margin = "0 3em 2em";
+                    logoDiv.classList.add( "title" );
+                    logoDiv.classList.add( "center" );
+                    logosDiv.appendChild( logoDiv );
+                    const isActive = logoInfo.state === "active"
+                    createTitleLogo( logoInfo, logoDiv, isActive, true, "https://bracket.religionandstory.com/survey.php?id=" + logoInfo.id );
+                }
             }
         }
     }

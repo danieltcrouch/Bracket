@@ -26,10 +26,11 @@ function getSurveyInfo( surveyId ) {
             id:     surveyId
         },
         function ( response ) {
-            let surveyInfo = JSON.parse( response );
-            updateSurveyTiming( surveyId, surveyInfo, loadPage );
+            updateSurveyTiming( surveyId, JSONparse( response ), loadPage );
         }
-    );
+    ).fail( function( error ) {
+        window.location = "https://bracket.religionandstory.com/index.php?error=FailedToLoad";
+    });
 }
 
 function loadPage( surveyId, surveyInfo ) {
@@ -107,8 +108,8 @@ function saveVote( votes ) {
             votes:  votes
         },
         function ( response ) {
-            response = JSON.parse( response );
-            if ( response.isSuccess ) {
+            response = JSONparse( response );
+            if ( response && response.isSuccess ) {
                 showToaster( "Votes submitted." );
                 updateVotes();
             }
@@ -131,7 +132,7 @@ function updateVotes() {
             id:     surveyId
         },
         function ( response ) {
-            currentVotes = JSON.parse( response );
+            currentVotes = JSONparse( response );
             review();
         }
     );

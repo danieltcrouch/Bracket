@@ -76,7 +76,7 @@ function getActiveId( survey, type, mode )
 
 function updateSurveyTiming( surveyId, surveyInfo, callback ) {
     let isSessionOver = false;
-    if ( isInProgress( surveyInfo.state ) )
+    if ( surveyId && surveyInfo && isInProgress( surveyInfo.state ) )
     {
         const closeTime = newDate( surveyInfo.timing.scheduledClose );
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
@@ -109,13 +109,15 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
                     winners:    surveyInfo.winners
                 },
                 function ( response ) {
-                    callback( surveyId, surveyInfo );
+                    if ( callback ) {
+                        callback( surveyId, surveyInfo );
+                    }
                 }
             );
         }
     }
 
-    if ( !isSessionOver ) {
+    if ( !isSessionOver && callback ) {
         callback( surveyId, surveyInfo );
     }
 }
@@ -264,11 +266,6 @@ function getCurrentVoteDisplay( matchTitles, choices, currentVotes ) {
     return result;
 }
 
-function view( title, display ) {
-    showMessage( title, display );
-    animateChoices();
-}
-
 function getChoiceSetVoteDisplay( title, choices, currentVoteSet ) {
     return "<strong>" + title + ": </strong><br/>\n" +
         currentVoteSet.choices.map( set => {
@@ -278,6 +275,11 @@ function getChoiceSetVoteDisplay( title, choices, currentVoteSet ) {
                 "<span style='display: none; float: right;'>" +  set.count + "</span>" +
                 "</div>"
         } ).join( "\n" );
+}
+
+function view( title, display ) {
+    showMessage( title, display );
+    animateChoices();
 }
 
 function animateChoices() {
@@ -315,6 +317,17 @@ function isFinished( state ) {
 /**********ERROR HANDLING**********/
 
 
+function JSONparse( response ) {
+    let result = null;
+    try {
+        result = JSON.parse( response );
+    }
+    catch ( e ) {
+        result = null;
+    }
+    return result;
+}
+
 function getErrorMessage( error ) {
     let result = "";
 
@@ -322,6 +335,9 @@ function getErrorMessage( error ) {
         switch ( error ) {
         case "InvalidSurveyId":
             result = "Invalid Survey ID in URL.";
+            break;
+        case "FailedToLoad":
+            result = "Survey failed to load. Please, try again.";
             break;
         case "DisabledSurvey":
             result = "This Survey is disabled.";

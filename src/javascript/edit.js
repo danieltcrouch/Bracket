@@ -321,7 +321,7 @@ function create() {
                 survey: JSON.stringify( getSurveyInfo() )
             },
             function ( response ) {
-                window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSON.parse( response );
+                window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSONparse( response );
             }
         );
     }
@@ -395,7 +395,7 @@ function load() {
             action: "getAllSurveyMetas"
         },
         function ( response ) {
-            const html = constructEditLinks( JSON.parse( response ) );
+            const html = constructEditLinks( JSONparse( response ) );
             showMessage( "Choose a Survey", html );
         }
     );
@@ -403,12 +403,14 @@ function load() {
 
 function constructEditLinks( surveyMetas ) {
     let result = "";
-    for ( let i = 0; i < surveyMetas.length; i++ )
-    {
-        const surveyMeta = surveyMetas[i];
-        const isDuplicate = surveyMetas.filter( m => m.title === surveyMeta.title && m.date !== surveyMeta.date ).length > 0;
-        const title = surveyMeta.title + (isDuplicate ? "(" + new Date( surveyMeta.date ) + ")" : "");
-        result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + surveyMeta.id + "' class='link'>" + title + "</a><br/>";
+    if ( surveyMetas ) {
+        for ( let i = 0; i < surveyMetas.length; i++ )
+        {
+            const surveyMeta = surveyMetas[i];
+            const isDuplicate = surveyMetas.filter( m => m.title === surveyMeta.title && m.date !== surveyMeta.date ).length > 0;
+            const title = surveyMeta.title + (isDuplicate ? "(" + new Date( surveyMeta.date ) + ")" : "");
+            result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + surveyMeta.id + "' class='link'>" + title + "</a><br/>";
+        }
     }
     result += "<a href='https://bracket.religionandstory.com/edit.php' class='link'>Create New Survey</a><br/>";
     return result;
