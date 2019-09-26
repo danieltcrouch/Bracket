@@ -9,15 +9,18 @@
             </div>
             <div id="modalBody" class="modal-body center">Update the current survey:</div>
             <div id="modalSubmit" class="modal-submit center">
-                <div style="margin-bottom: 1em">
-                    <button id="startButton" class="button" style="display: none; width: 10em" onclick="start()">Start</button>
-                    <button id="closeButton" class="button" style="display: none; width: 10em" onclick="end()"  >End</button>
-                    <button id="hideButton"  class="button" style="display: none; width: 10em" onclick="hide()" >Hide</button>
+                <div style="margin: .25em">
+                    <button id="startSurvey" class="button" style="display: none; width: 10em" onclick="start()">Start</button>
+                    <button id="endSurvey"   class="button" style="display: none; width: 10em" onclick="end()"  >End</button>
+                    <button id="hideSurvey"   class="button" style="display: none; width: 10em" onclick="hide()" >Hide</button>
                 </div>
-                <div>
+                <div style="margin: .25em">
                     <button id="pauseVoting"  class="button" style="display: none; width: 10em" onclick="pauseVoting()" >Pause Voting</button>
                     <button id="closeVoting"  class="button" style="display: none; width: 10em" onclick="closeVoting()" >Close Voting</button>
-                    <button id="extendVoting" class="button" style="display: none; width: 10em" onclick="extendVoting()">Extend Voting</button>
+                </div>
+                <div style="margin: .25em">
+                    <button id="clearClose" class="button" style="display: none; width: 10em" onclick="clearClose()">Clear Close Time</button>
+                    <button id="calcClose"  class="button" style="display: none; width: 10em" onclick="calcClose()" >Calculate Close</button>
                 </div>
             </div>
         </div>
@@ -38,18 +41,18 @@
         blurBackground();
 
         if ( stateModalValues.state === "ready" ) {
-            id('startButton').style.display = "";
+            id('startSurvey').style.display = "";
         }
         else if ( stateModalValues.state === "complete" ) {
-            id('hideButton').style.display = "";
+            id('hideSurvey').style.display = "";
         }
         else {
-            id('closeButton').style.display = "";
+            id('endSurvey').style.display = "";
             id('pauseVoting').style.display = "";
             id('closeVoting').style.display = "";
-            if ( stateModalValues.timing.scheduledClose ) {
-                id('extendVoting').style.display = "";
-            }
+
+            id('calcClose').style.display = "";
+            id('clearClose').style.display = "";
         }
     }
 
@@ -146,7 +149,7 @@
         );
     }
 
-    function extendVoting() {
+    function clearClose() {
         stateModalValues.timing.scheduledClose = null;
         $.post(
             "php/controller.php",
@@ -162,13 +165,30 @@
         );
     }
 
+    function calcClose() {
+        stateModalValues.timing.scheduledClose = null;
+        $.post(
+            "php/controller.php",
+            {
+                action:     "setCloseTime",
+                id:         stateModalValues.surveyId,
+                time:       getISOString( calculateNextTime( stateModalValues.timing, new Date() ) )
+            },
+            function ( response ) {
+                showToaster( "Survey close time has been reset..." );
+                closeOutModal();
+            }
+        );
+    }
+
     function closeOutModal() {
-        id('startButton').style.display  = "none";
-        id('hideButton').style.display   = "none";
-        id('closeButton').style.display  = "none";
+        id('startSurvey').style.display  = "none";
+        id('hideSurvey').style.display   = "none";
+        id('endSurvey').style.display    = "none";
         id('pauseVoting').style.display  = "none";
         id('closeVoting').style.display  = "none";
-        id('extendVoting').style.display = "none";
+        id('clearClose').style.display   = "none";
+        id('calcClose').style.display    = "none";
 
         closeModalJS( "stateModal" );
         stateModalCallback( stateModalValues );
