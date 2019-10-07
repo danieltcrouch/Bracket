@@ -321,7 +321,7 @@ function create() {
                 survey: JSON.stringify( getSurveyInfo() )
             },
             function ( response ) {
-                window.location = "https://bracket.religionandstory.com/edit.php?id=" + JSONparse( response );
+                window.location = "https://bracket.religionandstory.com/edit.php?id=" + JsonParse( response );
             }
         );
     }
@@ -395,7 +395,7 @@ function load() {
             action: "getAllSurveyMetas"
         },
         function ( response ) {
-            const html = constructEditLinks( JSONparse( response ) );
+            const html = constructEditLinks( JsonParse( response ) );
             showMessage( "Choose a Survey", html );
         }
     );

@@ -6,7 +6,7 @@ LEFT JOIN results r ON r.meta_id = m.id
 LEFT JOIN timing t ON t.meta_id = m.id
 LEFT JOIN voting v ON v.meta_id = m.id
 LEFT JOIN subscriptions s ON s.meta_id = m.id
-WHERE m.id IN ('B18D94751389913DC3AEC343CE0253B9');
+WHERE m.id IN ('3BB28321F647EE95AAF896081CE2EA1A');
 
 /*** RESET ***/
 UPDATE meta m, timing t

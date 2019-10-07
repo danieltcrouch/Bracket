@@ -26,7 +26,7 @@ function getSurveyInfo( surveyId ) {
             id:     surveyId
         },
         function ( response ) {
-            updateSurveyTiming( surveyId, JSONparse( response ), loadPage );
+            updateSurveyTiming( surveyId, JsonParse( response ), loadPage );
         }
     ).fail( function( error ) {
         window.location = "https://bracket.religionandstory.com/index.php?error=FailedToLoad";
@@ -108,7 +108,7 @@ function saveVote( votes ) {
             votes:  votes
         },
         function ( response ) {
-            response = JSONparse( response );
+            response = JsonParse( response );
             if ( response && response.isSuccess ) {
                 showToaster( "Votes submitted." );
                 updateVotes();
@@ -132,7 +132,7 @@ function updateVotes() {
             id:     surveyId
         },
         function ( response ) {
-            currentVotes = JSONparse( response );
+            currentVotes = JsonParse( response );
             review();
         }
     );
@@ -213,43 +213,31 @@ function setClickable( buttonGroupId ) {
     nm( buttonGroupId ).forEach( function( button ) { button.classList.add( "blinkBorder" ); } );
 }
 
-function adjustFontSize( verticalDiv ) {
+function adjustButtonSetFontSize( verticalDiv ) {
     let buttons = verticalDiv.getElementsByTagName( "BUTTON" );
 
-    const defaultStyle = getComputedStyle( buttons[0] );
-    const defaultWidth = parseFloat( defaultStyle.width );
-    const defaultFontSize = parseFloat( defaultStyle.fontSize );
-    let minFontSize = defaultFontSize;
+    const computedStyle = getComputedStyle( buttons[0] );
+    const defaults = {
+        fontSize: parseFloat( computedStyle.fontSize ),
+        width: parseFloat( computedStyle.width )
+    };
+    let newFontSize = defaults.fontSize;
     for ( let i = 0; i < buttons.length; i++ ) {
         let button = buttons[i];
-        let width = getFullWidth( button );
-        if ( width > defaultWidth ) {
-            const minSize = 12;
-            for ( let size = defaultFontSize; size > minSize; size-- ) {
-                button.style.fontSize = size + "px";
-                width = getFullWidth( button );
-                if ( width <= defaultWidth ) {
-                    minFontSize = size < minFontSize ? size : minFontSize;
-                    break;
-                }
-                if ( size - 1 === minSize ) {
-                    button.innerHTML = button.innerHTML.substring( 0, 15 ) + "...";
-                    minFontSize = size < minFontSize ? size : minFontSize;
-                }
+        let tempFontSize = adjustFontSize( button,
+            defaults,
+            12,
+            function( text ) {
+                return text.substring( 0, 15 ) + "...";
             }
-        }
+        );
+        newFontSize = tempFontSize < newFontSize ? tempFontSize : newFontSize;
     }
 
-    if ( minFontSize < defaultFontSize ) {
+    if ( newFontSize < defaults.fontSize ) {
         for ( let i = 0; i < buttons.length; i++ ) {
-            buttons[i].style.fontSize = minFontSize + "px";
+            buttons[i].style.fontSize = newFontSize + "px";
+            buttons[i].style.borderWidth = ".1rem";
         }
     }
-}
-
-function getFullWidth( button ) {
-    button.style.width = "";
-    let result = getComputedStyle( button ).width;
-    button.style.width = BUTTON_WIDTH;
-    return parseFloat( result );
 }

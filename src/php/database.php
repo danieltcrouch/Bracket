@@ -5,30 +5,10 @@ function getSurvey( $surveyId )
     $query = "SELECT
                   m.id, m.state, m.title, m.image, m.help, m.type, m.mode,
                   t.frequency, t.frequency_point, t.scheduled_close, t.active_id,
-                  r.winners,
-                  current_votes,
-                  c_names, c_images, c_links
+                  r.winners
               FROM meta m
                   JOIN timing t ON m.id = t.meta_id
                   LEFT OUTER JOIN results r ON m.id = r.meta_id
-                  LEFT OUTER JOIN (
-                      SELECT
-                          v.meta_id,
-                          GROUP_CONCAT(CONCAT(v.choice_set_id, '|', v.choice_id) ORDER BY v.choice_id) as \"current_votes\"
-                      FROM voting v
-                          JOIN timing t ON v.meta_id = t.meta_id
-                      WHERE active_id = '' OR choice_set_id LIKE CONCAT(active_id, '%')
-                      GROUP BY v.meta_id
-                  ) vot ON m.id = vot.meta_id
-                  LEFT OUTER JOIN (
-                      SELECT
-                          c.meta_id,
-                          GROUP_CONCAT(c.name ORDER BY c.id)  as \"c_names\",
-                          GROUP_CONCAT(c.image ORDER BY c.id) as \"c_images\",
-                          GROUP_CONCAT(c.link ORDER BY c.id) as \"c_links\"
-                      FROM choices c
-                      GROUP BY c.meta_id
-                  ) ent ON m.id = ent.meta_id
               WHERE m.id = :surveyId ";
     $connection = getConnection();
     $statement = $connection->prepare( $query );
@@ -36,6 +16,9 @@ function getSurvey( $surveyId )
     $statement->execute();
 
     $result = $statement->fetch();
+    $choices = getChoices( $surveyId );
+    $currentVotes = getCurrentVotes( $surveyId );
+
     $surveyInfo = [
         'state'   => $result['state'],
         'title'   => $result['title'],
@@ -50,14 +33,49 @@ function getSurvey( $surveyId )
             'scheduledClose' => $result['scheduled_close'],
             'activeId'       => $result['active_id']
         ],
-        'currentVotes' => [],
-        'choices'      => []
+        'currentVotes' => $currentVotes,
+        'choices'      => $choices
     ];
-    parseChoices( $surveyInfo['choices'], $result['c_names'], $result['c_images'], $result['c_links'] );
-    parseVotes( $surveyInfo['currentVotes'], $result['current_votes'] );
 
     $connection = null;
     return $surveyInfo;
+}
+
+function getCurrentVotes( $surveyId )
+{
+    $query = "SELECT
+                  GROUP_CONCAT(CONCAT(v.choice_set_id, '|', v.choice_id) ORDER BY v.choice_id) as \"current_votes\"
+              FROM voting v
+                  JOIN timing t ON v.meta_id = t.meta_id
+              WHERE (active_id = '' OR choice_set_id LIKE CONCAT(active_id, '%'))
+                  AND v.meta_id = :surveyId ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':surveyId', $surveyId);
+    $statement->execute();
+
+    $result = $statement->fetch();
+    $currentVotes = [];
+    parseVotes( $currentVotes, $result['current_votes'] );
+
+    $connection = null;
+    return $currentVotes;
+}
+
+function getChoices( $surveyId )
+{
+    $query = "SELECT name, image, link
+              FROM choices
+              WHERE meta_id = :surveyId ";
+    $connection = getConnection();
+    $statement = $connection->prepare( $query );
+    $statement->bindParam(':surveyId', $surveyId);
+    $statement->execute();
+
+    $result = $statement->fetchAll();
+
+    $connection = null;
+    return $result;
 }
 
 function createSurvey( $survey )
@@ -226,27 +244,6 @@ function getSurveyMeta( $surveyId )
 //    $connection = null;
 //    return $id;
 //}
-
-function getCurrentVotes( $surveyId )
-{
-    $query = "SELECT
-                  GROUP_CONCAT(CONCAT(v.choice_set_id, '|', v.choice_id) ORDER BY v.choice_id) as \"current_votes\"
-              FROM voting v
-                  JOIN timing t ON v.meta_id = t.meta_id
-              WHERE (active_id = '' OR choice_set_id LIKE CONCAT(active_id, '%'))
-                  AND v.meta_id = :surveyId ";
-    $connection = getConnection();
-    $statement = $connection->prepare( $query );
-    $statement->bindParam(':surveyId', $surveyId);
-    $statement->execute();
-
-    $result = $statement->fetch();
-    $currentVotes = [];
-    parseVotes( $currentVotes, $result['current_votes'] );
-
-    $connection = null;
-    return $currentVotes;
-}
 
 function getVoteConditions( $surveyId )
 {

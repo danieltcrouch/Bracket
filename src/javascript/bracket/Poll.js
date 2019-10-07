@@ -165,7 +165,7 @@ class Poll extends Survey {
          pollDiv.appendChild( optionDiv );
      }
      div.appendChild( pollDiv );
-     adjustFontSize( pollDiv );
+    adjustButtonSetFontSize( pollDiv );
 
      setClickable( optionSetId );
      hideMobileDisplay();

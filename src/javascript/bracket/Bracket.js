@@ -489,7 +489,7 @@ function displayBracket() {
             roundDiv.appendChild( matchDiv );
         }
         div.appendChild( roundDiv );
-        adjustFontSize( roundDiv );
+        adjustButtonSetFontSize( roundDiv );
     }
 
     setClickableMatches();
@@ -629,7 +629,7 @@ function displaySingleRound() {
         fillers[i].style.display = "none";
     }
 
-    adjustFontSize( id( "round" + round ) );
+    adjustButtonSetFontSize( id( "round" + round ) );
 }
 
 function displayThreeRounds() {
@@ -742,7 +742,7 @@ function updateSubsequentMatches( nextMatchAndPosition ) {
         button.innerHTML = nextEntry.getDisplayName();
         image.setAttribute( "src", nextEntry.getImage() );
         addLinkToImage( image, nextEntry.getLink() );
-        adjustFontSize( id( "round" + match.getRoundIndex()) );
+        adjustButtonSetFontSize( id( "round" + match.getRoundIndex()) );
 
         if ( match.isReady() ) {
             setClickable( match.getId() );

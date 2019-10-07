@@ -37,6 +37,8 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
     titleDiv.appendChild( logoDiv );
     titleDiv.appendChild( helpDiv );
 
+    adjustTitleFontSize( titleSpan, logoDiv );
+
     if ( logoLink ) {
         let anchor = document.createElement( "A" );
         anchor.href = logoLink;
@@ -47,6 +49,27 @@ function createTitleLogo( logoInfo, titleDiv, active, useSpecialHelp, logoLink )
 
     if ( !active ) {
         logoDiv.style.filter = "grayscale(1)";
+    }
+}
+
+function adjustTitleFontSize( titleSpan, logoDiv ) {
+    const computedStyleTitle = getComputedStyle( titleSpan );
+    const computedStyleLogo = getComputedStyle( logoDiv );
+    const defaults = {
+        fontSize: parseFloat( computedStyleTitle.fontSize ),
+        width: parseFloat( computedStyleLogo.width )
+    };
+    const newFontSize = adjustFontSize( titleSpan,
+        defaults,
+        29,
+        function( text ) {
+            const halfLength = text.length / 2;
+            return text.substring( 0, halfLength) + " " + text.substring( halfLength );
+        }
+    );
+
+    if ( newFontSize < defaults.fontSize ) {
+        titleSpan.style.fontSize = (newFontSize - 5) + "px"; //Reduce result because it doesn't account for curved edges
     }
 }
 
@@ -314,10 +337,10 @@ function isFinished( state ) {
 }
 
 
-/**********ERROR HANDLING**********/
+/**********GENERAL**********/
 
 
-function JSONparse( response ) {
+function JsonParse( response ) {
     let result = null;
     try {
         result = JSON.parse( response );
@@ -327,6 +350,39 @@ function JSONparse( response ) {
     }
     return result;
 }
+
+function adjustFontSize( element, defaults, minimumFontSize, getReducedTextFunction ) {
+    let newFontSize = defaults.fontSize;
+    let width = getFullWidth( element );
+    if ( width > defaults.width ) {
+        for ( let size = defaults.fontSize; size > minimumFontSize; size-- ) {
+            element.style.fontSize = size + "px";
+            width = getFullWidth( element );
+            if ( width <= defaults.width ) {
+                newFontSize = size < newFontSize ? size : newFontSize;
+                break;
+            }
+            if ( size - 1 === minimumFontSize ) {
+                element.innerText = getReducedTextFunction ? getReducedTextFunction( element.innerText ) : element.innerText;
+                newFontSize = size < newFontSize ? size : newFontSize;
+            }
+        }
+    }
+
+    return newFontSize;
+}
+
+function getFullWidth( element ) {
+    const previousWidth = element.style.width;
+    element.style.width = "";
+    let result = getComputedStyle( element ).width;
+    element.style.width = previousWidth;
+    return parseFloat( result );
+}
+
+
+/**********ERROR HANDLING**********/
+
 
 function getErrorMessage( error ) {
     let result = "";
