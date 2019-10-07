@@ -101,6 +101,9 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
     let isSessionOver = false;
     if ( surveyId && surveyInfo && isInProgress( surveyInfo.state ) )
     {
+        const tempTime = newDate( surveyInfo.timing.scheduledClose );
+        surveyInfo.timing.scheduledClose = tempTime ? adjustToUTC( tempTime ).toISOString() : null; //DB time needs to be adjusted
+
         const closeTime = newDate( surveyInfo.timing.scheduledClose );
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {

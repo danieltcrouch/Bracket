@@ -404,11 +404,12 @@ function load() {
 function constructEditLinks( surveyMetas ) {
     let result = "";
     if ( surveyMetas ) {
+        surveyMetas.forEach( m => m.date = adjustToUTC( newDate( m.date ) ) );
         for ( let i = 0; i < surveyMetas.length; i++ )
         {
             const surveyMeta = surveyMetas[i];
             const isDuplicate = surveyMetas.filter( m => m.title === surveyMeta.title && m.date !== surveyMeta.date ).length > 0;
-            const title = surveyMeta.title + (isDuplicate ? "(" + new Date( surveyMeta.date ) + ")" : "");
+            const title = surveyMeta.title + (isDuplicate ? "(" + surveyMeta.date + ")" : "");
             result += "<a href='https://bracket.religionandstory.com/edit.php?id=" + surveyMeta.id + "' class='link'>" + title + "</a><br/>";
         }
     }
