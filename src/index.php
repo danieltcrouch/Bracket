@@ -39,7 +39,7 @@
             action: "getAllSurveyMetas"
         },
         function ( response ) {
-            displayLogos( JsonParse( response ) );
+            displayLogos( jsonParse( response ) );
             if ( error ) {
                 showMessage( "Error", getErrorMessage( error ) );
             }

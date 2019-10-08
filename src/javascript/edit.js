@@ -83,23 +83,8 @@ function setSurveyType( surveyType ) {
 }
 
 function setVotingType( votingType ) {
-    if ( votingType === "match" ) {
-        displayTimingSettings( true, false );
-    }
-    else if ( votingType === "round" ) {
-        displayTimingSettings( true, false );
-    }
-    else if ( votingType === "open" ) {
-        displayTimingSettings( false, true );
-    }
-    else {
-        displayTimingSettings( false, false );
-    }
-}
-
-function displayTimingSettings( displayFrequency, displayScheduledClose ) {
-    id('frequencySettings').style.display = displayFrequency ? "block" : "none";
-    id('scheduleSettings').style.display = displayScheduledClose ? "block" : "none";
+    id('frequencySettings').style.display = isFrequencyUsed() ? "block" : "none";
+    id('scheduleSettings').style.display = !isFrequencyUsed() ? "block" : "none";
 }
 
 function updateFrequencyPoints() {
@@ -212,7 +197,7 @@ function validate() {
         const choiceNamesLength  = nm( 'choiceNames'  ).every( e => e.value.length <= 30 );
         const choiceImagesLength = nm( 'choiceImages' ).every( e => e.value.length <= 256 );
         const choiceLinksLength  = nm( 'choiceLinks'  ).every( e => e.value.length <= 256 );
-        const closeTime          = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
+        const closeTime          = !isFrequencyUsed() ? id( 'scheduledClose' ).value : null;
         const closeTimeInFuture  = isDateAfter( closeTime, adjustMinutes( new Date(), 5 ) );
 
         if ( isSurveyBracket() && !getSelectedRadioButtonId('votingType') ) {
@@ -314,14 +299,16 @@ function previewSurvey() {
 function create() {
     const error = validate();
     if ( !error ) {
+        let surveyInfo = getSurveyInfo();
+        surveyInfo.timing.scheduledClose = !isFrequencyUsed() ? surveyInfo.timing.scheduledClose : null;
         $.post(
             "php/controller.php",
             {
                 action: "createSurvey",
-                survey: JSON.stringify( getSurveyInfo() )
+                survey: JSON.stringify( surveyInfo )
             },
             function ( response ) {
-                window.location = "https://bracket.religionandstory.com/edit.php?id=" + JsonParse( response );
+                window.location = "https://bracket.religionandstory.com/edit.php?id=" + jsonParse( response );
             }
         );
     }
@@ -395,7 +382,7 @@ function load() {
             action: "getAllSurveyMetas"
         },
         function ( response ) {
-            const html = constructEditLinks( JsonParse( response ) );
+            const html = constructEditLinks( jsonParse( response ) );
             showMessage( "Choose a Survey", html );
         }
     );
@@ -447,9 +434,9 @@ function getSurveyInfo() {
 }
 
 function getTiming() {
-    let scheduledClose = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
-    let frequency      = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequency' )      : null;
-    let frequencyPoint = id('frequencySettings').style.display !== "none" ? getSelectedOptionValue( 'frequencyPoint' ) : null;
+    let scheduledClose = id( 'scheduledClose' ).value;
+    let frequency      = isFrequencyUsed() ? getSelectedOptionValue( 'frequency' )      : null;
+    let frequencyPoint = isFrequencyUsed() ? getSelectedOptionValue( 'frequencyPoint' ) : null;
     frequency      = frequency      === "X" ? null : frequency;
     frequencyPoint = frequencyPoint === "X" ? null : frequencyPoint;
 
@@ -479,4 +466,9 @@ function getChoices() {
 
 function isSurveyBracket() {
     return getSelectedRadioButtonId('surveyType') === "bracket";
+}
+
+function isFrequencyUsed() {
+    return getSelectedRadioButtonId('surveyType') === "bracket" &&
+        ( getSelectedRadioButtonId('votingType') === "match" || getSelectedRadioButtonId('votingType') === "round" );
 }

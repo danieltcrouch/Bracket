@@ -154,7 +154,7 @@ function adjustDatabaseTime( closeDateValue ) {
         if ( date.getTimezoneOffset() && date.getUTCHours() !== databaseHour ) {
             date = adjustToUTC( date );
         }
-        result = date.toISOString();
+        result = getISOString( date );
     }
     return result;
 }
@@ -360,7 +360,7 @@ function isFinished( state ) {
 /**********GENERAL**********/
 
 
-function JsonParse( response ) {
+function jsonParse( response ) {
     let result = null;
     try {
         result = JSON.parse( response );
