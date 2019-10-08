@@ -101,9 +101,7 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
     let isSessionOver = false;
     if ( surveyId && surveyInfo && isInProgress( surveyInfo.state ) )
     {
-        const tempTime = newDate( surveyInfo.timing.scheduledClose );
-        surveyInfo.timing.scheduledClose = tempTime ? adjustToUTC( tempTime ).toISOString() : null; //DB time needs to be adjusted
-
+        surveyInfo.timing.scheduledClose = adjustDatabaseTime( surveyInfo.timing.scheduledClose );
         const closeTime = newDate( surveyInfo.timing.scheduledClose );
         isSessionOver = closeTime && isDateBefore( closeTime, new Date(), true );
         if ( isSessionOver ) {
@@ -146,6 +144,19 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
     if ( !isSessionOver && callback ) {
         callback( surveyId, surveyInfo );
     }
+}
+
+function adjustDatabaseTime( closeDateValue ) {
+    let result = null;
+    if ( closeDateValue ) {
+        const databaseHour = parseInt( closeDateValue.split( " " )[1].substr( 0, 2 ) );
+        let date = newDate( closeDateValue );
+        if ( date.getTimezoneOffset() && date.getUTCHours() !== databaseHour ) {
+            date = adjustToUTC( date );
+        }
+        result = date.toISOString();
+    }
+    return result;
 }
 
 function emailSubscribers( surveyId ) {
@@ -281,9 +292,15 @@ function getCurrentVoteDisplay( matchTitles, choices, currentVotes ) {
     let result = "No current votes...";
     if ( choices && currentVotes && currentVotes.length ) {
         result = "";
+        currentVotes.sort( (a, b) => {
+            let aValue = Match.isValidId( a.id ) ? Match.parseMatchId( a.id ).matchIndex : a.id;
+            let bValue = Match.isValidId( b.id ) ? Match.parseMatchId( b.id ).matchIndex : b.id;
+            return aValue - bValue;
+        } );
         const isSingle = currentVotes.length === 1;
         for ( let i = 0; i < currentVotes.length; i++) {
             let currentVoteSet = currentVotes[i];
+            currentVoteSet.choices.sort( (a, b) => { return a.count === b.count ? a.id - b.id : b.count - a.count; } );
             let title = isSingle ? "Current" : matchTitles.find( m => m.id === currentVoteSet.id ).title;
             result += getChoiceSetVoteDisplay( title, choices, currentVoteSet );
             result += "<br/>";

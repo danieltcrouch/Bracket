@@ -209,7 +209,7 @@ function validate() {
     if ( !error ) {
         const choiceCount = id('choiceCount').value;
         const choiceNamesFilled  = nm( 'choiceNames'  ).every( e => e.value );
-        const choiceNamesLength  = nm( 'choiceNames'  ).every( e => e.value.length <= 20 );
+        const choiceNamesLength  = nm( 'choiceNames'  ).every( e => e.value.length <= 30 );
         const choiceImagesLength = nm( 'choiceImages' ).every( e => e.value.length <= 256 );
         const choiceLinksLength  = nm( 'choiceLinks'  ).every( e => e.value.length <= 256 );
         const closeTime          = id('scheduleSettings').style.display !== "none" ? id( 'scheduledClose' ).value : null;
@@ -225,7 +225,7 @@ function validate() {
             error = "Choice names required.";
         }
         else if ( !choiceNamesLength ) {
-            error = "Choice name length too long. (Max of 20 characters)";
+            error = "Choice name length too long. (Max of 30 characters)";
         }
         else if ( !choiceImagesLength ) {
             error = "Choice image length too long. (Max of 256 characters)";
@@ -247,8 +247,8 @@ function validateLogo() {
     if ( !id('imageInput').value ) {
         error = "Image required.";
     }
-    else if ( id('titleInput').value.length > 20 ) {
-        error = "Title length too long. (Max of 20 characters)";
+    else if ( id('titleInput').value.length > 35 ) {
+        error = "Title length too long. (Max of 35 characters)";
     }
     else if ( id('imageInput').value.length > 256 ) {
         error = "Image length too long. (Max of 256 characters)";

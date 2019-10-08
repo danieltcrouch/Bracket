@@ -43,8 +43,7 @@ function getSurvey( $surveyId )
 
 function getCurrentVotes( $surveyId )
 {
-    $query = "SELECT
-                  GROUP_CONCAT(CONCAT(v.choice_set_id, '|', v.choice_id) ORDER BY v.choice_id) as \"current_votes\"
+    $query = "SELECT choice_set_id, choice_id
               FROM voting v
                   JOIN timing t ON v.meta_id = t.meta_id
               WHERE (active_id = '' OR choice_set_id LIKE CONCAT(active_id, '%'))
@@ -54,12 +53,11 @@ function getCurrentVotes( $surveyId )
     $statement->bindParam(':surveyId', $surveyId);
     $statement->execute();
 
-    $result = $statement->fetch();
-    $currentVotes = [];
-    parseVotes( $currentVotes, $result['current_votes'] );
+    $result = $statement->fetchAll();
 
     $connection = null;
-    return $currentVotes;
+
+    return parseVotes( $result );
 }
 
 function getChoices( $surveyId )

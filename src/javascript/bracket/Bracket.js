@@ -68,7 +68,7 @@ class Match extends ChoiceSet {
     }
 
     static isValidId( id ) {
-        return ChoiceSet.isValidId( id );
+        return ChoiceSet.isValidId( id ) && id.includes( "m" );
     }
 
     static getMatch( matches, matchId ) {
@@ -575,11 +575,11 @@ function setClickableMatches() {
 
 function setDisplayType() {
     if ( isVisible( state ) ) {
-        window.onresize = updateMobile;
+        window.onresize = updateScreenSize;
         round = Math.abs( survey.getCurrentRoundIndex() );
         display = {
-           isLarge:  survey.getMaxSize() > 32,
-           isMobile: isMobile()
+           isTripleDisplay: survey.getMaxSize() > 32 || isSmallScreen(),
+           isSingleDisplay: isMobile()
         };
 
         displayRounds();
@@ -589,8 +589,9 @@ function setDisplayType() {
     }
 }
 
-function updateMobile() {
-    display.isMobile = isMobile();
+function updateScreenSize() {
+    display.isSingleDisplay = isMobile();
+    display.isTripleDisplay = survey.getMaxSize() > 32 || isSmallScreen();
     displayRounds();
 }
 
@@ -603,18 +604,26 @@ function isMobile() {
     return result;
 }
 
+function isSmallScreen() {
+    let rect = id('round0').getBoundingClientRect();
+    return (
+        rect.left < 0 ||
+        rect.right > (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
+
 function displayRounds() {
-    if ( display.isMobile ) {
+    if ( display.isSingleDisplay ) {
         displaySingleRound();
     }
-    else if ( display.isLarge ) {
+    else if ( display.isTripleDisplay ) {
         displayThreeRounds();
     }
     else {
         displayAllRounds();
     }
 
-    if ( display.isMobile || display.isLarge ) {
+    if ( display.isSingleDisplay || display.isTripleDisplay ) {
         updateRoundPicker();
     }
 }
@@ -682,7 +691,7 @@ function updateRoundPicker() {
     if ( round === 0 ) {
         id('arrowPrev').style.display = "none";
     }
-    else if ( round === survey.getMaxRounds() - 1 || ( display.isLarge && round === survey.getMaxRounds() - 2 ) ) {
+    else if ( round === survey.getMaxRounds() - 1 || ( display.isTripleDisplay && round === survey.getMaxRounds() - 2 ) ) {
         id('arrowNext').style.display = "none";
     }
     else {
@@ -721,8 +730,8 @@ function registerBracketChoice( matchId, isTop ) {
         if ( mode === "open" && winnerChange ) {
             updateSubsequentMatches( survey.getNextMatchAndPosition( matchId ) );
 
-            if ( ( display.isMobile && round < survey.getCurrentRoundIndex() ) ||
-                 ( display.isLarge  && round < survey.getCurrentRoundIndex() && round < ( survey.getMaxRounds() - 2 ) ) ) {
+            if ( ( display.isSingleDisplay && round < survey.getCurrentRoundIndex() ) ||
+                 ( display.isTripleDisplay && round < survey.getCurrentRoundIndex() && round < ( survey.getMaxRounds() - 2 ) ) ) {
                 changeRound( "next" );
             }
         }

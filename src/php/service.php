@@ -71,25 +71,25 @@ function emailSubscribers( $surveyId )
     return mail($to, $subject, $message, $headers);
 }
 
-function parseVotes( &$target, $rawVotes )
+function parseVotes( $votes )
 {
     $result = [];
     $matchIds = [];
-    $votes = $rawVotes ? explode( ',', $rawVotes ) : [];
-    foreach( $votes as $value )
+
+    foreach( $votes as $vote )
     {
-        $values = explode( '|', $value );
-        $index = array_search( $values[0], $matchIds );
+        $index = array_search( $vote['choice_set_id'], $matchIds );
         if ( $index === false )
         {
-            array_push( $matchIds, $values[0] );
-            array_push( $result, [ "id" => $values[0], "choices" => [], "allVotes" => [ $values[1] ] ] );
+            array_push( $matchIds, $vote['choice_set_id'] );
+            array_push( $result, [ "id" => $vote['choice_set_id'], "choices" => [], "allVotes" => [ $vote['choice_id'] ] ] );
         }
         else
         {
-            array_push( $result[$index]['allVotes'], $values[1] );
+            array_push( $result[$index]['allVotes'], $vote['choice_id'] );
         }
     }
+
     foreach( $result as $index => $match )
     {
         $votesByChoice = array_count_values( $match['allVotes'] );
@@ -99,7 +99,8 @@ function parseVotes( &$target, $rawVotes )
         }
         unset( $result[$index]['allVotes'] );
     }
-    $target = $result;
+
+    return $result;
 }
 
 function getGUID()
