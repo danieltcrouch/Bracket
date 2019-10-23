@@ -16,7 +16,9 @@
             <img id="helpIcon" style="width: .5em; padding-bottom: .25em" src="<?php getHelpImage() ?>" alt="help">
         </span></div>
         <div id="helpText" style="display: none">
-            ...
+            Use Brackets to make all your most important decisions. Vote along with potential strangers to choose the best movie, where you should eat this evening, or anything you can possibly think to ask. <br/>
+            Blinking buttons represent current options; click submit after making all choices.
+            Contact <a class="link" href="mailto:dcrouch1@harding.edu?Subject=Seven%20Dimensions" target="_top">Daniel Crouch</a> to create any bracket or polls.
         </div>
     </div>
 
