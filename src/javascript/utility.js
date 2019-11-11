@@ -118,9 +118,8 @@ function updateSurveyTiming( surveyId, surveyInfo, callback ) {
                 surveyInfo.timing.activeId = null;
                 surveyInfo.state = "complete";
             }
-            else {
-                emailSubscribers( surveyId );
-            }
+
+            emailSubscribers( surveyId );
 
             $.post(
                 "php/controller.php",
@@ -277,7 +276,8 @@ function reviewComplete( choices, finalVotes, additionalInfo ) {
 function getCompleteVoteDisplay( choices, finalVotes ) {
     let result = "";
     if ( choices && finalVotes ) {
-        result = getChoiceSetVoteDisplay( "Finals", choices, finalVotes[0] );
+        const finalVote = finalVotes[finalVotes.length - 1];
+        result = getChoiceSetVoteDisplay( "Finals", choices, finalVote );
     }
     return result;
 }

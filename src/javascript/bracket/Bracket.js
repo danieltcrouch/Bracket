@@ -576,7 +576,8 @@ function setClickableMatches() {
 function setDisplayType() {
     if ( isVisible( state ) ) {
         window.onresize = updateScreenSize;
-        round = Math.abs( survey.getCurrentRoundIndex() );
+        const currentRound = survey.getCurrentRoundIndex();
+        round = ( currentRound < 0 ) ? survey.getMaxRounds() - 1 : currentRound;
         display = {
            isTripleDisplay: survey.getMaxSize() > 32 || isSmallScreen(),
            isSingleDisplay: isMobile()
@@ -642,10 +643,13 @@ function displaySingleRound() {
 }
 
 function displayThreeRounds() {
+    let displayRound = ( round === 0 ) ? 1 : round;
+    displayRound = ( displayRound === survey.getMaxRounds() - 1 ) ? survey.getMaxRounds() - 2 : displayRound;
+
     id('roundPicker').style.display = "block";
 
     for ( let i = 0; i < survey.getMaxRounds(); i++ ) {
-        id('round' + i).style.display = ( i >= round - 1 && i <= round + 1 ) ? "flex" : "none";
+        id('round' + i).style.display = ( i >= displayRound - 1 && i <= displayRound + 1 ) ? "flex" : "none";
     }
 
     let fillers = nm('filler');
@@ -653,20 +657,20 @@ function displayThreeRounds() {
         fillers[i].style.display = "flex";
     }
 
-    const farLeftRound = ( round === 0 ) ? 0 : round - 1;
+    const farLeftRound = displayRound - 1;
     fillers = id('round' + farLeftRound).querySelectorAll('[name=filler]');
     for ( let i = 0; i < fillers.length; i++ ) {
         fillers[i].style.display = "none";
     }
 
-    const middleRound = ( round === 0 ) ? 1 : round;
+    const middleRound = displayRound;
     fillers = id('round' + middleRound).querySelectorAll('[name=filler]');
     for ( let i = 0; i < fillers.length; i++ ) {
         fillers[i].style.marginBottom = ( parseFloat(MATCH_B_MARGIN) ) + "rem";
         fillers[i].style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) ) + "rem";
     }
 
-    const farRightRound = ( round === 0 ) ? 2 : round + 1;
+    const farRightRound = displayRound + 1;
     fillers = id('round' + farRightRound).querySelectorAll('[name=filler]');
     for ( let i = 0; i < fillers.length; i++ ) {
         fillers[i].style.marginBottom = ( parseFloat(MATCH_B_MARGIN) * 3 ) + "rem";
@@ -691,7 +695,7 @@ function updateRoundPicker() {
     if ( round === 0 ) {
         id('arrowPrev').style.display = "none";
     }
-    else if ( round === survey.getMaxRounds() - 1 || ( display.isTripleDisplay && round === survey.getMaxRounds() - 2 ) ) {
+    else if ( round === survey.getMaxRounds() - 1 ) {
         id('arrowNext').style.display = "none";
     }
     else {
