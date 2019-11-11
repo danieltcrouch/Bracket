@@ -67,7 +67,12 @@ function displayRoundTimer() {
     }
 
     if ( !isEditable( state ) ) {
-        timerSpan.innerText += " (" + capitalize( state ) + ")";
+        if ( isFinished( state ) ) {
+            timerSpan.innerHTML = "Winner: <span style='font-weight: bold'>" + survey.getFinalWinner().getName() + "</span>";
+        }
+        else {
+            timerSpan.innerText += " (" + capitalize( state ) + ")";
+        }
         timerSpan.style.display = "block";
     }
 }
