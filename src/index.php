@@ -37,9 +37,7 @@
 
     $.post(
         "php/controller.php",
-        {
-            action: "getAllSurveyMetas"
-        },
+        { action: "getAllSurveyMetas" },
         function ( response ) {
             displayLogos( jsonParse( response ) );
             if ( error ) {
