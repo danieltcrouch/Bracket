@@ -469,7 +469,7 @@ function displayBracket() {
         roundDiv.id = "round" + i;
         roundDiv.style.display = "flex";
         roundDiv.style.flexDirection = "column";
-        roundDiv.style.justifyContent = "center";
+        roundDiv.style.justifyContent = "space-around";
         roundDiv.style.marginLeft = "1em";
 
         let matches = survey.getMatchesFromRound( i );
@@ -481,10 +481,6 @@ function displayBracket() {
             matchDiv.style.marginBottom = MATCH_B_MARGIN;
 
             matchDiv = getMatch( matchDiv, match );
-
-            if ( i > 0 && j > 0 ) {
-                insertFiller( roundDiv, 1 + ( 2 * ( i - 1 ) ) );
-            }
 
             roundDiv.appendChild( matchDiv );
         }
@@ -531,18 +527,6 @@ function getButtonFromEntry( entry, matchId, isByeEntry, isTop ) {
         registerBracketChoice( matchId, isTop );
     };
     return button;
-}
-
-function insertFiller( roundDiv, multiplier ) {
-    let fillerDiv = document.createElement( "DIV" );
-    fillerDiv.setAttribute( "name", "filler" );
-    fillerDiv.style.display = "flex";
-    fillerDiv.style.flexDirection = "column";
-    fillerDiv.style.marginBottom = ( parseFloat(MATCH_B_MARGIN) * multiplier ) + "rem";
-    fillerDiv.style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) * multiplier ) + "rem";
-    //fillerDiv.style.borderStyle = "solid";
-    //fillerDiv.style.borderWidth = "1px";
-    roundDiv.appendChild( fillerDiv );
 }
 
 function setClickableMatches() {
@@ -627,16 +611,14 @@ function displayRounds() {
     if ( display.isSingleDisplay || display.isTripleDisplay ) {
         updateRoundPicker();
     }
+    else {
+        hideMobileDisplay();
+    }
 }
 
 function displaySingleRound() {
     for ( let i = 0; i < survey.getMaxRounds(); i++ ) {
         id('round' + i).style.display = ( i === round ) ? "flex" : "none";
-    }
-
-    let fillers = nm('filler');
-    for ( let i = 0; i < fillers.length; i++ ) {
-        fillers[i].style.display = "none";
     }
 
     adjustButtonSetFontSize( id( "round" + round ) );
@@ -651,41 +633,11 @@ function displayThreeRounds() {
     for ( let i = 0; i < survey.getMaxRounds(); i++ ) {
         id('round' + i).style.display = ( i >= displayRound - 1 && i <= displayRound + 1 ) ? "flex" : "none";
     }
-
-    let fillers = nm('filler');
-    for ( let i = 0; i < fillers.length; i++ ) {
-        fillers[i].style.display = "flex";
-    }
-
-    const farLeftRound = displayRound - 1;
-    fillers = id('round' + farLeftRound).querySelectorAll('[name=filler]');
-    for ( let i = 0; i < fillers.length; i++ ) {
-        fillers[i].style.display = "none";
-    }
-
-    const middleRound = displayRound;
-    fillers = id('round' + middleRound).querySelectorAll('[name=filler]');
-    for ( let i = 0; i < fillers.length; i++ ) {
-        fillers[i].style.marginBottom = ( parseFloat(MATCH_B_MARGIN) ) + "rem";
-        fillers[i].style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) ) + "rem";
-    }
-
-    const farRightRound = displayRound + 1;
-    fillers = id('round' + farRightRound).querySelectorAll('[name=filler]');
-    for ( let i = 0; i < fillers.length; i++ ) {
-        fillers[i].style.marginBottom = ( parseFloat(MATCH_B_MARGIN) * 3 ) + "rem";
-        fillers[i].style.height = ( parseFloat(TOTAL_MATCH_HEIGHT) * 3 ) + "rem";
-    }
 }
 
 function displayAllRounds() {
     for ( let i = 0; i < survey.getMaxRounds(); i++ ) {
         id('round' + i).style.display = "flex";
-    }
-
-    let fillers = nm('filler');
-    for ( let i = 0; i < fillers.length; i++ ) {
-        fillers[i].style.display = "flex";
     }
 }
 

@@ -360,17 +360,6 @@ function isFinished( state ) {
 /**********GENERAL**********/
 
 
-function jsonParse( response ) {
-    let result = null;
-    try {
-        result = JSON.parse( response );
-    }
-    catch ( e ) {
-        result = null;
-    }
-    return result;
-}
-
 function adjustFontSize( element, defaults, minimumFontSize, getReducedTextFunction ) {
     let newFontSize = defaults.fontSize;
     let width = getFullWidth( element );
